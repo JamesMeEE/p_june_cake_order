@@ -210,7 +210,7 @@ function buildFlexMessage(data) {
             wrap: true,
             action: { type: 'uri', uri: data.mapLink },
             contents: [
-              { type: 'span', text: '📍 แผนที่ (Map): '},
+              { type: 'span', text: '🗺 แผนที่ (Map): '},
               { type: 'span', text: data.mapLink, color: '#1E88E5' }
             ]
           },
