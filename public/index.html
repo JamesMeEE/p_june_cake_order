@@ -54,7 +54,7 @@
 
   .map-row { display: flex; flex-direction: column; gap: 8px; }
   .pick-btn {
-    background: #A35318; color: white; border: none; border-radius: 8px;
+    background: #4b3619; color: white; border: none; border-radius: 8px;
     padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 6px;
   }
@@ -411,7 +411,7 @@
       return;
     }
 
-    const buttons = document.getElementById("submitBtn");
+    const buttons = [document.getElementById("submitBtn")];
     buttons.forEach(b => { b.disabled = true; b.innerText = "กำลังส่ง..."; });
 
     let total = 0;
