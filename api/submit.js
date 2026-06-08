@@ -10,10 +10,8 @@ export default async function handler(req, res) {
 
   try {
     const data = req.body;
-
     await appendToSheet(data);
     await sendOrderSummary(data);
-
     return res.status(200).json({ status: 'ok' });
   } catch (err) {
     console.error(err);
@@ -33,24 +31,26 @@ async function appendToSheet(data) {
   const sheets = google.sheets({ version: 'v4', auth });
   await ensureSheetExists(sheets);
 
-  const itemsText = data.items.map((item, i) =>
-    `${i + 1}. ${item.flavor} + ${item.sauce} × ${item.qty} = ${item.subtotal}฿`
-  ).join('\n');
+  const flavorsText = data.flavors.map(f => `${f.name} x ${f.qty} ชิ้น`).join('\n');
+  const saucesText = data.sauces.length > 0
+    ? data.sauces.map(s => `${s.name} x ${s.qty} ชิ้น`).join('\n')
+    : '-';
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: `${SHEET_NAME}!A:I`,
+    range: `${SHEET_NAME}!A:K`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[
         new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }),
         data.userId,
-        itemsText,
+        flavorsText,
+        saucesText,
         data.deliveryDate,
         data.name,
         data.phone,
         data.address,
-        data.mapLink || '-',
+        data.mapLink,
         data.note || '-',
         data.total
       ]]
@@ -72,11 +72,11 @@ async function ensureSheetExists(sheets) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!A:J`,
+      range: `${SHEET_NAME}!A:K`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
-          'Timestamp', 'UserID', 'Items', 'DeliveryDate',
+          'Timestamp', 'UserID', 'Flavors', 'Sauces', 'DeliveryDate',
           'Name', 'Phone', 'Address', 'MapLink', 'Note', 'Total'
         ]]
       }
@@ -85,46 +85,155 @@ async function ensureSheetExists(sheets) {
 }
 
 async function sendOrderSummary(data) {
-  const itemsText = data.items.map((item, i) =>
-    `${i + 1}. ${item.flavor}\n   ซอส: ${item.sauce}\n   จำนวน: ${item.qty} ชิ้น × ${item.flavorPrice + item.saucePrice}฿ = ${item.subtotal}฿`
-  ).join('\n\n');
-
-  const msg1 =
-`🧀 สรุปคำสั่งซื้อ 🧀
-─────────
-📋 รายการสั่งซื้อ :
-
-${itemsText}
-
-─────────
-📅 วัน-เวลาจัดส่ง :
-${data.deliveryDate}
-
-👤 ชื่อลูกค้า : ${data.name}
-📞 เบอร์โทร : ${data.phone}
-📍 ที่อยู่ : ${data.address}
-🗺 แผนที่ : ${data.mapLink || '-'}
-💬 อื่นๆ : ${data.note || '-'}
-─────────
-💰 รวมยอดที่ต้องชำระ : ${data.total} ฿`;
-
-  const msg2 =
-`💳 ชำระเงินได้ที่
-─────────
-🏦 ธนาคารกสิกรไทย
+  const flexMsg = buildFlexMessage(data);
+  const paymentText =
+`💳 ชำระเงินได้ที่ (Payment Channel)
+〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️
+🏦 ธนาคารกสิกรไทย (Kasikorn)
 เลขที่บัญชี : 020-2-88388-5
 ชื่อบัญชี : เฌนิศา เจริญวสุธร
+(Chenisa Jaruenvasutorn)
+♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡
+เมื่อชำระเงินเรียบร้อยแล้วกรุณาส่งสลิปการโอนเงินผ่านทางแชทของร้านเพื่อยืนยันรายการสั่งซื้อค่ะ 🙏🏻💖
+(After payment, please send your payment slip via chat to confirm your order)
+**ค่าบริการอาจมีเพิ่มเติมกรณีที่ระยะทางจัดส่งเกิน 3 กิโลเมตรนะคะ หากไม่เกินส่งฟรีทุกรายการค่าา ☺️**
+(Free delivery for the first 3 km.)`;
 
-**เมื่อชำระเรียบร้อยแล้วกรุณาส่งสลิปการโอนเงินผ่านทางแชทของร้านเพื่อยืนยันรายการสั่งซื้อค่ะ**
-
-(ค่าบริการอาจมีเพิ่มเติมกรณีที่ระยะทางจัดส่งเกิน 3 กิโลเมตร หากไม่เกินส่งฟรีทุกรายการ)`;
-
-  await sendLine(data.userId, msg1);
+  await sendLineMessage(data.userId, flexMsg);
   await new Promise(r => setTimeout(r, 500));
-  await sendLine(data.userId, msg2);
+  await sendLineMessage(data.userId, { type: 'text', text: paymentText });
 }
 
-async function sendLine(userId, text) {
+function buildFlexMessage(data) {
+  const orderLines = [];
+
+  data.flavors.forEach(f => {
+    orderLines.push({
+      type: 'text',
+      text: `รสชาติ (Flavor): ${f.name} x ${f.qty} ชิ้น`,
+      size: 'sm',
+      wrap: true,
+      margin: 'xs'
+    });
+  });
+
+  if (data.sauces.length === 0) {
+    orderLines.push({
+      type: 'text',
+      text: 'ซอส (Extra Sauce): -',
+      size: 'sm',
+      wrap: true,
+      margin: 'xs'
+    });
+  } else {
+    data.sauces.forEach(s => {
+      orderLines.push({
+        type: 'text',
+        text: `ซอส (Extra Sauce): ${s.name} x ${s.qty} ชิ้น`,
+        size: 'sm',
+        wrap: true,
+        margin: 'xs'
+      });
+    });
+  }
+
+  return {
+    type: 'flex',
+    altText: 'สรุปคำสั่งซื้อ',
+    contents: {
+      type: 'bubble',
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        paddingAll: '20px',
+        contents: [
+          {
+            type: 'text',
+            text: 'สรุปคำสั่งซื้อ',
+            weight: 'bold',
+            size: 'xl',
+            align: 'center'
+          },
+          { type: 'separator', margin: 'md' },
+          {
+            type: 'text',
+            text: '📝 รายการสั่งซื้อ (Order):',
+            weight: 'bold',
+            size: 'sm',
+            margin: 'md',
+            color: '#A35318'
+          },
+          ...orderLines,
+          {
+            type: 'text',
+            text: '⏰ วัน-เวลาจัดส่ง (Date & Time):',
+            weight: 'bold',
+            size: 'sm',
+            margin: 'md',
+            color: '#A35318'
+          },
+          {
+            type: 'text',
+            text: data.deliveryDate,
+            size: 'sm',
+            wrap: true,
+            margin: 'xs'
+          },
+          {
+            type: 'text',
+            text: `👤 ชื่อลูกค้า(Name): ${data.name}`,
+            size: 'sm',
+            margin: 'md',
+            wrap: true
+          },
+          {
+            type: 'text',
+            text: `📞 เบอร์ติดต่อ (Tel.): ${data.phone}`,
+            size: 'sm',
+            wrap: true,
+            margin: 'xs'
+          },
+          {
+            type: 'text',
+            text: `📍 ที่อยู่ (Address): ${data.address}`,
+            size: 'sm',
+            wrap: true,
+            margin: 'xs'
+          },
+          {
+            type: 'text',
+            text: `🗺 แผนที่ (Map): ${data.mapLink}`,
+            size: 'sm',
+            wrap: true,
+            margin: 'xs',
+            color: '#1E88E5',
+            action: { type: 'uri', uri: data.mapLink }
+          },
+          {
+            type: 'text',
+            text: `💬 อื่นๆ (Other): ${data.note || '-'}`,
+            size: 'sm',
+            wrap: true,
+            margin: 'xs'
+          },
+          { type: 'separator', margin: 'md' },
+          {
+            type: 'text',
+            text: `✏️ รวมยอดที่ต้องชำระ : ${data.total} ฿`,
+            weight: 'bold',
+            size: 'md',
+            margin: 'md',
+            align: 'center',
+            color: '#06c755'
+          }
+        ]
+      }
+    }
+  };
+}
+
+async function sendLineMessage(userId, message) {
   const res = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
     headers: {
@@ -133,7 +242,7 @@ async function sendLine(userId, text) {
     },
     body: JSON.stringify({
       to: userId,
-      messages: [{ type: 'text', text }]
+      messages: [message]
     })
   });
 
