@@ -88,6 +88,7 @@ async function sendOrderSummary(data) {
   const flexMsg = buildFlexMessage(data);
   const paymentText =
 `💳 ชำระเงินได้ที่ (Payment Channel)
+
 〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️
 
 🏦 ธนาคารกสิกรไทย (Kasikorn)
@@ -110,6 +111,7 @@ async function sendOrderSummary(data) {
 
 function buildFlexMessage(data) {
   const blank = { type: 'text', text: ' ', size: 'sm' };
+  const brown = '#4b3619';
 
   const orderLines = [];
 
@@ -152,7 +154,7 @@ function buildFlexMessage(data) {
         contents: [
           {
             type: 'text',
-            text: '🚩 สรุปคำสั่งซื้อ',
+            text: '📮 สรุปคำสั่งซื้อ',
             weight: 'bold',
             size: 'lg'
           },
@@ -163,7 +165,7 @@ function buildFlexMessage(data) {
             text: '📝 รายการสั่งซื้อ (Order):',
             weight: 'bold',
             size: 'sm',
-            color: '#A35318'
+            color: brown
           },
           blank,
           ...orderLines,
@@ -174,7 +176,7 @@ function buildFlexMessage(data) {
             text: '⏰ วัน-เวลาจัดส่ง (Date & Time):',
             weight: 'bold',
             size: 'sm',
-            color: '#A35318'
+            color: brown
           },
           blank,
           {
@@ -204,11 +206,13 @@ function buildFlexMessage(data) {
           },
           {
             type: 'text',
-            text: `🗺 แผนที่ (Map): ${data.mapLink}`,
             size: 'sm',
             wrap: true,
-            color: '#1E88E5',
-            action: { type: 'uri', uri: data.mapLink }
+            action: { type: 'uri', uri: data.mapLink },
+            contents: [
+              { type: 'span', text: '🗺 แผนที่ (Map): ', color: '#000000' },
+              { type: 'span', text: data.mapLink, color: '#1E88E5' }
+            ]
           },
           {
             type: 'text',
@@ -223,7 +227,7 @@ function buildFlexMessage(data) {
             text: `✏️ รวมยอดที่ต้องชำระ : ${data.total} ฿`,
             weight: 'bold',
             size: 'md',
-            color: '#A35318'
+            color: brown
           }
         ]
       }

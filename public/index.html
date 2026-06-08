@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>สั่ง Delivery ร้าน pik-baan 🏡</title>
+<title>สั่ง Delivery ร้าน ปิ๊กบ้าน 🏡</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
@@ -69,10 +69,14 @@
   .submit-bar-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
   .submit-bar-total b { color: #06c755; font-size: 20px; }
   .submit-btn {
-    width: 100%; padding: 14px; background: #A35318; color: white; border: none;
+    width: 100%; padding: 14px; color: white; border: none;
     border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+    margin-bottom: 8px;
   }
-  .submit-btn:disabled { background: #aaa; cursor: not-allowed; }
+  .submit-btn:last-child { margin-bottom: 0; }
+  .submit-btn.color-top { background: #4b3619; }
+  .submit-btn.color-bottom { background: #8a623f; }
+  .submit-btn:disabled { background: #aaa !important; cursor: not-allowed; }
 
   .loading {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -111,6 +115,21 @@
     width: 100%; padding: 14px; background: #06c755; color: white; border: none;
     border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
   }
+
+  .alert-modal {
+    background: white; width: calc(100% - 40px); max-width: 360px;
+    border-radius: 12px; padding: 20px; margin: auto;
+    align-self: center; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .alert-modal-title { font-weight: bold; font-size: 16px; margin-bottom: 12px; color: #A35318; }
+  .alert-modal-message { font-size: 14px; line-height: 1.5; margin-bottom: 16px; white-space: pre-wrap; }
+  .alert-modal-btn {
+    width: 100%; padding: 12px; background: #A35318; color: white; border: none;
+    border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer;
+  }
+  .alert-backdrop {
+    align-items: center !important;
+  }
 </style>
 </head>
 <body>
@@ -121,8 +140,8 @@
 </div>
 
 <div id="form" class="hidden">
-  <h1>สั่ง Delivery ร้าน pik-baan 🏡</h1>
-  <div class="subtitle">ทางร้านจัดส่งเฉพาะวัน อังคาร,พฤหัส,เสาร์,อาทิตย์ และ ส่งฟรี 3 กิโลเมตรแรกนะคะ (กิโลเมตรถัดไปคิดเพิ่ม 10 บาทต่อกิโลเมตร)</div>
+  <h1>สั่ง Delivery ร้าน ปิ๊กบ้าน 🏡</h1>
+  <div class="subtitle">ทางร้านจัดส่งเฉพาะวัน อังคาร,พฤหัสบดี,เสาร์,อาทิตย์ และ ส่งฟรี 3 กิโลเมตรแรกนะคะ (กิโลเมตรถัดไปคิดเพิ่ม 10 บาทต่อกิโลเมตร)</div>
 
   <div class="card">
     <div class="label">เลือกรูปแบบรสชาติ (Flavor) <span class="required">*</span></div>
@@ -148,7 +167,7 @@
   </div>
 
   <div class="card">
-    <div class="label">ชื่อ-นามสกุล หรือชื่อเล่น (Name) <span class="required">*</span></div>
+    <div class="label">ชื่อ-นามสกุล หรือ ชื่อเล่น (Name) <span class="required">*</span></div>
     <input type="text" id="name" required>
   </div>
 
@@ -167,13 +186,13 @@
     <div class="label">ตำแหน่งจัดส่ง (Map) <span class="required">*</span></div>
     <div class="map-row">
       <input type="text" id="mapLink" placeholder="วางลิงก์ หรือกดปุ่มด้านล่าง">
-      <button type="button" class="pick-btn" id="pickBtn">🗺 เลือกบนแผนที่</button>
+      <button type="button" class="pick-btn" id="pickBtn">🗺 ตำแหน่งปัจจุบัน</button>
     </div>
     <div id="gpsStatus" class="gps-status"></div>
   </div>
 
   <div class="card">
-    <div class="label">ส่งข้อความเพิ่มเติมถึงร้านค้า (More information)</div>
+    <div class="label">ส่งข้อความเพิ่มเติมถึงร้านค้า (More Information)</div>
     <textarea id="note"></textarea>
   </div>
 </div>
@@ -183,7 +202,8 @@
     <span>รวมทั้งหมด</span>
     <b id="totalDisplay">0 ฿</b>
   </div>
-  <button id="submitBtn" class="submit-btn">ยืนยันคำสั่งซื้อ</button>
+  <button id="submitBtn" class="submit-btn color-top">ยืนยันคำสั่งซื้อ</button>
+  <button id="submitBtn2" class="submit-btn color-bottom">ยืนยันคำสั่งซื้อ</button>
 </div>
 
 <div id="mapModal" class="modal-backdrop hidden">
@@ -203,11 +223,33 @@
   </div>
 </div>
 
+<div id="alertModal" class="modal-backdrop alert-backdrop hidden">
+  <div class="alert-modal">
+    <div class="alert-modal-title">สั่ง Delivery ร้าน ปิ๊กบ้าน</div>
+    <div class="alert-modal-message" id="alertMessage"></div>
+    <button class="alert-modal-btn" id="alertOkBtn">ตกลง</button>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
   const LIFF_ID = "2010335350-xAkOcQC8";
   let userId = null;
+  let alertCallback = null;
+
+  function showAlert(message, onClose) {
+    document.getElementById("alertMessage").innerText = message;
+    document.getElementById("alertModal").classList.remove("hidden");
+    alertCallback = onClose || null;
+  }
+
+  document.getElementById("alertOkBtn").addEventListener("click", () => {
+    document.getElementById("alertModal").classList.add("hidden");
+    const cb = alertCallback;
+    alertCallback = null;
+    if (cb) cb();
+  });
 
   const FLAVORS = [
     { id: 'original', name: '🧀 Original', displayName: '(195 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 195, image: '/pic/original.png' },
@@ -217,8 +259,9 @@
   const SAUCES = [
     { id: 'darkchoco', name: '🍫 ดาร์คช็อกโกแลต (Dark Chocolate)', price: 15 },
     { id: 'matcha', name: '🍵 มัทฉะ (Matcha)', price: 15 },
-    { id: 'strawberry', name: '🍓 สตรอว์เบอร์รี (Strawberry)', price: 20 },
-    { id: 'nutella', name: '🥜 นูเทลล่า (Nutella)', price: 20 }
+    { id: 'strawberry', name: '🍓 สตรอว์เบอร์รี่ (Strawberry)', price: 20 },
+    { id: 'nutella', name: '🥜 นูเทลล่า (Nutella)', price: 20 },
+    { id: 'biscoff', name: '🍪 บิสคอฟ (Biscoff)', price: 25 }
   ];
 
   const quantities = {};
@@ -346,14 +389,14 @@
     closeMapPicker();
   });
 
-  document.getElementById("submitBtn").addEventListener("click", async () => {
+  async function handleSubmit() {
     const flavors = FLAVORS.filter(f => quantities['flavor-' + f.id] > 0)
       .map(f => ({ name: f.name, price: f.price, qty: quantities['flavor-' + f.id] }));
     const sauces = SAUCES.filter(s => quantities['sauce-' + s.id] > 0)
       .map(s => ({ name: s.name, price: s.price, qty: quantities['sauce-' + s.id] }));
 
     if (flavors.length === 0) {
-      alert("กรุณาเลือกรสชาติอย่างน้อย 1 รายการ");
+      showAlert("กรุณาเลือกรสชาติอย่างน้อย 1 รายการ");
       return;
     }
 
@@ -365,13 +408,12 @@
     const note = document.getElementById("note").value.trim();
 
     if (!deliveryDate || !name || !phone || !address || !mapLink) {
-      alert("กรุณากรอกข้อมูลให้ครบทุกช่องที่มี *");
+      showAlert("กรุณากรอกข้อมูลให้ครบทุกช่องที่มี *");
       return;
     }
 
-    const btn = document.getElementById("submitBtn");
-    btn.disabled = true;
-    btn.innerText = "กำลังส่ง...";
+    const buttons = [document.getElementById("submitBtn"), document.getElementById("submitBtn2")];
+    buttons.forEach(b => { b.disabled = true; b.innerText = "กำลังส่ง..."; });
 
     let total = 0;
     flavors.forEach(f => total += f.price * f.qty);
@@ -388,19 +430,19 @@
       const result = await res.json();
 
       if (result.status === "ok") {
-        alert("ส่งคำสั่งซื้อเรียบร้อย! กรุณาตรวจสอบข้อความใน Line");
-        liff.closeWindow();
+        showAlert("ส่งคำสั่งซื้อเรียบร้อย! กรุณาตรวจสอบข้อความใน Line", () => liff.closeWindow());
       } else {
-        alert("เกิดข้อผิดพลาด: " + result.message);
-        btn.disabled = false;
-        btn.innerText = "ยืนยันคำสั่งซื้อ";
+        showAlert("เกิดข้อผิดพลาด: " + result.message);
+        buttons.forEach(b => { b.disabled = false; b.innerText = "ยืนยันคำสั่งซื้อ"; });
       }
     } catch (err) {
-      alert("เกิดข้อผิดพลาด: " + err.message);
-      btn.disabled = false;
-      btn.innerText = "ยืนยันคำสั่งซื้อ";
+      showAlert("เกิดข้อผิดพลาด: " + err.message);
+      buttons.forEach(b => { b.disabled = false; b.innerText = "ยืนยันคำสั่งซื้อ"; });
     }
-  });
+  }
+
+  document.getElementById("submitBtn").addEventListener("click", handleSubmit);
+  document.getElementById("submitBtn2").addEventListener("click", handleSubmit);
 
   initLiff();
 </script>
