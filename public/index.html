@@ -19,9 +19,8 @@
   .flavor-item:last-child { border-bottom: none; }
   .flavor-top { display: flex; align-items: center; gap: 16px; }
   .flavor-img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; }
-  .flavor-meta { text-align: center; margin-top: 8px; }
-  .flavor-name { font-weight: 600; font-size: 15px; }
-  .flavor-price { color: #06c755; font-weight: bold; font-size: 15px; margin-top: 2px; }
+  .flavor-meta { text-align: left; margin-top: 10px; }
+  .flavor-name { font-weight: 600; font-size: 14px; line-height: 1.4; }
 
   .sauce-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; gap: 12px; }
   .sauce-item:last-child { border-bottom: none; }
@@ -70,7 +69,7 @@
   .submit-bar-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
   .submit-bar-total b { color: #06c755; font-size: 20px; }
   .submit-btn {
-    width: 100%; padding: 14px; background: #06c755; color: white; border: none;
+    width: 100%; padding: 14px; background: #A35318; color: white; border: none;
     border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
   }
   .submit-btn:disabled { background: #aaa; cursor: not-allowed; }
@@ -123,10 +122,10 @@
 
 <div id="form" class="hidden">
   <h1>สั่ง Delivery ร้าน pik-baan 🏡</h1>
-  <div class="subtitle">ทางร้านจัดส่งเฉพาะวัน อังคาร, พฤหัสบดี, เสาร์, อาทิตย์ และส่งฟรี 3 กิโลเมตรแรก</div>
+  <div class="subtitle">ทางร้านจัดส่งเฉพาะวัน อังคาร,พฤหัส,เสาร์,อาทิตย์ และ ส่งฟรี 3 กิโลเมตรแรกนะคะ (กิโลเมตรถัดไปคิดเพิ่ม 10 บาทต่อกิโลเมตร)</div>
 
   <div class="card">
-    <div class="label">เลือกรสชาติ (Flavor) <span class="required">*</span></div>
+    <div class="label">เลือกรูปแบบรสชาติ (Flavor) <span class="required">*</span></div>
     <div id="flavorList"></div>
   </div>
 
@@ -136,7 +135,7 @@
   </div>
 
   <div class="card">
-    <div class="label">เลือกวันที่จัดส่ง (Date & Time) <span class="required">*</span></div>
+    <div class="label">เลือกวันที่จัดส่ง (Delivery Date and Time) <span class="required">*</span></div>
     <select id="deliveryDate" required>
       <option value="">-- เลือกวัน-เวลา --</option>
       <option>วันอังคาร (TUE) 9.00 - 10.00</option>
@@ -154,7 +153,7 @@
   </div>
 
   <div class="card">
-    <div class="label">เบอร์โทรสำหรับติดต่อ (Tel.) <span class="required">*</span></div>
+    <div class="label">เบอร์โทรสำหรับติดต่อ (Telephone Number) <span class="required">*</span></div>
     <input type="tel" id="phone" required>
   </div>
 
@@ -174,7 +173,7 @@
   </div>
 
   <div class="card">
-    <div class="label">ข้อความเพิ่มเติมถึงร้านค้า (Other)</div>
+    <div class="label">ส่งข้อความเพิ่มเติมถึงร้านค้า (More information)</div>
     <textarea id="note"></textarea>
   </div>
 </div>
@@ -211,8 +210,8 @@
   let userId = null;
 
   const FLAVORS = [
-    { id: 'original', name: '🧀 Original', price: 195, image: '/pic/original.png' },
-    { id: 'pistachio', name: '🥜 Pistachio', price: 220, image: '/pic/pistachio.png' }
+    { id: 'original', name: '🧀 Original', displayName: '(195 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 195, image: '/pic/original.png' },
+    { id: 'pistachio', name: '🥜 Pistachio', displayName: '(220 ฿)🥜 Pistachio : หอมถั่วพิสตาชิโอ้เข้มข้น ผสมกับความนัวของชีส', price: 220, image: '/pic/pistachio.png' }
   ];
 
   const SAUCES = [
@@ -257,8 +256,7 @@
           '</div>' +
         '</div>' +
         '<div class="flavor-meta">' +
-          '<div class="flavor-name">' + f.name + '</div>' +
-          '<div class="flavor-price">' + f.price + ' ฿</div>' +
+          '<div class="flavor-name">' + f.displayName + '</div>' +
         '</div>' +
       '</div>'
     ).join('');
