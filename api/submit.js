@@ -89,13 +89,17 @@ async function sendOrderSummary(data) {
   const paymentText =
 `💳 ชำระเงินได้ที่ (Payment Channel)
 〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️
+
 🏦 ธนาคารกสิกรไทย (Kasikorn)
 เลขที่บัญชี : 020-2-88388-5
 ชื่อบัญชี : เฌนิศา เจริญวสุธร
 (Chenisa Jaruenvasutorn)
+
 ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡
+
 เมื่อชำระเงินเรียบร้อยแล้วกรุณาส่งสลิปการโอนเงินผ่านทางแชทของร้านเพื่อยืนยันรายการสั่งซื้อค่ะ 🙏🏻💖
 (After payment, please send your payment slip via chat to confirm your order)
+
 **ค่าบริการอาจมีเพิ่มเติมกรณีที่ระยะทางจัดส่งเกิน 3 กิโลเมตรนะคะ หากไม่เกินส่งฟรีทุกรายการค่าา ☺️**
 (Free delivery for the first 3 km.)`;
 
@@ -107,13 +111,13 @@ async function sendOrderSummary(data) {
 function buildFlexMessage(data) {
   const orderLines = [];
 
-  data.flavors.forEach(f => {
+  data.flavors.forEach((f, idx) => {
     orderLines.push({
       type: 'text',
       text: `รสชาติ (Flavor): ${f.name} x ${f.qty} ชิ้น`,
       size: 'sm',
       wrap: true,
-      margin: 'xs'
+      margin: idx === 0 ? 'md' : 'xs'
     });
   });
 
@@ -145,23 +149,21 @@ function buildFlexMessage(data) {
       body: {
         type: 'box',
         layout: 'vertical',
-        spacing: 'sm',
         paddingAll: '20px',
         contents: [
           {
             type: 'text',
-            text: 'สรุปคำสั่งซื้อ',
+            text: '🚩 สรุปคำสั่งซื้อ',
             weight: 'bold',
-            size: 'xl',
-            align: 'center'
+            size: 'lg'
           },
-          { type: 'separator', margin: 'md' },
+          { type: 'separator', margin: 'lg' },
           {
             type: 'text',
             text: '📝 รายการสั่งซื้อ (Order):',
             weight: 'bold',
             size: 'sm',
-            margin: 'md',
+            margin: 'lg',
             color: '#A35318'
           },
           ...orderLines,
@@ -170,7 +172,7 @@ function buildFlexMessage(data) {
             text: '⏰ วัน-เวลาจัดส่ง (Date & Time):',
             weight: 'bold',
             size: 'sm',
-            margin: 'md',
+            margin: 'xl',
             color: '#A35318'
           },
           {
@@ -178,13 +180,13 @@ function buildFlexMessage(data) {
             text: data.deliveryDate,
             size: 'sm',
             wrap: true,
-            margin: 'xs'
+            margin: 'md'
           },
           {
             type: 'text',
             text: `👤 ชื่อลูกค้า(Name): ${data.name}`,
             size: 'sm',
-            margin: 'md',
+            margin: 'xl',
             wrap: true
           },
           {
@@ -217,15 +219,14 @@ function buildFlexMessage(data) {
             wrap: true,
             margin: 'xs'
           },
-          { type: 'separator', margin: 'md' },
+          { type: 'separator', margin: 'lg' },
           {
             type: 'text',
             text: `✏️ รวมยอดที่ต้องชำระ : ${data.total} ฿`,
             weight: 'bold',
             size: 'md',
-            margin: 'md',
-            align: 'center',
-            color: '#06c755'
+            margin: 'lg',
+            color: '#A35318'
           }
         ]
       }
