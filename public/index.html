@@ -7,25 +7,51 @@
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
-  body { margin: 0; padding: 16px; background: #f5f5f5; }
+  body { margin: 0; padding: 16px 16px 120px; background: #f5f5f5; }
   h1 { font-size: 22px; margin: 0 0 8px; }
   .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
   .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
   .label { font-weight: bold; font-size: 15px; margin-bottom: 10px; }
   .required { color: #e74c3c; }
-  .option { display: flex; align-items: center; padding: 10px; border: 2px solid #eee; border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
-  .option.selected { border-color: #06c755; background: #f0fff4; }
-  .option input { margin-right: 10px; }
-  .option-text { font-size: 14px; flex: 1; }
+
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .menu-item { text-align: center; }
+  .menu-item img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; background: #eee; }
+  .menu-name { font-size: 14px; margin-top: 8px; font-weight: 600; }
+  .menu-price { color: #06c755; font-weight: bold; font-size: 15px; }
+
+  .add-btn {
+    width: 100%; padding: 14px; background: #06c755; color: white; border: none;
+    border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer;
+  }
+  .add-btn:active { background: #05a847; }
+
+  .cart-empty { text-align: center; color: #999; padding: 20px; font-size: 14px; }
+  .cart-item { padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+  .cart-item-header { display: flex; justify-content: space-between; align-items: start; }
+  .cart-item-info { flex: 1; }
+  .cart-item-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .cart-item-detail { font-size: 13px; color: #666; margin-bottom: 4px; }
+  .cart-item-price { color: #06c755; font-weight: bold; font-size: 14px; margin-top: 4px; }
+  .cart-item-remove { color: #e74c3c; background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px 8px; width: auto; }
+
   input[type="text"], input[type="tel"], textarea, select {
     width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit;
   }
   textarea { resize: vertical; min-height: 60px; }
-  button {
-    width: 100%; padding: 14px; background: #06c755; color: white; border: none;
-    border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 16px;
+
+  .submit-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: white;
+    padding: 12px 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); z-index: 100;
   }
-  button:disabled { background: #aaa; cursor: not-allowed; }
+  .submit-bar-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
+  .submit-bar-total b { color: #06c755; font-size: 20px; }
+  .submit-btn {
+    width: 100%; padding: 14px; background: #06c755; color: white; border: none;
+    border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+  }
+  .submit-btn:disabled { background: #aaa; cursor: not-allowed; }
+
   .loading {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background: #f5f5f5; display: flex; flex-direction: column;
@@ -38,11 +64,48 @@
   }
   .loading-text { font-size: 15px; color: #666; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .hidden { display: none; }
-  .image-option { display: flex; flex-direction: column; align-items: center; padding: 12px; border: 2px solid #eee; border-radius: 8px; cursor: pointer; }
-  .image-option.selected { border-color: #06c755; background: #f0fff4; }
-  .image-option img { width: 100%; max-width: 140px; border-radius: 8px; margin-bottom: 8px; }
-  .flavor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hidden { display: none !important; }
+
+  .modal-backdrop {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 1000;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .modal {
+    background: white; width: 100%; max-width: 500px; max-height: 90vh;
+    border-radius: 16px 16px 0 0; padding: 20px; overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-title { font-size: 18px; font-weight: bold; }
+  .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 8px; width: auto; color: #666; }
+
+  .option-list { margin-bottom: 16px; }
+  .option {
+    display: flex; align-items: center; padding: 12px; border: 2px solid #eee;
+    border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: 0.15s;
+  }
+  .option.selected { border-color: #06c755; background: #f0fff4; }
+  .option input { display: none; }
+  .option-text { font-size: 14px; flex: 1; }
+  .option-price { color: #06c755; font-weight: bold; font-size: 14px; }
+
+  .qty-row { display: flex; align-items: center; justify-content: center; padding: 12px 0; margin-bottom: 8px; }
+  .qty-controls { display: flex; align-items: center; gap: 20px; }
+  .qty-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: 2px solid #06c755;
+    background: white; color: #06c755; font-size: 22px; font-weight: bold;
+    cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qty-btn:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; }
+  .qty-value { font-size: 22px; font-weight: bold; min-width: 40px; text-align: center; }
+
+  .confirm-btn {
+    width: 100%; padding: 14px; background: #06c755; color: white; border: none;
+    border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 12px;
+  }
 </style>
 </head>
 <body>
@@ -54,43 +117,42 @@
 
 <div id="form" class="hidden">
   <h1>สั่ง Delivery 🧀</h1>
-  <div class="subtitle">ทางร้านจัดส่งเฉพาะวัน จันทร์, พุธ, เสาร์ และส่งฟรี 3 กิโลเมตรแรก</div>
+  <div class="subtitle">ทางร้านจัดส่งเฉพาะวัน อังคาร, พฤหัส, เสาร์, อาทิตย์ และส่งฟรี 3 กิโลเมตรแรก</div>
 
   <div class="card">
-    <div class="label">เลือกรูปแบบรสชาติ <span class="required">*</span></div>
-    <div class="flavor-grid">
-      <label class="image-option">
-        <img src="https://via.placeholder.com/140x140/f4d35e/333?text=Original" alt="Original">
-        <input type="radio" name="flavor" value="(194 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก" data-price="194" required style="display:none">
-        <div class="option-text">(194 ฿) 🧀 Original</div>
-      </label>
-      <label class="image-option">
-        <img src="https://via.placeholder.com/140x140/95c623/333?text=Pistachio" alt="Pistachio">
-        <input type="radio" name="flavor" value="(222 ฿)🥜 Pistachio : หอมถั่วพิตาชิโอเข้มข้น ผสมกับความมันของชีส" data-price="222" style="display:none">
-        <div class="option-text">(222 ฿) 🥜 Pistachio</div>
-      </label>
+    <div class="label">เมนูของเรา 🧀</div>
+    <div class="menu-grid">
+      <div class="menu-item">
+        <img src="/pic/original.png" alt="Original">
+        <div class="menu-name">🧀 Original</div>
+        <div class="menu-price">195 ฿</div>
+      </div>
+      <div class="menu-item">
+        <img src="/pic/pistachio.png" alt="Pistachio">
+        <div class="menu-name">🥜 Pistachio</div>
+        <div class="menu-price">220 ฿</div>
+      </div>
     </div>
+    <button class="add-btn" id="openAddBtn">+ เพิ่มรายการสั่งซื้อ</button>
   </div>
 
   <div class="card">
-    <div class="label">เลือกซอส <span class="required">*</span></div>
-    <label class="option"><input type="radio" name="sauce" value="(20฿) 🍫ช็อกโกแลต (Chocolate)" data-price="20" required>ช็อกโกแลต (20฿)</label>
-    <label class="option"><input type="radio" name="sauce" value="(20฿) 🥜นูเทลล่า (Nutella)" data-price="20">นูเทลล่า (20฿)</label>
-    <label class="option"><input type="radio" name="sauce" value="(20฿) 🍵มัทฉะ (Matcha)" data-price="20">มัทฉะ (20฿)</label>
-    <label class="option"><input type="radio" name="sauce" value="(20฿) 🍓สตรอว์เบอร์รี (Strawberry)" data-price="20">สตรอว์เบอร์รี (20฿)</label>
-    <label class="option"><input type="radio" name="sauce" value="(0฿) ไม่รับซอส" data-price="0">ไม่รับซอส (0฿)</label>
+    <div class="label">รายการที่สั่ง</div>
+    <div id="cartList">
+      <div class="cart-empty">ยังไม่มีรายการ กดปุ่ม "เพิ่มรายการสั่งซื้อ" ด้านบน</div>
+    </div>
   </div>
 
   <div class="card">
     <div class="label">เลือกวันที่จัดส่ง <span class="required">*</span></div>
     <select id="deliveryDate" required>
       <option value="">-- เลือกวัน-เวลา --</option>
-      <option>วันจันทร์ 9.00 - 10.00</option>
-      <option>วันจันทร์ 10.00 - 11.00</option>
-      <option>วันพุธ 9.00 - 10.00</option>
-      <option>วันพุธ 10.00 - 11.00</option>
-      <option>วันเสาร์ 9.00 - 10.00</option>
-      <option>วันเสาร์ 10.00 - 11.00</option>
+      <option>วันอังคาร 9.00 - 10.00</option>
+      <option>วันอังคาร 14.00 - 15.00</option>
+      <option>วันพฤหัสบดี 9.00 - 10.00</option>
+      <option>วันพฤหัสบดี 14.00 - 15.00</option>
+      <option>วันเสาร์ 9.30 - 10.30</option>
+      <option>วันอาทิตย์ 9.30 - 10.30</option>
     </select>
   </div>
 
@@ -106,26 +168,98 @@
 
   <div class="card">
     <div class="label">ที่อยู่สำหรับจัดส่ง <span class="required">*</span></div>
+    <div style="font-size:12px;color:#888;margin-bottom:8px;">*ส่งฟรี 3 กิโลเมตรแรก กิโลเมตรถัดไปคิดเพิ่ม 10 บาท/กิโลเมตร*</div>
     <textarea id="address" required></textarea>
   </div>
 
   <div class="card">
-    <div class="label">ลิ้งแผนที่ Google Maps <span class="required">*</span></div>
-    <input type="text" id="mapLink" placeholder="https://maps.app.goo.gl/..." required>
+    <div class="label">ลิ้งแผนที่ Google Maps</div>
+    <input type="text" id="mapLink" placeholder="https://maps.app.goo.gl/...">
   </div>
 
   <div class="card">
     <div class="label">ข้อความเพิ่มเติมถึงร้านค้า</div>
     <textarea id="note"></textarea>
   </div>
+</div>
 
-  <button id="submitBtn">ยืนยันคำสั่งซื้อ</button>
+<div id="submitBar" class="submit-bar hidden">
+  <div class="submit-bar-total">
+    <span>รวมทั้งหมด</span>
+    <b id="totalDisplay">0 ฿</b>
+  </div>
+  <button id="submitBtn" class="submit-btn">ยืนยันคำสั่งซื้อ</button>
+</div>
+
+<div id="addModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">เพิ่มรายการสั่งซื้อ</div>
+      <button class="modal-close" id="closeAddBtn">✕</button>
+    </div>
+
+    <div class="label">เลือกรสชาติ <span class="required">*</span></div>
+    <div class="option-list">
+      <label class="option">
+        <input type="radio" name="modal-flavor" value="🧀 Original" data-price="195">
+        <span class="option-text">🧀 Original</span>
+        <span class="option-price">195 ฿</span>
+      </label>
+      <label class="option">
+        <input type="radio" name="modal-flavor" value="🥜 Pistachio" data-price="220">
+        <span class="option-text">🥜 Pistachio</span>
+        <span class="option-price">220 ฿</span>
+      </label>
+    </div>
+
+    <div class="label">เลือกซอส <span class="required">*</span></div>
+    <div class="option-list">
+      <label class="option">
+        <input type="radio" name="modal-sauce" value="🍫 ดาร์คช็อกโกแลต" data-price="15">
+        <span class="option-text">🍫 ดาร์คช็อกโกแลต</span>
+        <span class="option-price">15 ฿</span>
+      </label>
+      <label class="option">
+        <input type="radio" name="modal-sauce" value="🍵 มัทฉะ" data-price="15">
+        <span class="option-text">🍵 มัทฉะ</span>
+        <span class="option-price">15 ฿</span>
+      </label>
+      <label class="option">
+        <input type="radio" name="modal-sauce" value="🍓 สตรอว์เบอร์รี" data-price="20">
+        <span class="option-text">🍓 สตรอว์เบอร์รี</span>
+        <span class="option-price">20 ฿</span>
+      </label>
+      <label class="option">
+        <input type="radio" name="modal-sauce" value="🥜 นูเทลล่า" data-price="20">
+        <span class="option-text">🥜 นูเทลล่า</span>
+        <span class="option-price">20 ฿</span>
+      </label>
+      <label class="option">
+        <input type="radio" name="modal-sauce" value="ไม่รับซอส" data-price="0">
+        <span class="option-text">ไม่รับซอส</span>
+        <span class="option-price">0 ฿</span>
+      </label>
+    </div>
+
+    <div class="label">จำนวน <span class="required">*</span></div>
+    <div class="qty-row">
+      <div class="qty-controls">
+        <button class="qty-btn" id="qtyMinus">−</button>
+        <span class="qty-value" id="qtyValue">1</span>
+        <button class="qty-btn" id="qtyPlus">+</button>
+      </div>
+    </div>
+
+    <button class="confirm-btn" id="confirmAddBtn">เพิ่มเข้ารายการ</button>
+  </div>
 </div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
   const LIFF_ID = "2010335350-xAkOcQC8";
   let userId = null;
+  let cart = [];
+  let qty = 1;
 
   async function initLiff() {
     try {
@@ -139,10 +273,60 @@
       document.getElementById("name").value = profile.displayName || "";
       document.getElementById("loading").classList.add("hidden");
       document.getElementById("form").classList.remove("hidden");
+      document.getElementById("submitBar").classList.remove("hidden");
     } catch (err) {
       document.querySelector(".loading-text").innerText = "เกิดข้อผิดพลาด: " + err.message;
     }
   }
+
+  function openModal() {
+    document.querySelectorAll('input[name="modal-flavor"], input[name="modal-sauce"]').forEach(r => {
+      r.checked = false;
+      r.closest('label').classList.remove('selected');
+    });
+    qty = 1;
+    updateQtyDisplay();
+    document.getElementById("addModal").classList.remove("hidden");
+  }
+
+  function closeModal() {
+    document.getElementById("addModal").classList.add("hidden");
+  }
+
+  function updateQtyDisplay() {
+    document.getElementById("qtyValue").innerText = qty;
+    document.getElementById("qtyMinus").disabled = qty <= 1;
+  }
+
+  function renderCart() {
+    const list = document.getElementById("cartList");
+    if (cart.length === 0) {
+      list.innerHTML = '<div class="cart-empty">ยังไม่มีรายการ กดปุ่ม "เพิ่มรายการสั่งซื้อ" ด้านบน</div>';
+    } else {
+      list.innerHTML = cart.map((item, i) => 
+        '<div class="cart-item"><div class="cart-item-header"><div class="cart-item-info">' +
+        '<div class="cart-item-title">' + item.flavor + '</div>' +
+        '<div class="cart-item-detail">ซอส: ' + item.sauce + '</div>' +
+        '<div class="cart-item-detail">จำนวน: ' + item.qty + ' ชิ้น</div>' +
+        '<div class="cart-item-price">' + item.subtotal + ' ฿</div>' +
+        '</div><button class="cart-item-remove" data-idx="' + i + '">✕</button></div></div>'
+      ).join('');
+      document.querySelectorAll('.cart-item-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          cart.splice(parseInt(btn.dataset.idx), 1);
+          renderCart();
+        });
+      });
+    }
+    const total = cart.reduce((s, i) => s + i.subtotal, 0);
+    document.getElementById("totalDisplay").innerText = total + " ฿";
+  }
+
+  document.getElementById("openAddBtn").addEventListener("click", openModal);
+  document.getElementById("closeAddBtn").addEventListener("click", closeModal);
+  document.getElementById("addModal").addEventListener("click", (e) => {
+    if (e.target.id === "addModal") closeModal();
+  });
 
   document.querySelectorAll('input[type="radio"]').forEach(radio => {
     radio.addEventListener('change', () => {
@@ -154,9 +338,46 @@
     });
   });
 
+  document.getElementById("qtyPlus").addEventListener("click", () => {
+    qty++;
+    updateQtyDisplay();
+  });
+  document.getElementById("qtyMinus").addEventListener("click", () => {
+    if (qty > 1) { qty--; updateQtyDisplay(); }
+  });
+
+  document.getElementById("confirmAddBtn").addEventListener("click", () => {
+    const flavor = document.querySelector('input[name="modal-flavor"]:checked');
+    const sauce = document.querySelector('input[name="modal-sauce"]:checked');
+
+    if (!flavor || !sauce) {
+      alert("กรุณาเลือกรสชาติและซอสให้ครบ");
+      return;
+    }
+
+    const flavorPrice = parseInt(flavor.dataset.price);
+    const saucePrice = parseInt(sauce.dataset.price);
+    const subtotal = (flavorPrice + saucePrice) * qty;
+
+    cart.push({
+      flavor: flavor.value,
+      flavorPrice: flavorPrice,
+      sauce: sauce.value,
+      saucePrice: saucePrice,
+      qty: qty,
+      subtotal: subtotal
+    });
+
+    renderCart();
+    closeModal();
+  });
+
   document.getElementById("submitBtn").addEventListener("click", async () => {
-    const flavor = document.querySelector('input[name="flavor"]:checked');
-    const sauce = document.querySelector('input[name="sauce"]:checked');
+    if (cart.length === 0) {
+      alert("กรุณาเพิ่มรายการสั่งซื้ออย่างน้อย 1 รายการ");
+      return;
+    }
+
     const deliveryDate = document.getElementById("deliveryDate").value;
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
@@ -164,7 +385,7 @@
     const mapLink = document.getElementById("mapLink").value.trim();
     const note = document.getElementById("note").value.trim();
 
-    if (!flavor || !sauce || !deliveryDate || !name || !phone || !address || !mapLink) {
+    if (!deliveryDate || !name || !phone || !address) {
       alert("กรุณากรอกข้อมูลให้ครบทุกช่องที่มี *");
       return;
     }
@@ -173,12 +394,11 @@
     btn.disabled = true;
     btn.innerText = "กำลังส่ง...";
 
+    const total = cart.reduce((s, i) => s + i.subtotal, 0);
     const data = {
       userId: userId,
-      flavor: flavor.value,
-      flavorPrice: flavor.dataset.price,
-      sauce: sauce.value,
-      saucePrice: sauce.dataset.price,
+      items: cart,
+      total: total,
       deliveryDate: deliveryDate,
       name: name,
       phone: phone,

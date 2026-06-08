@@ -10,10 +10,9 @@ export default async function handler(req, res) {
 
   try {
     const data = req.body;
-    const total = parseInt(data.flavorPrice) + parseInt(data.saucePrice);
 
-    await appendToSheet(data, total);
-    await sendOrderSummary(data, total);
+    await appendToSheet(data);
+    await sendOrderSummary(data);
 
     return res.status(200).json({ status: 'ok' });
   } catch (err) {
@@ -22,7 +21,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function appendToSheet(data, total) {
+async function appendToSheet(data) {
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -32,26 +31,28 @@ async function appendToSheet(data, total) {
   });
 
   const sheets = google.sheets({ version: 'v4', auth });
-
   await ensureSheetExists(sheets);
+
+  const itemsText = data.items.map((item, i) =>
+    `${i + 1}. ${item.flavor} + ${item.sauce} × ${item.qty} = ${item.subtotal}฿`
+  ).join('\n');
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: `${SHEET_NAME}!A:K`,
+    range: `${SHEET_NAME}!A:I`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[
         new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }),
         data.userId,
-        data.flavor,
-        data.sauce,
+        itemsText,
         data.deliveryDate,
         data.name,
         data.phone,
         data.address,
-        data.mapLink,
+        data.mapLink || '-',
         data.note || '-',
-        total
+        data.total
       ]]
     }
   });
@@ -71,11 +72,11 @@ async function ensureSheetExists(sheets) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!A:K`,
+      range: `${SHEET_NAME}!A:J`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
-          'Timestamp', 'UserID', 'Flavor', 'Sauce', 'DeliveryDate',
+          'Timestamp', 'UserID', 'Items', 'DeliveryDate',
           'Name', 'Phone', 'Address', 'MapLink', 'Note', 'Total'
         ]]
       }
@@ -83,24 +84,29 @@ async function ensureSheetExists(sheets) {
   }
 }
 
-async function sendOrderSummary(data, total) {
+async function sendOrderSummary(data) {
+  const itemsText = data.items.map((item, i) =>
+    `${i + 1}. ${item.flavor}\n   ซอส: ${item.sauce}\n   จำนวน: ${item.qty} ชิ้น × ${item.flavorPrice + item.saucePrice}฿ = ${item.subtotal}฿`
+  ).join('\n\n');
+
   const msg1 =
 `🧀 สรุปคำสั่งซื้อ 🧀
 ───────────────────
-รายละเอียด :
-${data.flavor}
-${data.sauce}
+📋 รายการสั่งซื้อ :
 
+${itemsText}
+
+───────────────────
 📅 วัน-เวลาจัดส่ง :
 ${data.deliveryDate}
 
 👤 ชื่อลูกค้า : ${data.name}
 📞 เบอร์โทร : ${data.phone}
 📍 ที่อยู่ : ${data.address}
-🗺 แผนที่ : ${data.mapLink}
+🗺 แผนที่ : ${data.mapLink || '-'}
 💬 อื่นๆ : ${data.note || '-'}
 ───────────────────
-💰 รวมยอดที่ต้องชำระ : ${total} ฿`;
+💰 รวมยอดที่ต้องชำระ : ${data.total} ฿`;
 
   const msg2 =
 `💳 ชำระเงินได้ที่
