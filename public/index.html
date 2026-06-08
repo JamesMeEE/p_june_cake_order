@@ -96,11 +96,20 @@
   .qty-controls { display: flex; align-items: center; gap: 20px; }
   .qty-btn {
     width: 40px; height: 40px; border-radius: 50%; border: 2px solid #06c755;
-    background: white; color: #06c755; font-size: 24px; font-weight: bold;
-    cursor: pointer; padding: 0; line-height: 1;
-    display: flex; align-items: center; justify-content: center;
+    background: white; cursor: pointer; padding: 0; position: relative;
   }
-  .qty-btn span { display: block; transform: translateY(-1px); }
+  .qty-btn::before {
+    content: ''; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 14px; height: 2px; background: #06c755; border-radius: 2px;
+  }
+  .qty-btn.plus::after {
+    content: ''; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 2px; height: 14px; background: #06c755; border-radius: 2px;
+  }
+  .qty-btn:disabled { border-color: #ccc; cursor: not-allowed; }
+  .qty-btn:disabled::before, .qty-btn:disabled::after { background: #ccc; }
   .qty-btn:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; }
   .qty-value { font-size: 22px; font-weight: bold; min-width: 40px; text-align: center; }
 
@@ -246,9 +255,9 @@
     <div class="label">จำนวน <span class="required">*</span></div>
     <div class="qty-row">
       <div class="qty-controls">
-        <button class="qty-btn" id="qtyMinus"><span>−</span></button>
+        <button class="qty-btn" id="qtyMinus" aria-label="ลดจำนวน"></button>
         <span class="qty-value" id="qtyValue">1</span>
-        <button class="qty-btn" id="qtyPlus"><span>+</span></button>
+        <button class="qty-btn plus" id="qtyPlus" aria-label="เพิ่มจำนวน"></button>
       </div>
     </div>
 
@@ -313,6 +322,10 @@
 
     updateQtyDisplay();
     document.getElementById("addModal").classList.remove("hidden");
+    setTimeout(() => {
+      const modal = document.querySelector('.modal');
+      modal.scrollTop = modal.scrollHeight;
+    }, 50);
   }
 
   function closeModal() {
