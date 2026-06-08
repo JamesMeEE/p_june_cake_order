@@ -109,15 +109,16 @@ async function sendOrderSummary(data) {
 }
 
 function buildFlexMessage(data) {
+  const blank = { type: 'text', text: ' ', size: 'sm' };
+
   const orderLines = [];
 
-  data.flavors.forEach((f, idx) => {
+  data.flavors.forEach(f => {
     orderLines.push({
       type: 'text',
       text: `รสชาติ (Flavor): ${f.name} x ${f.qty} ชิ้น`,
       size: 'sm',
-      wrap: true,
-      margin: idx === 0 ? 'md' : 'xs'
+      wrap: true
     });
   });
 
@@ -126,8 +127,7 @@ function buildFlexMessage(data) {
       type: 'text',
       text: 'ซอส (Extra Sauce): -',
       size: 'sm',
-      wrap: true,
-      margin: 'xs'
+      wrap: true
     });
   } else {
     data.sauces.forEach(s => {
@@ -135,8 +135,7 @@ function buildFlexMessage(data) {
         type: 'text',
         text: `ซอส (Extra Sauce): ${s.name} x ${s.qty} ชิ้น`,
         size: 'sm',
-        wrap: true,
-        margin: 'xs'
+        wrap: true
       });
     });
   }
@@ -157,58 +156,57 @@ function buildFlexMessage(data) {
             weight: 'bold',
             size: 'lg'
           },
-          { type: 'separator', margin: 'lg' },
+          { type: 'separator', margin: 'md' },
+          blank,
           {
             type: 'text',
             text: '📝 รายการสั่งซื้อ (Order):',
             weight: 'bold',
             size: 'sm',
-            margin: 'lg',
             color: '#A35318'
           },
+          blank,
           ...orderLines,
+          blank,
+          blank,
           {
             type: 'text',
             text: '⏰ วัน-เวลาจัดส่ง (Date & Time):',
             weight: 'bold',
             size: 'sm',
-            margin: 'xl',
             color: '#A35318'
           },
+          blank,
           {
             type: 'text',
             text: data.deliveryDate,
             size: 'sm',
-            wrap: true,
-            margin: 'md'
+            wrap: true
           },
+          blank,
           {
             type: 'text',
             text: `👤 ชื่อลูกค้า(Name): ${data.name}`,
             size: 'sm',
-            margin: 'xl',
             wrap: true
           },
           {
             type: 'text',
             text: `📞 เบอร์ติดต่อ (Tel.): ${data.phone}`,
             size: 'sm',
-            wrap: true,
-            margin: 'xs'
+            wrap: true
           },
           {
             type: 'text',
             text: `📍 ที่อยู่ (Address): ${data.address}`,
             size: 'sm',
-            wrap: true,
-            margin: 'xs'
+            wrap: true
           },
           {
             type: 'text',
             text: `🗺 แผนที่ (Map): ${data.mapLink}`,
             size: 'sm',
             wrap: true,
-            margin: 'xs',
             color: '#1E88E5',
             action: { type: 'uri', uri: data.mapLink }
           },
@@ -216,16 +214,15 @@ function buildFlexMessage(data) {
             type: 'text',
             text: `💬 อื่นๆ (Other): ${data.note || '-'}`,
             size: 'sm',
-            wrap: true,
-            margin: 'xs'
+            wrap: true
           },
-          { type: 'separator', margin: 'lg' },
+          { type: 'separator', margin: 'md' },
+          blank,
           {
             type: 'text',
             text: `✏️ รวมยอดที่ต้องชำระ : ${data.total} ฿`,
             weight: 'bold',
             size: 'md',
-            margin: 'lg',
             color: '#A35318'
           }
         ]
