@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>สั่ง Delivery ร้าน ปิ๊กบ้าน</title>
+<title>สั่ง Delivery ร้าน ปิ๊กบ้าน 🏡</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
@@ -140,7 +140,7 @@
 </div>
 
 <div id="form" class="hidden">
-  <h1>สั่ง Delivery ร้าน ปิ๊กบ้าน</h1>
+  <h1>สั่ง Delivery ร้าน ปิ๊กบ้าน 🏡</h1>
   <div class="subtitle">ทางร้านจัดส่งเฉพาะวัน อังคาร,พฤหัสบดี,เสาร์,อาทิตย์ และ ส่งฟรี 3 กิโลเมตรแรกนะคะ (กิโลเมตรถัดไปคิดเพิ่ม 10 บาทต่อกิโลเมตร)</div>
 
   <div class="card">
@@ -185,8 +185,8 @@
   <div class="card">
     <div class="label">ตำแหน่งจัดส่ง (Map) <span class="required">*</span></div>
     <div class="map-row">
-      <input type="text" id="mapLink" placeholder="วางลิงก์ หรือกดปุ่มด้านล่าง">
-      <button type="button" class="pick-btn" id="pickBtn">🗺 ตำแหน่งปัจจุบัน</button>
+      <input type="text" id="mapLink" placeholder="วางลิงก์ หรือ กดปุ่มด้านล่าง">
+      <button type="button" class="pick-btn" id="pickBtn">📍 ตำแหน่งปัจจุบัน</button>
     </div>
     <div id="gpsStatus" class="gps-status"></div>
   </div>
@@ -203,7 +203,6 @@
     <b id="totalDisplay">0 ฿</b>
   </div>
   <button id="submitBtn" class="submit-btn color-top">ยืนยันคำสั่งซื้อ</button>
-  <button id="submitBtn2" class="submit-btn color-bottom">ยืนยันคำสั่งซื้อ</button>
 </div>
 
 <div id="mapModal" class="modal-backdrop hidden">
@@ -225,7 +224,7 @@
 
 <div id="alertModal" class="modal-backdrop alert-backdrop hidden">
   <div class="alert-modal">
-    <div class="alert-modal-title">สั่ง Delivery ร้าน ปิ๊กบ้าน</div>
+    <div class="alert-modal-title">สั่ง Delivery ร้าน ปิ๊กบ้าน 🏡</div>
     <div class="alert-modal-message" id="alertMessage"></div>
     <button class="alert-modal-btn" id="alertOkBtn">ตกลง</button>
   </div>
@@ -412,7 +411,7 @@
       return;
     }
 
-    const buttons = [document.getElementById("submitBtn"), document.getElementById("submitBtn2")];
+    const buttons = document.getElementById("submitBtn");
     buttons.forEach(b => { b.disabled = true; b.innerText = "กำลังส่ง..."; });
 
     let total = 0;
@@ -442,7 +441,6 @@
   }
 
   document.getElementById("submitBtn").addEventListener("click", handleSubmit);
-  document.getElementById("submitBtn2").addEventListener("click", handleSubmit);
 
   initLiff();
 </script>

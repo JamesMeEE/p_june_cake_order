@@ -111,7 +111,7 @@ async function sendOrderSummary(data) {
 
 function buildFlexMessage(data) {
   const blank = { type: 'text', text: ' ', size: 'sm' };
-  const brown = '#4b3619';
+  const brown = '#64471f';
 
   const orderLines = [];
 
@@ -210,7 +210,7 @@ function buildFlexMessage(data) {
             wrap: true,
             action: { type: 'uri', uri: data.mapLink },
             contents: [
-              { type: 'span', text: '🗺 แผนที่ (Map): ', color: '#000000' },
+              { type: 'span', text: '📍 แผนที่ (Map): '},
               { type: 'span', text: data.mapLink, color: '#1E88E5' }
             ]
           },
