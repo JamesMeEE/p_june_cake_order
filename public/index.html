@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>สั่ง Delivery</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
   body { margin: 0; padding: 16px 16px 120px; background: #f5f5f5; }
@@ -113,17 +114,31 @@
   .qty-btn:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; }
   .qty-value { font-size: 22px; font-weight: bold; min-width: 40px; text-align: center; }
 
-  .map-row { display: flex; gap: 8px; }
-  .map-row input { flex: 1; }
-  .gps-btn {
-    background: #06c755; color: white; border: none; border-radius: 8px;
-    padding: 0 16px; font-size: 13px; font-weight: bold; cursor: pointer;
-    white-space: nowrap; display: flex; align-items: center; gap: 4px;
+  .map-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .map-row input { flex: 1 1 100%; }
+  .map-buttons { display: flex; gap: 8px; flex: 1 1 100%; }
+  .gps-btn, .pick-btn {
+    flex: 1; background: #06c755; color: white; border: none; border-radius: 8px;
+    padding: 10px; font-size: 13px; font-weight: bold; cursor: pointer;
+    white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 4px;
   }
+  .pick-btn { background: #4a90e2; }
   .gps-btn:disabled { background: #aaa; cursor: not-allowed; }
   .gps-status { font-size: 12px; margin-top: 6px; }
   .gps-status.success { color: #06c755; }
   .gps-status.error { color: #e74c3c; }
+
+  .map-modal { padding: 0; max-height: 100vh; height: 100vh; border-radius: 0; display: flex; flex-direction: column; }
+  .map-modal-header { padding: 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .map-container { flex: 1; position: relative; }
+  #mapDiv { width: 100%; height: 100%; }
+  .map-center-pin {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -100%); z-index: 1000;
+    pointer-events: none; font-size: 36px; line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+  .map-footer { padding: 12px 16px; border-top: 1px solid #eee; background: white; flex-shrink: 0; }
 
   .confirm-btn {
     width: 100%; padding: 14px; background: #06c755; color: white; border: none;
@@ -198,8 +213,11 @@
   <div class="card">
     <div class="label">ตำแหน่งจัดส่ง (Google Maps)</div>
     <div class="map-row">
-      <input type="text" id="mapLink" placeholder="วางลิงก์ หรือกดปุ่มขวา ➜">
-      <button type="button" class="gps-btn" id="gpsBtn">📍 ใช้ตำแหน่งปัจจุบัน</button>
+      <input type="text" id="mapLink" placeholder="วางลิงก์ หรือกดปุ่มด้านล่าง">
+      <div class="map-buttons">
+        <button type="button" class="gps-btn" id="gpsBtn">📍 ตำแหน่งปัจจุบัน</button>
+        <button type="button" class="pick-btn" id="pickBtn">🗺 เลือกบนแผนที่</button>
+      </div>
     </div>
     <div id="gpsStatus" class="gps-status"></div>
   </div>
@@ -281,6 +299,24 @@
   </div>
 </div>
 
+<div id="mapModal" class="modal-backdrop hidden">
+  <div class="modal map-modal">
+    <div class="map-modal-header">
+      <div class="modal-title">เลือกตำแหน่งจัดส่ง</div>
+      <button class="modal-close" id="closeMapBtn">✕</button>
+    </div>
+    <div class="map-container">
+      <div id="mapDiv"></div>
+      <div class="map-center-pin">📍</div>
+    </div>
+    <div class="map-footer">
+      <div style="font-size:12px;color:#666;margin-bottom:8px;text-align:center;">เลื่อนแผนที่ให้หมุดอยู่ตรงตำแหน่งที่ต้องการ</div>
+      <button class="confirm-btn" id="confirmMapBtn" style="margin-top:0;">ยืนยันตำแหน่งนี้</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
   const LIFF_ID = "2010335350-xAkOcQC8";
@@ -437,6 +473,52 @@
 
     renderCart();
     closeModal();
+  });
+
+  let mapInstance = null;
+
+  function openMapPicker() {
+    document.getElementById("mapModal").classList.remove("hidden");
+
+    setTimeout(() => {
+      if (!mapInstance) {
+        mapInstance = L.map('mapDiv').setView([13.7563, 100.5018], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap',
+          maxZoom: 19
+        }).addTo(mapInstance);
+      }
+      mapInstance.invalidateSize();
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 17);
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      }
+    }, 100);
+  }
+
+  function closeMapPicker() {
+    document.getElementById("mapModal").classList.add("hidden");
+  }
+
+  document.getElementById("pickBtn").addEventListener("click", openMapPicker);
+  document.getElementById("closeMapBtn").addEventListener("click", closeMapPicker);
+
+  document.getElementById("confirmMapBtn").addEventListener("click", () => {
+    if (!mapInstance) return;
+    const center = mapInstance.getCenter();
+    const lat = center.lat.toFixed(6);
+    const lng = center.lng.toFixed(6);
+    document.getElementById("mapLink").value = `https://www.google.com/maps?q=${lat},${lng}`;
+    const status = document.getElementById("gpsStatus");
+    status.className = "gps-status success";
+    status.innerText = "✓ เลือกตำแหน่งเรียบร้อย (" + lat + ", " + lng + ")";
+    closeMapPicker();
   });
 
   document.getElementById("gpsBtn").addEventListener("click", () => {
