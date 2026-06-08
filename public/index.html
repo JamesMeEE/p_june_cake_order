@@ -2,11 +2,11 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>สั่ง Delivery</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
+  * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
   body { margin: 0; padding: 16px 16px 120px; background: #f5f5f5; }
   h1 { font-size: 22px; margin: 0 0 8px; }
   .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
@@ -27,7 +27,8 @@
   .add-btn:active { background: #05a847; }
 
   .cart-empty { text-align: center; color: #999; padding: 20px; font-size: 14px; }
-  .cart-item { padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+  .cart-item { padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: 0.15s; }
+  .cart-item:active { background: #f9f9f9; }
   .cart-item-header { display: flex; justify-content: space-between; align-items: start; }
   .cart-item-info { flex: 1; }
   .cart-item-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
@@ -95,10 +96,11 @@
   .qty-controls { display: flex; align-items: center; gap: 20px; }
   .qty-btn {
     width: 40px; height: 40px; border-radius: 50%; border: 2px solid #06c755;
-    background: white; color: #06c755; font-size: 22px; font-weight: bold;
-    cursor: pointer; padding: 0;
+    background: white; color: #06c755; font-size: 24px; font-weight: bold;
+    cursor: pointer; padding: 0; line-height: 1;
     display: flex; align-items: center; justify-content: center;
   }
+  .qty-btn span { display: block; transform: translateY(-1px); }
   .qty-btn:disabled { border-color: #ccc; color: #ccc; cursor: not-allowed; }
   .qty-value { font-size: 22px; font-weight: bold; min-width: 40px; text-align: center; }
 
@@ -244,9 +246,9 @@
     <div class="label">จำนวน <span class="required">*</span></div>
     <div class="qty-row">
       <div class="qty-controls">
-        <button class="qty-btn" id="qtyMinus">−</button>
+        <button class="qty-btn" id="qtyMinus"><span>−</span></button>
         <span class="qty-value" id="qtyValue">1</span>
-        <button class="qty-btn" id="qtyPlus">+</button>
+        <button class="qty-btn" id="qtyPlus"><span>+</span></button>
       </div>
     </div>
 
@@ -260,6 +262,7 @@
   let userId = null;
   let cart = [];
   let qty = 1;
+  let editIndex = -1;
 
   async function initLiff() {
     try {
@@ -279,12 +282,35 @@
     }
   }
 
-  function openModal() {
+  function openModal(idx) {
+    editIndex = (typeof idx === 'number') ? idx : -1;
+
     document.querySelectorAll('input[name="modal-flavor"], input[name="modal-sauce"]').forEach(r => {
       r.checked = false;
       r.closest('label').classList.remove('selected');
     });
-    qty = 1;
+
+    if (editIndex >= 0) {
+      const item = cart[editIndex];
+      const flavorInput = document.querySelector('input[name="modal-flavor"][value="' + item.flavor + '"]');
+      const sauceInput = document.querySelector('input[name="modal-sauce"][value="' + item.sauce + '"]');
+      if (flavorInput) {
+        flavorInput.checked = true;
+        flavorInput.closest('label').classList.add('selected');
+      }
+      if (sauceInput) {
+        sauceInput.checked = true;
+        sauceInput.closest('label').classList.add('selected');
+      }
+      qty = item.qty;
+      document.querySelector('.modal-title').innerText = 'แก้ไขรายการ';
+      document.getElementById('confirmAddBtn').innerText = 'บันทึก';
+    } else {
+      qty = 1;
+      document.querySelector('.modal-title').innerText = 'เพิ่มรายการสั่งซื้อ';
+      document.getElementById('confirmAddBtn').innerText = 'เพิ่มเข้ารายการ';
+    }
+
     updateQtyDisplay();
     document.getElementById("addModal").classList.remove("hidden");
   }
@@ -304,7 +330,7 @@
       list.innerHTML = '<div class="cart-empty">ยังไม่มีรายการ กดปุ่ม "เพิ่มรายการสั่งซื้อ" ด้านบน</div>';
     } else {
       list.innerHTML = cart.map((item, i) => 
-        '<div class="cart-item"><div class="cart-item-header"><div class="cart-item-info">' +
+        '<div class="cart-item" data-idx="' + i + '"><div class="cart-item-header"><div class="cart-item-info">' +
         '<div class="cart-item-title">' + item.flavor + '</div>' +
         '<div class="cart-item-detail">ซอส: ' + item.sauce + '</div>' +
         '<div class="cart-item-detail">จำนวน: ' + item.qty + ' ชิ้น</div>' +
@@ -312,9 +338,15 @@
         '</div><button class="cart-item-remove" data-idx="' + i + '">✕</button></div></div>'
       ).join('');
       document.querySelectorAll('.cart-item-remove').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           cart.splice(parseInt(btn.dataset.idx), 1);
           renderCart();
+        });
+      });
+      document.querySelectorAll('.cart-item').forEach(el => {
+        el.addEventListener('click', () => {
+          openModal(parseInt(el.dataset.idx));
         });
       });
     }
@@ -322,7 +354,7 @@
     document.getElementById("totalDisplay").innerText = total + " ฿";
   }
 
-  document.getElementById("openAddBtn").addEventListener("click", openModal);
+  document.getElementById("openAddBtn").addEventListener("click", () => openModal());
   document.getElementById("closeAddBtn").addEventListener("click", closeModal);
   document.getElementById("addModal").addEventListener("click", (e) => {
     if (e.target.id === "addModal") closeModal();
@@ -359,14 +391,20 @@
     const saucePrice = parseInt(sauce.dataset.price);
     const subtotal = (flavorPrice + saucePrice) * qty;
 
-    cart.push({
+    const newItem = {
       flavor: flavor.value,
       flavorPrice: flavorPrice,
       sauce: sauce.value,
       saucePrice: saucePrice,
       qty: qty,
       subtotal: subtotal
-    });
+    };
+
+    if (editIndex >= 0) {
+      cart[editIndex] = newItem;
+    } else {
+      cart.push(newItem);
+    }
 
     renderCart();
     closeModal();
