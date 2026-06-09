@@ -52,9 +52,32 @@
   }
   textarea { resize: vertical; min-height: 60px; }
 
+  .custom-select { position: relative; }
+  .select-input {
+    width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; background: white; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .select-input.placeholder-shown { color: #999; }
+  .select-arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
+  .custom-select.open .select-arrow { transform: rotate(180deg); }
+  .select-options {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: white; border: 1px solid #ddd; border-radius: 8px;
+    max-height: 320px; overflow-y: auto; z-index: 50;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .select-option {
+    padding: 14px 12px; font-size: 14px; cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .select-option:last-child { border-bottom: none; }
+  .select-option:active { background: #f0f0f0; }
+  .select-option.selected { background: #fff5e8; color: #8a623f; font-weight: 600; }
+
   .map-row { display: flex; flex-direction: column; gap: 8px; }
   .pick-btn {
-    background: #4b3619; color: white; border: none; border-radius: 8px;
+    background: #8a623f; color: white; border: none; border-radius: 8px;
     padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 6px;
   }
@@ -74,7 +97,7 @@
     margin-bottom: 8px;
   }
   .submit-btn:last-child { margin-bottom: 0; }
-  .submit-btn.color-top { background: #4b3619; }
+  .submit-btn.color-top { background: #8a623f; }
   .submit-btn.color-bottom { background: #8a623f; }
   .submit-btn:disabled { background: #aaa !important; cursor: not-allowed; }
 
@@ -121,10 +144,10 @@
     border-radius: 12px; padding: 20px; margin: auto;
     align-self: center; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
   }
-  .alert-modal-title { font-weight: bold; font-size: 16px; margin-bottom: 12px; color: #A35318; }
+  .alert-modal-title { font-weight: bold; font-size: 16px; margin-bottom: 12px; color: #8a623f; }
   .alert-modal-message { font-size: 14px; line-height: 1.5; margin-bottom: 16px; white-space: pre-wrap; }
   .alert-modal-btn {
-    width: 100%; padding: 12px; background: #4b3619; color: white; border: none;
+    width: 100%; padding: 12px; background: #8a623f; color: white; border: none;
     border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer;
   }
   .alert-backdrop {
@@ -155,15 +178,20 @@
 
   <div class="card">
     <div class="label">เลือกวันที่จัดส่ง (Delivery Date and Time) <span class="required">*</span></div>
-    <select id="deliveryDate" required>
-      <option value="">-- เลือกวัน-เวลา --</option>
-      <option>วันอังคาร (TUE) 9.00 - 10.00</option>
-      <option>วันอังคาร (TUE) 14.00 - 15.00</option>
-      <option>วันพฤหัสบดี (THU) 9.00 - 10.00</option>
-      <option>วันพฤหัสบดี (THU) 14.00 - 15.00</option>
-      <option>วันเสาร์ (SAT) 9.30 - 10.30</option>
-      <option>วันอาทิตย์ (SUN) 9.30 - 10.30</option>
-    </select>
+    <div class="custom-select" id="deliveryDateSelect">
+      <div class="select-input placeholder-shown" id="deliveryDateInput">
+        <span id="deliveryDateText">-- เลือกวัน-เวลา --</span>
+        <span class="select-arrow">▼</span>
+      </div>
+      <div class="select-options hidden" id="deliveryDateOptions">
+        <div class="select-option">วันอังคาร (TUE) 9.00 - 10.00</div>
+        <div class="select-option">วันอังคาร (TUE) 14.00 - 15.00</div>
+        <div class="select-option">วันพฤหัสบดี (THU) 9.00 - 10.00</div>
+        <div class="select-option">วันพฤหัสบดี (THU) 14.00 - 15.00</div>
+        <div class="select-option">วันเสาร์ (SAT) 9.30 - 10.30</div>
+        <div class="select-option">วันอาทิตย์ (SUN) 9.30 - 10.30</div>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -224,7 +252,7 @@
 
 <div id="alertModal" class="modal-backdrop alert-backdrop hidden">
   <div class="alert-modal">
-    <div class="alert-modal-title">สั่ง Delivery ร้าน ปิ๊กบ้าน 🏡</div>
+    <div class="alert-modal-title">สั่ง Delivery ร้าน ปิ๊กบ้าน</div>
     <div class="alert-modal-message" id="alertMessage"></div>
     <button class="alert-modal-btn" id="alertOkBtn">ตกลง</button>
   </div>
@@ -388,6 +416,36 @@
     closeMapPicker();
   });
 
+  const dateSelect = document.getElementById("deliveryDateSelect");
+  const dateInput = document.getElementById("deliveryDateInput");
+  const dateText = document.getElementById("deliveryDateText");
+  const dateOptions = document.getElementById("deliveryDateOptions");
+  let selectedDate = "";
+
+  dateInput.addEventListener("click", () => {
+    dateSelect.classList.toggle("open");
+    dateOptions.classList.toggle("hidden");
+  });
+
+  dateOptions.querySelectorAll(".select-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+      selectedDate = opt.innerText;
+      dateText.innerText = selectedDate;
+      dateInput.classList.remove("placeholder-shown");
+      dateOptions.querySelectorAll(".select-option").forEach(o => o.classList.remove("selected"));
+      opt.classList.add("selected");
+      dateSelect.classList.remove("open");
+      dateOptions.classList.add("hidden");
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!dateSelect.contains(e.target)) {
+      dateSelect.classList.remove("open");
+      dateOptions.classList.add("hidden");
+    }
+  });
+
   async function handleSubmit() {
     const flavors = FLAVORS.filter(f => quantities['flavor-' + f.id] > 0)
       .map(f => ({ name: f.name, price: f.price, qty: quantities['flavor-' + f.id] }));
@@ -399,7 +457,7 @@
       return;
     }
 
-    const deliveryDate = document.getElementById("deliveryDate").value;
+    const deliveryDate = selectedDate;
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
     const address = document.getElementById("address").value.trim();
