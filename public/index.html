@@ -201,7 +201,7 @@
 
   <div class="card">
     <div class="label">เบอร์โทรสำหรับติดต่อ (Telephone Number) <span class="required">*</span></div>
-    <input type="tel" id="phone" required>
+    <input type="tel" id="phone" inputmode="numeric" maxlength="10" required>
   </div>
 
   <div class="card">
@@ -446,6 +446,10 @@
     }
   });
 
+  document.getElementById("phone").addEventListener("input", (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '');
+  });
+
   async function handleSubmit() {
     const flavors = FLAVORS.filter(f => quantities['flavor-' + f.id] > 0)
       .map(f => ({ name: f.name, price: f.price, qty: quantities['flavor-' + f.id] }));
@@ -466,6 +470,11 @@
 
     if (!deliveryDate || !name || !phone || !address || !mapLink) {
       showAlert("กรุณากรอกข้อมูลให้ครบทุกช่องที่มี *");
+      return;
+    }
+
+    if (phone.length !== 10) {
+      showAlert("กรุณากรอกเบอร์โทรให้ครบ 10 หลัก");
       return;
     }
 
