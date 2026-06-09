@@ -51,6 +51,7 @@
     width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit;
   }
   textarea { resize: vertical; min-height: 60px; }
+  .input-error { color: #e74c3c; font-size: 12px; margin-top: 6px; }
 
   .custom-select { position: relative; }
   .select-input {
@@ -202,6 +203,7 @@
   <div class="card">
     <div class="label">เบอร์โทรสำหรับติดต่อ (Telephone Number) <span class="required">*</span></div>
     <input type="tel" id="phone" inputmode="numeric" maxlength="10" required>
+    <div id="phoneError" class="input-error hidden">กรุณากรอกเบอร์โทรให้ครบ 10 หลัก</div>
   </div>
 
   <div class="card">
@@ -448,6 +450,12 @@
 
   document.getElementById("phone").addEventListener("input", (e) => {
     e.target.value = e.target.value.replace(/\D/g, '');
+    const err = document.getElementById("phoneError");
+    if (e.target.value.length > 0 && e.target.value.length < 10) {
+      err.classList.remove("hidden");
+    } else {
+      err.classList.add("hidden");
+    }
   });
 
   async function handleSubmit() {
