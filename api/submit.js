@@ -224,7 +224,7 @@ function buildFlexMessage(data) {
           blank,
           {
             type: 'text',
-            text: `✏️ ยอดที่ต้องชำระ: ${Math.round(data.total * 0.95)} ฿ (ราคาหลังหักส่วนลด 5%)`,
+            text: `✏️ ยอดที่ต้องชำระ: ${Math.floor(data.total * 0.95)} ฿ (ราคาหลังหักส่วนลด 5%)`,
             weight: 'bold',
             size: 'md',
             wrap: true,
