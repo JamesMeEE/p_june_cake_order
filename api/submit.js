@@ -101,8 +101,8 @@ async function sendOrderSummary(data) {
 เมื่อชำระเงินเรียบร้อยแล้วกรุณาส่งสลิปการโอนเงินผ่านทางแชทของร้านเพื่อยืนยันรายการสั่งซื้อค่ะ 🙏🏻💖
 (After payment, please send your payment slip via chat to confirm your order)
 
-**ค่าบริการอาจมีเพิ่มเติมกรณีที่ระยะทางจัดส่งเกิน 3 กิโลเมตรนะคะ หากไม่เกินส่งฟรีทุกรายการค่าา ☺️**
-(Free delivery for the first 3 km.)`;
+**ค่าบริการอาจมีเพิ่มเติมกรณีที่ระยะทางจัดส่งเกิน 5 กิโลเมตรนะคะ หากไม่เกินส่งฟรีทุกรายการค่าา หรือ หากยอดเกิน 400 บาทส่งฟรีทุกออเดอร์เล้ยย แต่เฉพาะในพื้นที่ Grab นะคะ ☺️**
+(Free delivery within 5 km, or on orders over 400 THB 🚖 Available within Grab service areas only.)`;
 
   await sendLineMessage(data.userId, flexMsg);
   await new Promise(r => setTimeout(r, 500));
