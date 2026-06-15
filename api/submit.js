@@ -170,7 +170,6 @@ function buildFlexMessage(data) {
           blank,
           ...orderLines,
           blank,
-          blank,
           {
             type: 'text',
             text: '⏰ วัน-เวลาจัดส่ง (Date & Time):',

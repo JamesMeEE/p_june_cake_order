@@ -224,11 +224,11 @@
   </div>
 
   <div class="card">
-    <div class="label">เลือกประเภทรับสินค้า (Receiving Method) <span class="required">*</span></div>
+    <div class="label">วิธีการการรับสินค้า (Delivery Method) <span class="required">*</span></div>
     <div class="toggle-group">
       <button type="button" class="toggle-btn" data-method="pickup">
         <span class="toggle-icon">🏬</span>
-        <span>1) นัดรับที่โรบินสันแม่สอด</span>
+        <span>1) นัดรับที่โรบินสันแม่สอด (Pickup at Robinson)</span>
       </button>
       <button type="button" class="toggle-btn" data-method="delivery">
         <span class="toggle-icon">🛵</span>
@@ -338,7 +338,7 @@
   ];
 
   const SAUCES = [
-    { id: 'darkchoco', name: '🍫 ดาร์คช็อกโกแลต (Dark Chocolate)', price: 20 },
+    { id: 'darkchoco', name: '🍫 ดาร์กช็อกโกแลต (Dark Chocolate)', price: 20 },
     { id: 'matcha', name: '🍵 มัทฉะ (Matcha)', price: 20 },
     { id: 'strawberry', name: '🍓 สตรอว์เบอร์รี่ (Strawberry)', price: 20 },
     { id: 'nutella', name: '🥜 นูเทลล่า (Nutella)', price: 20 },
@@ -598,7 +598,7 @@
   function buildDeliveryDate() {
     if (!deliveryMethod || !selectedDateObj || !selectedTime) return '';
     const methodText = deliveryMethod === 'pickup' ? 'นัดรับที่โรบินสันแม่สอด' : 'จัดส่ง Delivery';
-    return `${methodText} | ${formatThaiDate(selectedDateObj)} | ${selectedTime}`;
+    return `${methodText}\n${formatThaiDate(selectedDateObj)}\n${selectedTime}`;
   }
 
   document.getElementById("phone").addEventListener("input", (e) => {
