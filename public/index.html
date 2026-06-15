@@ -59,6 +59,52 @@
     font-size: 14px; background: white; cursor: pointer;
     display: flex; justify-content: space-between; align-items: center;
   }
+
+  .toggle-group { display: flex; flex-direction: column; gap: 10px; }
+  .toggle-btn {
+    width: 100%; padding: 14px 16px; border: 2px solid #e0e0e0;
+    background: white; border-radius: 12px; font-size: 14px; font-weight: 600;
+    color: #555; cursor: pointer; transition: all 0.2s ease;
+    display: flex; align-items: center; gap: 12px; text-align: left;
+    font-family: inherit;
+  }
+  .toggle-btn:active { transform: scale(0.98); }
+  .toggle-btn.active {
+    border-color: #8a623f; background: #8a623f; color: white;
+    box-shadow: 0 2px 8px rgba(138,98,63,0.25);
+  }
+  .toggle-icon { font-size: 22px; line-height: 1; }
+
+  .calendar { background: white; border: 1px solid #eee; border-radius: 8px; padding: 12px; }
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .calendar-nav {
+    background: none; border: none; font-size: 20px; padding: 4px 12px;
+    cursor: pointer; color: #8a623f; font-weight: bold;
+  }
+  .calendar-month { font-weight: bold; font-size: 15px; color: #4b3619; }
+  .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; color: #999; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid #f0f0f0; }
+  .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .calendar-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; border-radius: 6px; cursor: pointer; user-select: none;
+  }
+  .calendar-day.disabled { color: #d0d0d0; cursor: not-allowed; }
+  .calendar-day.other-month { color: transparent; pointer-events: none; }
+  .calendar-day.selected { background: #8a623f; color: white; font-weight: bold; }
+  .calendar-day:not(.disabled):not(.selected):active { background: #f5f5f5; }
+
+  .time-list { display: flex; flex-direction: column; gap: 10px; }
+  .time-opt {
+    display: block; padding: 14px 16px; border: 2px solid #e0e0e0;
+    background: white; border-radius: 12px; font-size: 14px; font-weight: 600;
+    color: #555; cursor: pointer; transition: all 0.2s ease;
+    text-align: center; font-family: inherit;
+  }
+  .time-opt:active { transform: scale(0.98); }
+  .time-opt.active {
+    border-color: #8a623f; background: #8a623f; color: white;
+    box-shadow: 0 2px 8px rgba(138,98,63,0.25);
+  }
   .select-input.placeholder-shown { color: #999; }
   .select-arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
   .custom-select.open .select-arrow { transform: rotate(180deg); }
@@ -178,20 +224,26 @@
   </div>
 
   <div class="card">
-    <div class="label">เลือกวันที่จัดส่ง (Delivery Date and Time) <span class="required">*</span></div>
-    <div class="custom-select" id="deliveryDateSelect">
-      <div class="select-input placeholder-shown" id="deliveryDateInput">
-        <span id="deliveryDateText">-- เลือกวัน-เวลา --</span>
-        <span class="select-arrow">▼</span>
-      </div>
-      <div class="select-options hidden" id="deliveryDateOptions">
-        <div class="select-option">วันอังคาร (TUE) 9.00 - 10.00</div>
-        <div class="select-option">วันอังคาร (TUE) 14.00 - 15.00</div>
-        <div class="select-option">วันพฤหัสบดี (THU) 9.00 - 10.00</div>
-        <div class="select-option">วันพฤหัสบดี (THU) 14.00 - 15.00</div>
-        <div class="select-option">วันเสาร์ (SAT) 9.30 - 10.30</div>
-        <div class="select-option">วันอาทิตย์ (SUN) 9.30 - 10.30</div>
-      </div>
+    <div class="label">เลือกประเภทรับสินค้า (Receiving Method) <span class="required">*</span></div>
+    <div class="toggle-group">
+      <button type="button" class="toggle-btn" data-method="pickup">
+        <span class="toggle-icon">🏬</span>
+        <span>1) นัดรับที่โรบินสันแม่สอด</span>
+      </button>
+      <button type="button" class="toggle-btn" data-method="delivery">
+        <span class="toggle-icon">🛵</span>
+        <span>2) จัดส่ง Delivery</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="dateCard">
+    <div class="label">เลือกวันที่ (Date) <span class="required">*</span></div>
+    <div class="calendar" id="calendar"></div>
+
+    <div id="timeSection" class="hidden">
+      <div class="label" style="margin-top:16px;">เลือกเวลา (Time) <span class="required">*</span></div>
+      <div id="timeOptions"></div>
     </div>
   </div>
 
@@ -418,35 +470,136 @@
     closeMapPicker();
   });
 
-  const dateSelect = document.getElementById("deliveryDateSelect");
-  const dateInput = document.getElementById("deliveryDateInput");
-  const dateText = document.getElementById("deliveryDateText");
-  const dateOptions = document.getElementById("deliveryDateOptions");
-  let selectedDate = "";
+  const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const THAI_DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  const THAI_DAYS_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
 
-  dateInput.addEventListener("click", () => {
-    dateSelect.classList.toggle("open");
-    dateOptions.classList.toggle("hidden");
-  });
+  let deliveryMethod = null;
+  let selectedDateObj = null;
+  let selectedTime = null;
+  let calendarMonth = new Date();
+  calendarMonth.setDate(1);
+  calendarMonth.setHours(0,0,0,0);
 
-  dateOptions.querySelectorAll(".select-option").forEach(opt => {
-    opt.addEventListener("click", () => {
-      selectedDate = opt.innerText;
-      dateText.innerText = selectedDate;
-      dateInput.classList.remove("placeholder-shown");
-      dateOptions.querySelectorAll(".select-option").forEach(o => o.classList.remove("selected"));
-      opt.classList.add("selected");
-      dateSelect.classList.remove("open");
-      dateOptions.classList.add("hidden");
+  function todayStart() {
+    const t = new Date();
+    t.setHours(0,0,0,0);
+    return t;
+  }
+
+  function isDateValid(date) {
+    if (date <= todayStart()) return false;
+    if (deliveryMethod === 'pickup') return date.getDay() === 0;
+    return true;
+  }
+
+  function sameDay(a, b) {
+    return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function formatThaiDate(date) {
+    return `วัน${THAI_DAYS[date.getDay()]}ที่ ${date.getDate()} ${THAI_MONTHS[date.getMonth()]} ${date.getFullYear() + 543}`;
+  }
+
+  function renderCalendar() {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+
+    let html = '<div class="calendar-header">';
+    html += '<button type="button" class="calendar-nav" data-nav="prev">‹</button>';
+    html += `<div class="calendar-month">${THAI_MONTHS_FULL[month]} ${year + 543}</div>`;
+    html += '<button type="button" class="calendar-nav" data-nav="next">›</button>';
+    html += '</div>';
+
+    html += '<div class="calendar-weekdays">';
+    THAI_DAYS_SHORT.forEach(d => html += `<div>${d}</div>`);
+    html += '</div>';
+
+    html += '<div class="calendar-days">';
+    for (let i = 0; i < firstDay; i++) html += '<div class="calendar-day other-month"></div>';
+    for (let d = 1; d <= lastDate; d++) {
+      const date = new Date(year, month, d);
+      const valid = isDateValid(date);
+      const sel = sameDay(date, selectedDateObj);
+      const cls = sel ? 'selected' : (valid ? '' : 'disabled');
+      html += `<div class="calendar-day ${cls}" data-day="${d}">${d}</div>`;
+    }
+    html += '</div>';
+
+    const cal = document.getElementById('calendar');
+    cal.innerHTML = html;
+
+    cal.querySelectorAll('[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dir = btn.dataset.nav === 'next' ? 1 : -1;
+        calendarMonth.setMonth(calendarMonth.getMonth() + dir);
+        renderCalendar();
+      });
+    });
+
+    cal.querySelectorAll('.calendar-day:not(.disabled):not(.other-month)').forEach(el => {
+      el.addEventListener('click', () => {
+        const d = parseInt(el.dataset.day);
+        selectedDateObj = new Date(year, month, d);
+        selectedTime = null;
+        renderCalendar();
+        renderTimeSlots();
+      });
+    });
+  }
+
+  function renderTimeSlots() {
+    if (!selectedDateObj) return;
+    let slots = [];
+    if (deliveryMethod === 'pickup') {
+      slots = ['11:00-12:00', '16:00-17:00'];
+    } else if (selectedDateObj.getDay() === 6) {
+      slots = ['8:00-9:00', '9:00-10:00'];
+    } else {
+      slots = ['8:00-9:00', '9:00-10:00', '14:00-15:00', '15:00-16:00'];
+    }
+
+    const html = '<div class="time-list">' + slots.map(s =>
+      `<button type="button" class="time-opt" data-time="${s}">${s}</button>`
+    ).join('') + '</div>';
+
+    document.getElementById('timeOptions').innerHTML = html;
+    document.getElementById('timeSection').classList.remove('hidden');
+
+    document.querySelectorAll('.time-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.time-opt').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedTime = btn.dataset.time;
+      });
+    });
+  }
+
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      deliveryMethod = btn.dataset.method;
+      selectedDateObj = null;
+      selectedTime = null;
+      calendarMonth = new Date();
+      calendarMonth.setDate(1);
+      calendarMonth.setHours(0,0,0,0);
+      document.getElementById('dateCard').classList.remove('hidden');
+      document.getElementById('timeSection').classList.add('hidden');
+      document.getElementById('timeOptions').innerHTML = '';
+      renderCalendar();
     });
   });
 
-  document.addEventListener("click", (e) => {
-    if (!dateSelect.contains(e.target)) {
-      dateSelect.classList.remove("open");
-      dateOptions.classList.add("hidden");
-    }
-  });
+  function buildDeliveryDate() {
+    if (!deliveryMethod || !selectedDateObj || !selectedTime) return '';
+    const methodText = deliveryMethod === 'pickup' ? 'นัดรับที่โรบินสันแม่สอด' : 'จัดส่ง Delivery';
+    return `${methodText} | ${formatThaiDate(selectedDateObj)} | ${selectedTime}`;
+  }
 
   document.getElementById("phone").addEventListener("input", (e) => {
     e.target.value = e.target.value.replace(/\D/g, '');
@@ -469,7 +622,7 @@
       return;
     }
 
-    const deliveryDate = selectedDate;
+    const deliveryDate = buildDeliveryDate();
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
     const address = document.getElementById("address").value.trim();
