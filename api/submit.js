@@ -221,18 +221,59 @@ function buildFlexMessage(data) {
           },
           { type: 'separator', margin: 'md' },
           blank,
-          {
-            type: 'text',
-            text: `✏️ ยอดที่ต้องชำระ: ${Math.floor(data.total * 0.95)} ฿ (ราคาหลังหักส่วนลด 5%)`,
-            weight: 'bold',
-            size: 'md',
-            wrap: true,
-            color: brown
-          }
+          ...buildTotalLines(data, brown)
         ]
       }
     }
   };
+}
+
+function buildTotalLines(data, brown) {
+  const itemsTotal = data.itemsTotal || data.total;
+  const discountedItems = Math.floor(itemsTotal * 0.95);
+  const fee = data.deliveryFee || 0;
+  const finalTotal = discountedItems + fee;
+
+  const lines = [];
+
+  if (fee > 0) {
+    const distText = data.deliveryDistance
+      ? ` (${data.deliveryDistance.toFixed(2)} km)`
+      : '';
+    lines.push({
+      type: 'text',
+      text: `🛵 ค่าจัดส่ง: ${fee} ฿${distText}`,
+      size: 'sm',
+      wrap: true
+    });
+    lines.push({
+      type: 'text',
+      text: `✏️ ยอดที่ต้องชำระ: ${finalTotal} ฿ (สินค้าหลังหักส่วนลด 5% + ค่าจัดส่ง)`,
+      weight: 'bold',
+      size: 'md',
+      wrap: true,
+      color: brown
+    });
+  } else {
+    if (data.deliveryDistance) {
+      lines.push({
+        type: 'text',
+        text: `🛵 ค่าจัดส่ง: ฟรี (${data.deliveryDistance.toFixed(2)} km, ภายใน 5 km)`,
+        size: 'sm',
+        wrap: true
+      });
+    }
+    lines.push({
+      type: 'text',
+      text: `✏️ ยอดที่ต้องชำระ: ${discountedItems} ฿ (ราคาหลังหักส่วนลด 5%)`,
+      weight: 'bold',
+      size: 'md',
+      wrap: true,
+      color: brown
+    });
+  }
+
+  return lines;
 }
 
 async function sendLineMessage(userId, message) {

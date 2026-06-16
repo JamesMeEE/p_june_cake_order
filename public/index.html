@@ -131,6 +131,12 @@
   .gps-status { font-size: 12px; margin-top: 6px; }
   .gps-status.success { color: #06c755; }
   .gps-status.error { color: #e74c3c; }
+  .delivery-info {
+    margin-top: 12px; padding: 12px; background: #fff5e8;
+    border-radius: 8px; font-size: 13px; color: #4b3619;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .delivery-info .calc { color: #999; font-style: italic; }
 
   .submit-bar {
     position: fixed; bottom: 0; left: 0; right: 0; background: white;
@@ -211,7 +217,7 @@
 
 <div id="form" class="hidden">
   <h1>สั่ง Delivery ร้าน ปิ๊กบ้าน 🏡</h1>
-  <div class="subtitle">ทางร้านจัดส่งทุกวันและส่งฟรี 5 กิโลเมตรแรกนะคะ (กิโลเมตรถัดไปคิดเพิ่ม 10 บาทต่อกิโลเมตร หรือ หากยอดเกิน 400 ส่งฟรีทุกออเดอร์เฉพาะในพื้นที่ Grab)</div>
+  <div class="subtitle">ทางร้านจัดส่งทุกวันและส่งฟรี 5 กิโลเมตรแรกนะคะ (กิโลเมตรถัดไปคิดเพิ่ม 10 บาทต่อกิโลเมตร หรือ หากยอดเกิน 400 บาท ส่งฟรีทุกออเดอร์เฉพาะในพื้นที่ Grab)</div>
 
   <div class="card">
     <div class="label">เลือกรูปแบบรสชาติ (Flavor) <span class="required">*</span></div>
@@ -260,7 +266,7 @@
 
   <div class="card">
     <div class="label">ที่อยู่สำหรับจัดส่ง (Address) <span class="required">*</span></div>
-    <div style="font-size:12px;color:#888;margin-bottom:8px;">*ส่งฟรี 3 กิโลเมตรแรก กิโลเมตรถัดไปคิดเพิ่ม 10 บาท/กิโลเมตร*</div>
+    <div style="font-size:12px;color:#888;margin-bottom:8px;">*ส่งฟรี 5 กิโลเมตรแรก กิโลเมตรถัดไปคิดเพิ่ม 10 บาท/กิโลเมตร*</div>
     <textarea id="address" required></textarea>
   </div>
 
@@ -271,6 +277,10 @@
       <button type="button" class="pick-btn" id="pickBtn">📍 ตำแหน่งปัจจุบัน</button>
     </div>
     <div id="gpsStatus" class="gps-status"></div>
+    <div id="deliveryInfo" class="delivery-info hidden">
+      <div>📏 ระยะทาง: <span id="distanceText">-</span></div>
+      <div>🛵 ค่าจัดส่ง: <span id="feeText">-</span></div>
+    </div>
   </div>
 
   <div class="card">
@@ -316,8 +326,13 @@
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
   const LIFF_ID = "2010335350-xAkOcQC8";
+  const SHOP_COORDS = { lat: 16.7217709, lng: 98.5842024 };
   let userId = null;
   let alertCallback = null;
+  let customerLat = null;
+  let customerLng = null;
+  let deliveryDistance = null;
+  let deliveryFee = 0;
 
   function showAlert(message, onClose) {
     document.getElementById("alertMessage").innerText = message;
@@ -426,6 +441,9 @@
     let total = 0;
     FLAVORS.forEach(f => total += f.price * quantities['flavor-' + f.id]);
     SAUCES.forEach(s => total += s.price * quantities['sauce-' + s.id]);
+    if (deliveryMethod === 'delivery' && deliveryFee > 0) {
+      total += deliveryFee;
+    }
     document.getElementById("totalDisplay").innerText = total + " ฿";
   }
 
@@ -458,6 +476,49 @@
   document.getElementById("pickBtn").addEventListener("click", openMapPicker);
   document.getElementById("closeMapBtn").addEventListener("click", closeMapPicker);
 
+  async function calculateDistance(lat, lng) {
+    const info = document.getElementById('deliveryInfo');
+    if (deliveryMethod !== 'delivery') {
+      info.classList.add('hidden');
+      deliveryFee = 0;
+      deliveryDistance = null;
+      updateTotal();
+      return;
+    }
+
+    info.classList.remove('hidden');
+    document.getElementById('distanceText').innerHTML = '<span class="calc">กำลังคำนวณ...</span>';
+    document.getElementById('feeText').innerHTML = '<span class="calc">กำลังคำนวณ...</span>';
+
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${SHOP_COORDS.lng},${SHOP_COORDS.lat};${lng},${lat}?overview=false`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const meters = data.routes[0].distance;
+      const km = meters / 1000;
+      deliveryDistance = km;
+
+      let fee = 0;
+      if (km > 5) {
+        fee = Math.ceil(km - 5) * 10;
+      }
+      deliveryFee = fee;
+
+      document.getElementById('distanceText').innerText = km.toFixed(2) + ' km';
+      document.getElementById('feeText').innerText = fee > 0
+        ? fee + ' ฿'
+        : 'ฟรี! (ภายใน 5 km)';
+
+      updateTotal();
+    } catch (err) {
+      document.getElementById('distanceText').innerText = '-';
+      document.getElementById('feeText').innerHTML = '<span class="calc">คำนวณไม่สำเร็จ ทางร้านจะคำนวณให้ภายหลัง</span>';
+      deliveryFee = 0;
+      deliveryDistance = null;
+      updateTotal();
+    }
+  }
+
   document.getElementById("confirmMapBtn").addEventListener("click", () => {
     if (!mapInstance) return;
     const center = mapInstance.getCenter();
@@ -467,7 +528,10 @@
     const status = document.getElementById("gpsStatus");
     status.className = "gps-status success";
     status.innerText = "✓ เลือกตำแหน่งเรียบร้อย (" + lat + ", " + lng + ")";
+    customerLat = parseFloat(lat);
+    customerLng = parseFloat(lng);
     closeMapPicker();
+    calculateDistance(customerLat, customerLng);
   });
 
   const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -592,6 +656,14 @@
       document.getElementById('timeSection').classList.add('hidden');
       document.getElementById('timeOptions').innerHTML = '';
       renderCalendar();
+      if (deliveryMethod === 'pickup') {
+        document.getElementById('deliveryInfo').classList.add('hidden');
+        deliveryFee = 0;
+        deliveryDistance = null;
+        updateTotal();
+      } else if (customerLat !== null && customerLng !== null) {
+        calculateDistance(customerLat, customerLng);
+      }
     });
   });
 
@@ -642,11 +714,17 @@
     const buttons = [document.getElementById("submitBtn")];
     buttons.forEach(b => { b.disabled = true; b.innerText = "กำลังส่ง..."; });
 
-    let total = 0;
-    flavors.forEach(f => total += f.price * f.qty);
-    sauces.forEach(s => total += s.price * s.qty);
+    let itemsTotal = 0;
+    flavors.forEach(f => itemsTotal += f.price * f.qty);
+    sauces.forEach(s => itemsTotal += s.price * s.qty);
 
-    const data = { userId, flavors, sauces, total, deliveryDate, name, phone, address, mapLink, note };
+    const finalDeliveryFee = (deliveryMethod === 'delivery' && deliveryFee > 0) ? deliveryFee : 0;
+    const total = itemsTotal + finalDeliveryFee;
+
+    const data = {
+      userId, flavors, sauces, itemsTotal, deliveryFee: finalDeliveryFee,
+      deliveryDistance, total, deliveryDate, name, phone, address, mapLink, note
+    };
 
     try {
       const res = await fetch("/api/submit", {
