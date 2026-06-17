@@ -552,8 +552,15 @@
     return t;
   }
 
+  const BLOCKED_RANGES = [
+    { start: new Date(2026, 5, 23), end: new Date(2026, 5, 28) }
+  ];
+
   function isDateValid(date) {
     if (date <= todayStart()) return false;
+    for (const r of BLOCKED_RANGES) {
+      if (date >= r.start && date <= r.end) return false;
+    }
     return true;
   }
 
