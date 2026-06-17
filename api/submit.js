@@ -230,7 +230,10 @@ function buildFlexMessage(data) {
 
 function buildTotalLines(data, brown) {
   const itemsTotal = data.itemsTotal || data.total;
-  const discountedItems = Math.floor(itemsTotal * 0.95);
+  const isPickup = data.deliveryMethod === 'pickup';
+  const discountPct = isPickup ? 10 : 5;
+  const multiplier = isPickup ? 0.9 : 0.95;
+  const discountedItems = Math.floor(itemsTotal * multiplier);
   const fee = data.deliveryFee || 0;
   const finalTotal = discountedItems + fee;
 
@@ -248,7 +251,7 @@ function buildTotalLines(data, brown) {
     });
     lines.push({
       type: 'text',
-      text: `✏️ ยอดที่ต้องชำระ: ${finalTotal} ฿ (สินค้าหลังหักส่วนลด 5% + ค่าจัดส่ง)`,
+      text: `✏️ ยอดที่ต้องชำระ: ${finalTotal} ฿ (สินค้าหลังหักส่วนลด ${discountPct}% + ค่าจัดส่ง)`,
       weight: 'bold',
       size: 'md',
       wrap: true,
@@ -265,7 +268,7 @@ function buildTotalLines(data, brown) {
     }
     lines.push({
       type: 'text',
-      text: `✏️ ยอดที่ต้องชำระ: ${discountedItems} ฿ (ราคาหลังหักส่วนลด 5%)`,
+      text: `✏️ ยอดที่ต้องชำระ: ${discountedItems} ฿ (ราคาหลังหักส่วนลด ${discountPct}%)`,
       weight: 'bold',
       size: 'md',
       wrap: true,

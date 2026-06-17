@@ -234,7 +234,7 @@
     <div class="toggle-group">
       <button type="button" class="toggle-btn" data-method="pickup">
         <span class="toggle-icon">🏬</span>
-        <span>1) นัดรับที่โรบินสันแม่สอด (Pickup at Robinson)</span>
+        <span>นัดรับที่ Robinson (รับส่วนลด 10% ทุกออเดอร์)</span>
       </button>
       <button type="button" class="toggle-btn" data-method="delivery">
         <span class="toggle-icon">🛵</span>
@@ -349,7 +349,8 @@
 
   const FLAVORS = [
     { id: 'original', name: '🧀 Original', displayName: '(195 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 195, image: '/pic/original.png' },
-    { id: 'pistachio', name: '🥜 Pistachio', displayName: '(220 ฿)🥜 Pistachio : หอมถั่วพิสตาชิโอ้เข้มข้น ผสมกับความนัวของชีส', price: 220, image: '/pic/pistachio.png' }
+    { id: 'pistachio', name: '🥜 Pistachio', displayName: '(220 ฿)🥜 Pistachio : หอมถั่วพิสตาชิโอ้เข้มข้น ผสมกับความนัวของชีส', price: 220, image: '/pic/pistachio.png' },
+    { id: 'valrhona', name: '🍫 Valrhona Chocolate', displayName: '(220 ฿)🍫 Valrhona Chocolate : ดาร์กช็อคโกแลต เข้ม นุ่ม ลึก เต็มคำ', price: 220, image: '/pic/valrhona_chocolate.png' }
   ];
 
   const SAUCES = [
@@ -554,7 +555,6 @@
 
   function isDateValid(date) {
     if (date <= todayStart()) return false;
-    if (deliveryMethod === 'pickup') return date.getDay() === 0;
     return true;
   }
 
@@ -619,11 +619,15 @@
     if (!selectedDateObj) return;
     let slots = [];
     if (deliveryMethod === 'pickup') {
-      slots = ['11:00-12:00', '16:00-17:00'];
+      if (selectedDateObj.getDay() === 6) {
+        slots = ['10.00-11.00', '11.00-12.00'];
+      } else {
+        slots = ['10.00-11.00', '11.00-12.00', '12.00-13.00', '13.00-14.00', '16.00-17.00'];
+      }
     } else if (selectedDateObj.getDay() === 6) {
-      slots = ['8:00-9:00', '9:00-10:00'];
+      slots = ['8.00-9.00', '9.00-10.00'];
     } else {
-      slots = ['8:00-9:00', '9:00-10:00', '14:00-15:00', '15:00-16:00'];
+      slots = ['8.00-9.00', '9.00-10.00', '14.00-15.00', '15.00-16.00'];
     }
 
     const html = '<div class="time-list">' + slots.map(s =>
@@ -669,7 +673,7 @@
 
   function buildDeliveryDate() {
     if (!deliveryMethod || !selectedDateObj || !selectedTime) return '';
-    const methodText = deliveryMethod === 'pickup' ? 'นัดรับที่โรบินสันแม่สอด' : 'จัดส่ง Delivery';
+    const methodText = deliveryMethod === 'pickup' ? 'นัดรับที่ Robinson' : 'จัดส่ง Delivery';
     return `${methodText}\n${formatThaiDate(selectedDateObj)}\n${selectedTime}`;
   }
 
@@ -723,7 +727,8 @@
 
     const data = {
       userId, flavors, sauces, itemsTotal, deliveryFee: finalDeliveryFee,
-      deliveryDistance, total, deliveryDate, name, phone, address, mapLink, note
+      deliveryDistance, total, deliveryDate, deliveryMethod,
+      name, phone, address, mapLink, note
     };
 
     try {
