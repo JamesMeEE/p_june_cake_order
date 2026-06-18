@@ -137,6 +137,7 @@
     display: flex; flex-direction: column; gap: 6px;
   }
   .delivery-info .calc { color: #999; font-style: italic; }
+  .out-of-range { color: #e74c3c; font-size: 13px; font-weight: bold; margin-top: 8px; }
 
   .submit-bar {
     position: fixed; bottom: 0; left: 0; right: 0; background: white;
@@ -234,7 +235,7 @@
     <div class="toggle-group">
       <button type="button" class="toggle-btn" data-method="pickup">
         <span class="toggle-icon">🏬</span>
-        <span>นัดรับที่ Robinson (รับส่วนลด 10% ทุกออเดอร์)</span>
+        <span>1) นัดรับที่ Robinson (รับส่วนลด 10% ทุกออเดอร์)</span>
       </button>
       <button type="button" class="toggle-btn" data-method="delivery">
         <span class="toggle-icon">🛵</span>
@@ -281,6 +282,7 @@
       <div>📏 ระยะทาง: <span id="distanceText">-</span></div>
       <div>🛵 ค่าจัดส่ง: <span id="feeText">-</span></div>
     </div>
+    <div id="outOfRange" class="out-of-range hidden">⚠️ อยู่นอกเขตพื้นที่ให้บริการ กรุณาเลือกเป็นนัดรับที่โรบินสันแม่สอดแทนค่ะ</div>
   </div>
 
   <div class="card">
@@ -333,6 +335,7 @@
   let customerLng = null;
   let deliveryDistance = null;
   let deliveryFee = 0;
+  let isOutOfRange = false;
 
   function showAlert(message, onClose) {
     document.getElementById("alertMessage").innerText = message;
@@ -349,7 +352,8 @@
 
   const FLAVORS = [
     { id: 'original', name: '🧀 Original', displayName: '(195 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 195, image: '/pic/original.png' },
-    { id: 'pistachio', name: '🥜 Pistachio', displayName: '(220 ฿)🥜 Pistachio : หอมถั่วพิสตาชิโอ้เข้มข้น ผสมกับความนัวของชีส', price: 220, image: '/pic/pistachio.png' }
+    { id: 'pistachio', name: '🥜 Pistachio', displayName: '(220 ฿)🥜 Pistachio : หอมถั่วพิสตาชิโอ้เข้มข้น ผสมกับความนัวของชีส', price: 220, image: '/pic/pistachio.png' },
+    { id: 'valrhona', name: '🍫 Valrhona Chocolate', displayName: '(220 ฿)🍫 Valrhona Chocolate : ดาร์กช็อคโกแลต เข้ม นุ่ม ลึก เต็มคำ', price: 220, image: '/pic/valrhona_chocolate.png' }
   ];
 
   const SAUCES = [
@@ -478,15 +482,20 @@
 
   async function calculateDistance(lat, lng) {
     const info = document.getElementById('deliveryInfo');
+    const rangeWarn = document.getElementById('outOfRange');
     if (deliveryMethod !== 'delivery') {
       info.classList.add('hidden');
+      rangeWarn.classList.add('hidden');
       deliveryFee = 0;
       deliveryDistance = null;
+      isOutOfRange = false;
       updateTotal();
       return;
     }
 
     info.classList.remove('hidden');
+    rangeWarn.classList.add('hidden');
+    isOutOfRange = false;
     document.getElementById('distanceText').innerHTML = '<span class="calc">กำลังคำนวณ...</span>';
     document.getElementById('feeText').innerHTML = '<span class="calc">กำลังคำนวณ...</span>';
 
@@ -497,6 +506,16 @@
       const meters = data.routes[0].distance;
       const km = meters / 1000;
       deliveryDistance = km;
+
+      if (km > 20) {
+        isOutOfRange = true;
+        rangeWarn.classList.remove('hidden');
+        document.getElementById('distanceText').innerText = km.toFixed(2) + ' km';
+        document.getElementById('feeText').innerText = 'ไม่สามารถจัดส่งได้';
+        deliveryFee = 0;
+        updateTotal();
+        return;
+      }
 
       let fee = 0;
       if (km > 5) {
@@ -515,6 +534,7 @@
       document.getElementById('feeText').innerHTML = '<span class="calc">คำนวณไม่สำเร็จ ทางร้านจะคำนวณให้ภายหลัง</span>';
       deliveryFee = 0;
       deliveryDistance = null;
+      isOutOfRange = false;
       updateTotal();
     }
   }
@@ -668,8 +688,10 @@
       renderCalendar();
       if (deliveryMethod === 'pickup') {
         document.getElementById('deliveryInfo').classList.add('hidden');
+        document.getElementById('outOfRange').classList.add('hidden');
         deliveryFee = 0;
         deliveryDistance = null;
+        isOutOfRange = false;
         updateTotal();
       } else if (customerLat !== null && customerLng !== null) {
         calculateDistance(customerLat, customerLng);
@@ -718,6 +740,11 @@
 
     if (phone.length !== 10) {
       showAlert("กรุณากรอกเบอร์โทรให้ครบ 10 หลัก");
+      return;
+    }
+
+    if (isOutOfRange) {
+      showAlert("อยู่นอกเขตพื้นที่ให้บริการ กรุณาเลือกเป็นนัดรับที่โรบินสันแม่สอดแทนค่ะ");
       return;
     }
 
