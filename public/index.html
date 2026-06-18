@@ -265,13 +265,13 @@
     <div id="phoneError" class="input-error hidden">กรุณากรอกเบอร์โทรให้ครบ 10 หลัก</div>
   </div>
 
-  <div class="card">
+  <div class="card" id="addressCard">
     <div class="label">ที่อยู่สำหรับจัดส่ง (Address) <span class="required">*</span></div>
     <div style="font-size:12px;color:#888;margin-bottom:8px;">*ส่งฟรี 5 กิโลเมตรแรก กิโลเมตรถัดไปคิดเพิ่ม 10 บาท/กิโลเมตร*</div>
     <textarea id="address" required></textarea>
   </div>
 
-  <div class="card">
+  <div class="card" id="mapCard">
     <div class="label">ตำแหน่งจัดส่ง (Map) <span class="required">*</span></div>
     <div class="map-row">
       <input type="text" id="mapLink" placeholder="วางลิงก์ หรือ กดปุ่มด้านล่าง">
@@ -689,12 +689,18 @@
       if (deliveryMethod === 'pickup') {
         document.getElementById('deliveryInfo').classList.add('hidden');
         document.getElementById('outOfRange').classList.add('hidden');
+        document.getElementById('addressCard').classList.add('hidden');
+        document.getElementById('mapCard').classList.add('hidden');
         deliveryFee = 0;
         deliveryDistance = null;
         isOutOfRange = false;
         updateTotal();
-      } else if (customerLat !== null && customerLng !== null) {
-        calculateDistance(customerLat, customerLng);
+      } else {
+        document.getElementById('addressCard').classList.remove('hidden');
+        document.getElementById('mapCard').classList.remove('hidden');
+        if (customerLat !== null && customerLng !== null) {
+          calculateDistance(customerLat, customerLng);
+        }
       }
     });
   });
@@ -733,8 +739,13 @@
     const mapLink = document.getElementById("mapLink").value.trim();
     const note = document.getElementById("note").value.trim();
 
-    if (!deliveryDate || !name || !phone || !address || !mapLink) {
+    if (!deliveryDate || !name || !phone) {
       showAlert("กรุณากรอกข้อมูลให้ครบทุกช่องที่มี *");
+      return;
+    }
+
+    if (deliveryMethod === 'delivery' && (!address || !mapLink)) {
+      showAlert("กรุณากรอกที่อยู่และตำแหน่งจัดส่ง");
       return;
     }
 

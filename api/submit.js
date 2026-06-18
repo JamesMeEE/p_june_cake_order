@@ -49,8 +49,8 @@ async function appendToSheet(data) {
         data.deliveryDate,
         data.name,
         data.phone,
-        data.address,
-        data.mapLink,
+        data.address || 'นัดรับที่ Robinson',
+        data.mapLink || '-',
         data.note || '-',
         data.total
       ]]
@@ -197,22 +197,24 @@ function buildFlexMessage(data) {
             size: 'sm',
             wrap: true
           },
-          {
-            type: 'text',
-            text: `📍 ที่อยู่ (Address): ${data.address}`,
-            size: 'sm',
-            wrap: true
-          },
-          {
-            type: 'text',
-            size: 'sm',
-            wrap: true,
-            action: { type: 'uri', uri: data.mapLink },
-            contents: [
-              { type: 'span', text: '🗺 แผนที่ (Map): ' },
-              { type: 'span', text: data.mapLink, color: '#1E88E5' }
-            ]
-          },
+          ...(data.deliveryMethod === 'delivery' ? [
+            {
+              type: 'text',
+              text: `📍 ที่อยู่ (Address): ${data.address}`,
+              size: 'sm',
+              wrap: true
+            },
+            {
+              type: 'text',
+              size: 'sm',
+              wrap: true,
+              action: { type: 'uri', uri: data.mapLink },
+              contents: [
+                { type: 'span', text: '🗺 แผนที่ (Map): ' },
+                { type: 'span', text: data.mapLink, color: '#1E88E5' }
+              ]
+            }
+          ] : []),
           {
             type: 'text',
             text: `💬 อื่นๆ (Other): ${data.note || '-'}`,
