@@ -139,6 +139,71 @@
   .delivery-info .calc { color: #999; font-style: italic; }
   .out-of-range { color: #e74c3c; font-size: 13px; font-weight: bold; margin-top: 8px; }
 
+  .sold-out { opacity: 0.4; pointer-events: none; position: relative; }
+  .sold-out-badge {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.6); color: white; padding: 6px 14px;
+    border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 2; white-space: nowrap;
+  }
+
+  .admin-panel { padding-bottom: 20px; }
+  .admin-title { font-size: 20px; font-weight: bold; color: #8a623f; margin-bottom: 4px; }
+  .admin-subtitle { font-size: 13px; color: #999; margin-bottom: 16px; }
+  .admin-section { font-weight: bold; font-size: 14px; color: #4b3619; margin-bottom: 10px; margin-top: 16px; }
+  .admin-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .admin-row-label { font-size: 14px; }
+  .toggle-switch {
+    position: relative; width: 48px; height: 26px; cursor: pointer;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: #ccc; border-radius: 26px; transition: 0.3s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute; height: 20px; width: 20px;
+    left: 3px; bottom: 3px; background: white; border-radius: 50%;
+    transition: 0.3s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: #06c755; }
+  .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+  .admin-date-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .admin-date-tag {
+    display: flex; align-items: center; gap: 4px; padding: 6px 10px;
+    background: #fee; border-radius: 16px; font-size: 12px; color: #c0392b;
+  }
+  .admin-date-remove {
+    background: none; border: none; color: #c0392b; font-size: 14px;
+    cursor: pointer; padding: 0 2px; font-weight: bold;
+  }
+  .admin-date-add {
+    display: flex; gap: 8px; margin-top: 8px; align-items: center;
+  }
+  .admin-date-add input {
+    flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; font-family: inherit;
+  }
+  .admin-date-add button {
+    padding: 8px 16px; background: #8a623f; color: white; border: none;
+    border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;
+    white-space: nowrap;
+  }
+  .admin-save {
+    width: 100%; padding: 14px; background: #06c755; color: white; border: none;
+    border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+    margin-top: 20px;
+  }
+  .admin-back {
+    width: 100%; padding: 14px; background: #999; color: white; border: none;
+    border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+    margin-top: 8px;
+  }
+
   .submit-bar {
     position: fixed; bottom: 0; left: 0; right: 0; background: white;
     padding: 12px 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); z-index: 100;
@@ -324,11 +389,58 @@
   </div>
 </div>
 
+<div id="adminPanel" class="hidden">
+  <div class="admin-panel">
+    <div class="admin-title">🔧 ตั้งค่าร้าน ปิ๊กบ้าน</div>
+    <div class="admin-subtitle">จัดการสินค้า, ซอส, และวันหยุด</div>
+
+    <div class="card">
+      <div class="admin-section">⏰ โหมดรับออเดอร์วันปัจจุบัน</div>
+      <div class="admin-row">
+        <span class="admin-row-label">เปิดรับออเดอร์วันนี้</span>
+        <label class="toggle-switch"><input type="checkbox" id="sameDayToggle"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="admin-section">🧀 เค้ก (Flavor)</div>
+      <div id="adminFlavors"></div>
+    </div>
+
+    <div class="card">
+      <div class="admin-section">🍫 ซอส (Extra Sauce)</div>
+      <div id="adminSauces"></div>
+    </div>
+
+    <div class="card">
+      <div class="admin-section">📅 วันหยุด - นัดรับ (Pickup)</div>
+      <div id="adminPickupDates"></div>
+      <div class="admin-date-add">
+        <input type="date" id="addPickupDate">
+        <button type="button" id="addPickupBtn">+ เพิ่ม</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="admin-section">📅 วันหยุด - จัดส่ง (Delivery)</div>
+      <div id="adminDeliveryDates"></div>
+      <div class="admin-date-add">
+        <input type="date" id="addDeliveryDate">
+        <button type="button" id="addDeliveryBtn">+ เพิ่ม</button>
+      </div>
+    </div>
+
+    <button type="button" class="admin-save" id="adminSaveBtn">💾 บันทึกการตั้งค่า</button>
+    <button type="button" class="admin-back" id="adminBackBtn">← กลับหน้าสั่งซื้อ</button>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
   const LIFF_ID = "2010335350-xAkOcQC8";
   const SHOP_COORDS = { lat: 16.7217709, lng: 98.5842024 };
+  const SECRET_PHRASE = 'บ้านใหม่ไหล่ท่า';
   let userId = null;
   let alertCallback = null;
   let customerLat = null;
@@ -336,6 +448,73 @@
   let deliveryDistance = null;
   let deliveryFee = 0;
   let isOutOfRange = false;
+  let shopConfig = null;
+
+  async function fetchConfig() {
+    try {
+      const res = await fetch('/api/config');
+      shopConfig = await res.json();
+    } catch (e) {
+      shopConfig = {
+        flavors: { original: true, pistachio: true, valrhona: true },
+        sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
+        closedDates: { pickup: [], delivery: [] },
+        sameDayOrder: false
+      };
+    }
+  }
+
+  function applyConfig() {
+    if (!shopConfig) return;
+
+    FLAVORS.forEach(f => {
+      const available = shopConfig.flavors[f.id] !== false;
+      const el = document.querySelector(`[data-key="flavor-${f.id}"]`);
+      if (!el) return;
+      const item = el.closest('.flavor-item');
+      if (!available) {
+        item.classList.add('sold-out');
+        if (!item.querySelector('.sold-out-badge')) {
+          const badge = document.createElement('div');
+          badge.className = 'sold-out-badge';
+          badge.innerText = 'ของหมดชั่วคราวค่ะ';
+          item.style.position = 'relative';
+          item.appendChild(badge);
+        }
+        quantities['flavor-' + f.id] = 0;
+        el.querySelector('.qty-value').innerText = '0';
+      }
+    });
+
+    SAUCES.forEach(s => {
+      const available = shopConfig.sauces[s.id] !== false;
+      const el = document.querySelector(`[data-key="sauce-${s.id}"]`);
+      if (!el) return;
+      const item = el.closest('.sauce-item');
+      if (!available) {
+        item.classList.add('sold-out');
+        if (!item.querySelector('.sold-out-badge')) {
+          const badge = document.createElement('div');
+          badge.className = 'sold-out-badge';
+          badge.innerText = 'ของหมดชั่วคราวค่ะ';
+          item.style.position = 'relative';
+          item.appendChild(badge);
+        }
+        quantities['sauce-' + s.id] = 0;
+        el.querySelector('.qty-value').innerText = '0';
+      }
+    });
+  }
+
+  function isDateClosed(date) {
+    if (!shopConfig || !shopConfig.closedDates) return false;
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    if (deliveryMethod === 'pickup') {
+      return (shopConfig.closedDates.pickup || []).includes(dateStr);
+    } else {
+      return (shopConfig.closedDates.delivery || []).includes(dateStr);
+    }
+  }
 
   function showAlert(message, onClose) {
     document.getElementById("alertMessage").innerText = message;
@@ -377,7 +556,9 @@
       }
       const profile = await liff.getProfile();
       userId = profile.userId;
+      await fetchConfig();
       renderMenu();
+      applyConfig();
       document.getElementById("loading").classList.add("hidden");
       document.getElementById("form").classList.remove("hidden");
       document.getElementById("submitBar").classList.remove("hidden");
@@ -572,15 +753,13 @@
     return t;
   }
 
-  const BLOCKED_RANGES = [
-    { start: new Date(2026, 5, 23), end: new Date(2026, 5, 28) }
-  ];
-
   function isDateValid(date) {
-    if (date <= todayStart()) return false;
-    for (const r of BLOCKED_RANGES) {
-      if (date >= r.start && date <= r.end) return false;
+    const today = todayStart();
+    if (date < today) return false;
+    if (date.getTime() === today.getTime()) {
+      if (!shopConfig || !shopConfig.sameDayOrder) return false;
     }
+    if (isDateClosed(date)) return false;
     return true;
   }
 
@@ -722,6 +901,12 @@
   });
 
   async function handleSubmit() {
+    const address = document.getElementById("address").value.trim();
+    if (address === SECRET_PHRASE) {
+      openAdminPanel();
+      return;
+    }
+
     const flavors = FLAVORS.filter(f => quantities['flavor-' + f.id] > 0)
       .map(f => ({ name: f.name, price: f.price, qty: quantities['flavor-' + f.id] }));
     const sauces = SAUCES.filter(s => quantities['sauce-' + s.id] > 0)
@@ -796,6 +981,134 @@
   }
 
   document.getElementById("submitBtn").addEventListener("click", handleSubmit);
+
+  function openAdminPanel() {
+    document.getElementById('form').classList.add('hidden');
+    document.getElementById('submitBar').classList.add('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+    document.getElementById('address').value = '';
+    renderAdminPanel();
+  }
+
+  function closeAdminPanel() {
+    document.getElementById('adminPanel').classList.add('hidden');
+    document.getElementById('form').classList.remove('hidden');
+    document.getElementById('submitBar').classList.remove('hidden');
+  }
+
+  function renderAdminPanel() {
+    if (!shopConfig) return;
+
+    document.getElementById('sameDayToggle').checked = shopConfig.sameDayOrder || false;
+
+    const flavorNames = { original: '🧀 Original', pistachio: '🥜 Pistachio', valrhona: '🍫 Valrhona Chocolate' };
+    const sauceNames = {
+      darkchoco: '🍫 ดาร์กช็อกโกแลต', matcha: '🍵 มัทฉะ',
+      strawberry: '🍓 สตรอว์เบอร์รี่', nutella: '🥜 นูเทลล่า', biscoff: '🍪 บิสคอฟ'
+    };
+
+    let flavorHtml = '';
+    for (const [id, name] of Object.entries(flavorNames)) {
+      const checked = shopConfig.flavors[id] !== false ? 'checked' : '';
+      flavorHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
+        `<label class="toggle-switch"><input type="checkbox" data-type="flavor" data-id="${id}" ${checked}>` +
+        `<span class="toggle-slider"></span></label></div>`;
+    }
+    document.getElementById('adminFlavors').innerHTML = flavorHtml;
+
+    let sauceHtml = '';
+    for (const [id, name] of Object.entries(sauceNames)) {
+      const checked = shopConfig.sauces[id] !== false ? 'checked' : '';
+      sauceHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
+        `<label class="toggle-switch"><input type="checkbox" data-type="sauce" data-id="${id}" ${checked}>` +
+        `<span class="toggle-slider"></span></label></div>`;
+    }
+    document.getElementById('adminSauces').innerHTML = sauceHtml;
+
+    renderAdminDates('pickup');
+    renderAdminDates('delivery');
+  }
+
+  function renderAdminDates(type) {
+    const dates = shopConfig.closedDates[type] || [];
+    const container = document.getElementById(type === 'pickup' ? 'adminPickupDates' : 'adminDeliveryDates');
+    if (dates.length === 0) {
+      container.innerHTML = '<div style="font-size:13px;color:#999;">ไม่มีวันหยุด</div>';
+    } else {
+      const sorted = [...dates].sort();
+      container.innerHTML = '<div class="admin-date-list">' + sorted.map(d =>
+        `<span class="admin-date-tag">${d}<button type="button" class="admin-date-remove" data-type="${type}" data-date="${d}">✕</button></span>`
+      ).join('') + '</div>';
+    }
+
+    container.querySelectorAll('.admin-date-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const t = btn.dataset.type;
+        const dateVal = btn.dataset.date;
+        shopConfig.closedDates[t] = shopConfig.closedDates[t].filter(d => d !== dateVal);
+        renderAdminDates(t);
+      });
+    });
+  }
+
+  document.getElementById('addPickupBtn').addEventListener('click', () => {
+    const input = document.getElementById('addPickupDate');
+    if (!input.value) return;
+    if (!shopConfig.closedDates.pickup) shopConfig.closedDates.pickup = [];
+    if (!shopConfig.closedDates.pickup.includes(input.value)) {
+      shopConfig.closedDates.pickup.push(input.value);
+    }
+    input.value = '';
+    renderAdminDates('pickup');
+  });
+
+  document.getElementById('addDeliveryBtn').addEventListener('click', () => {
+    const input = document.getElementById('addDeliveryDate');
+    if (!input.value) return;
+    if (!shopConfig.closedDates.delivery) shopConfig.closedDates.delivery = [];
+    if (!shopConfig.closedDates.delivery.includes(input.value)) {
+      shopConfig.closedDates.delivery.push(input.value);
+    }
+    input.value = '';
+    renderAdminDates('delivery');
+  });
+
+  document.getElementById('adminSaveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('adminSaveBtn');
+    btn.disabled = true;
+    btn.innerText = '💾 กำลังบันทึก...';
+
+    document.querySelectorAll('[data-type="flavor"]').forEach(cb => {
+      shopConfig.flavors[cb.dataset.id] = cb.checked;
+    });
+    document.querySelectorAll('[data-type="sauce"]').forEach(cb => {
+      shopConfig.sauces[cb.dataset.id] = cb.checked;
+    });
+    shopConfig.sameDayOrder = document.getElementById('sameDayToggle').checked;
+
+    try {
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(shopConfig)
+      });
+      const result = await res.json();
+      if (result.status === 'ok') {
+        showAlert('บันทึกการตั้งค่าเรียบร้อย ✅');
+      } else {
+        showAlert('เกิดข้อผิดพลาด: ' + result.message);
+      }
+    } catch (err) {
+      showAlert('เกิดข้อผิดพลาด: ' + err.message);
+    }
+    btn.disabled = false;
+    btn.innerText = '💾 บันทึกการตั้งค่า';
+  });
+
+  document.getElementById('adminBackBtn').addEventListener('click', () => {
+    closeAdminPanel();
+    applyConfig();
+  });
 
   initLiff();
 </script>
