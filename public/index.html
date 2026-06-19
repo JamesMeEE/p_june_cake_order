@@ -91,7 +91,8 @@
   .calendar-day.disabled { color: #d0d0d0; cursor: not-allowed; }
   .calendar-day.other-month { color: transparent; pointer-events: none; }
   .calendar-day.selected { background: #8a623f; color: white; font-weight: bold; }
-  .calendar-day:not(.disabled):not(.selected):active { background: #f5f5f5; }
+  .calendar-day.closed { background: #e74c3c; color: white; font-weight: bold; }
+  .calendar-day:not(.disabled):not(.selected):not(.closed):active { background: #f5f5f5; }
 
   .time-list { display: flex; flex-direction: column; gap: 10px; }
   .time-opt {
@@ -414,20 +415,16 @@
 
     <div class="card">
       <div class="admin-section">📅 วันหยุด - นัดรับ (Pickup)</div>
-      <div id="adminPickupDates"></div>
-      <div class="admin-date-add">
-        <input type="date" id="addPickupDate">
-        <button type="button" id="addPickupBtn">+ เพิ่ม</button>
-      </div>
+      <div class="admin-subtitle" style="margin-top:0;">กดที่วันในปฏิทินเพื่อเพิ่ม/ลบวันหยุด (สีแดง = วันหยุด)</div>
+      <div id="adminPickupCalendar" class="calendar"></div>
+      <div id="adminPickupDates" style="margin-top:8px;"></div>
     </div>
 
     <div class="card">
       <div class="admin-section">📅 วันหยุด - จัดส่ง (Delivery)</div>
-      <div id="adminDeliveryDates"></div>
-      <div class="admin-date-add">
-        <input type="date" id="addDeliveryDate">
-        <button type="button" id="addDeliveryBtn">+ เพิ่ม</button>
-      </div>
+      <div class="admin-subtitle" style="margin-top:0;">กดที่วันในปฏิทินเพื่อเพิ่ม/ลบวันหยุด (สีแดง = วันหยุด)</div>
+      <div id="adminDeliveryCalendar" class="calendar"></div>
+      <div id="adminDeliveryDates" style="margin-top:8px;"></div>
     </div>
 
     <button type="button" class="admin-save" id="adminSaveBtn">💾 บันทึกการตั้งค่า</button>
@@ -1029,6 +1026,10 @@
 
     renderAdminDates('pickup');
     renderAdminDates('delivery');
+    initAdminCalendarMonth('pickup');
+    initAdminCalendarMonth('delivery');
+    renderAdminCalendar('pickup');
+    renderAdminCalendar('delivery');
   }
 
   function renderAdminDates(type) {
@@ -1053,27 +1054,75 @@
     });
   }
 
-  document.getElementById('addPickupBtn').addEventListener('click', () => {
-    const input = document.getElementById('addPickupDate');
-    if (!input.value) return;
-    if (!shopConfig.closedDates.pickup) shopConfig.closedDates.pickup = [];
-    if (!shopConfig.closedDates.pickup.includes(input.value)) {
-      shopConfig.closedDates.pickup.push(input.value);
-    }
-    input.value = '';
-    renderAdminDates('pickup');
-  });
+  const adminCalendarMonths = { pickup: new Date(), delivery: new Date() };
 
-  document.getElementById('addDeliveryBtn').addEventListener('click', () => {
-    const input = document.getElementById('addDeliveryDate');
-    if (!input.value) return;
-    if (!shopConfig.closedDates.delivery) shopConfig.closedDates.delivery = [];
-    if (!shopConfig.closedDates.delivery.includes(input.value)) {
-      shopConfig.closedDates.delivery.push(input.value);
+  function initAdminCalendarMonth(type) {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0,0,0,0);
+    adminCalendarMonths[type] = d;
+  }
+
+  function dateToStr(date) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  }
+
+  function renderAdminCalendar(type) {
+    const month = adminCalendarMonths[type];
+    const year = month.getFullYear();
+    const m = month.getMonth();
+    const firstDay = new Date(year, m, 1).getDay();
+    const lastDate = new Date(year, m + 1, 0).getDate();
+    const closedList = shopConfig.closedDates[type] || [];
+
+    let html = '<div class="calendar-header">';
+    html += `<button type="button" class="calendar-nav" data-cal="${type}" data-dir="prev">‹</button>`;
+    html += `<div class="calendar-month">${THAI_MONTHS_FULL[m]} ${year + 543}</div>`;
+    html += `<button type="button" class="calendar-nav" data-cal="${type}" data-dir="next">›</button>`;
+    html += '</div>';
+    html += '<div class="calendar-weekdays">';
+    THAI_DAYS_SHORT.forEach(d => html += `<div>${d}</div>`);
+    html += '</div>';
+    html += '<div class="calendar-days">';
+    for (let i = 0; i < firstDay; i++) html += '<div class="calendar-day other-month"></div>';
+    for (let d = 1; d <= lastDate; d++) {
+      const date = new Date(year, m, d);
+      const str = dateToStr(date);
+      const past = date < todayStart();
+      const closed = closedList.includes(str);
+      let cls = '';
+      if (past) cls = 'disabled';
+      else if (closed) cls = 'closed';
+      html += `<div class="calendar-day ${cls}" data-cal="${type}" data-date="${str}">${d}</div>`;
     }
-    input.value = '';
-    renderAdminDates('delivery');
-  });
+    html += '</div>';
+
+    const container = document.getElementById(type === 'pickup' ? 'adminPickupCalendar' : 'adminDeliveryCalendar');
+    container.innerHTML = html;
+
+    container.querySelectorAll('.calendar-nav').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dir = btn.dataset.dir === 'next' ? 1 : -1;
+        adminCalendarMonths[type].setMonth(adminCalendarMonths[type].getMonth() + dir);
+        renderAdminCalendar(type);
+      });
+    });
+
+    container.querySelectorAll('.calendar-day:not(.disabled):not(.other-month)').forEach(el => {
+      el.addEventListener('click', () => {
+        const str = el.dataset.date;
+        if (!shopConfig.closedDates[type]) shopConfig.closedDates[type] = [];
+        const idx = shopConfig.closedDates[type].indexOf(str);
+        if (idx >= 0) {
+          shopConfig.closedDates[type].splice(idx, 1);
+        } else {
+          shopConfig.closedDates[type].push(str);
+        }
+        renderAdminCalendar(type);
+        renderAdminDates(type);
+      });
+    });
+  }
 
   document.getElementById('adminSaveBtn').addEventListener('click', async () => {
     const btn = document.getElementById('adminSaveBtn');
