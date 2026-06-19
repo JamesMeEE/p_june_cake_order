@@ -1050,6 +1050,7 @@
         const dateVal = btn.dataset.date;
         shopConfig.closedDates[t] = shopConfig.closedDates[t].filter(d => d !== dateVal);
         renderAdminDates(t);
+        renderAdminCalendar(t);
       });
     });
   }
