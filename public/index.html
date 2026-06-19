@@ -452,7 +452,10 @@
 
   async function fetchConfig() {
     try {
-      const res = await fetch('/api/config');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch('/api/config', { signal: controller.signal });
+      clearTimeout(timeout);
       shopConfig = await res.json();
     } catch (e) {
       shopConfig = {
@@ -920,7 +923,6 @@
     const deliveryDate = buildDeliveryDate();
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
-    const address = document.getElementById("address").value.trim();
     const mapLink = document.getElementById("mapLink").value.trim();
     const note = document.getElementById("note").value.trim();
 
