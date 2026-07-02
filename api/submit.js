@@ -248,9 +248,7 @@ function buildFlexMessage(data) {
 function buildTotalLines(data, brown) {
   const itemsTotal = data.itemsTotal || data.total;
   const isPickup = data.deliveryMethod === 'pickup';
-  const discountPct = isPickup ? 10 : 5;
-  const multiplier = isPickup ? 0.9 : 0.95;
-  const discountedItems = Math.floor(itemsTotal * multiplier);
+  const discountedItems = isPickup ? Math.floor(itemsTotal * 0.9) : itemsTotal;
   const fee = data.deliveryFee || 0;
   const finalTotal = discountedItems + fee;
 
@@ -268,7 +266,7 @@ function buildTotalLines(data, brown) {
     });
     lines.push({
       type: 'text',
-      text: `✏️ ยอดที่ต้องชำระ: ${finalTotal} ฿ (สินค้าหลังหักส่วนลด ${discountPct}% + ค่าจัดส่ง)`,
+      text: `✏️ ยอดที่ต้องชำระ: ${finalTotal} ฿`,
       weight: 'bold',
       size: 'md',
       wrap: true,
@@ -283,14 +281,25 @@ function buildTotalLines(data, brown) {
         wrap: true
       });
     }
-    lines.push({
-      type: 'text',
-      text: `✏️ ยอดที่ต้องชำระ: ${discountedItems} ฿ (ราคาหลังหักส่วนลด ${discountPct}%)`,
-      weight: 'bold',
-      size: 'md',
-      wrap: true,
-      color: brown
-    });
+    if (isPickup) {
+      lines.push({
+        type: 'text',
+        text: `✏️ ยอดที่ต้องชำระ: ${discountedItems} ฿ (ราคาหลังหักส่วนลด 10%)`,
+        weight: 'bold',
+        size: 'md',
+        wrap: true,
+        color: brown
+      });
+    } else {
+      lines.push({
+        type: 'text',
+        text: `✏️ ยอดที่ต้องชำระ: ${finalTotal} ฿`,
+        weight: 'bold',
+        size: 'md',
+        wrap: true,
+        color: brown
+      });
+    }
   }
 
   return lines;
