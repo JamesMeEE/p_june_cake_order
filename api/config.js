@@ -14,8 +14,9 @@ function getAuth() {
 }
 
 const DEFAULT_CONFIG = {
-  flavors: { original: true, pistachio: true, valrhona: true },
+  flavors: { original: true, valrhona: true },
   sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
+  croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, croissant_box_set: true },
   closedDates: { pickup: [], delivery: [] },
   sameDayOrder: false
 };

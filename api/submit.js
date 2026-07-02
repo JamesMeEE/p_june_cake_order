@@ -35,10 +35,13 @@ async function appendToSheet(data) {
   const saucesText = data.sauces.length > 0
     ? data.sauces.map(s => `${s.name} x ${s.qty} ชิ้น`).join('\n')
     : '-';
+  const croissantsText = (data.croissants && data.croissants.length > 0)
+    ? data.croissants.map(c => `${c.name} x ${c.qty} ชิ้น`).join('\n')
+    : '-';
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: `${SHEET_NAME}!A:K`,
+    range: `${SHEET_NAME}!A:L`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[
@@ -46,6 +49,7 @@ async function appendToSheet(data) {
         data.userId,
         flavorsText,
         saucesText,
+        croissantsText,
         data.deliveryDate,
         data.name,
         data.phone,
@@ -72,11 +76,11 @@ async function ensureSheetExists(sheets) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!A:K`,
+      range: `${SHEET_NAME}!A:L`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
-          'Timestamp', 'UserID', 'Flavors', 'Sauces', 'DeliveryDate',
+          'Timestamp', 'UserID', 'Flavors', 'Sauces', 'Croissants', 'DeliveryDate',
           'Name', 'Phone', 'Address', 'MapLink', 'Note', 'Total'
         ]]
       }
@@ -136,6 +140,17 @@ function buildFlexMessage(data) {
       orderLines.push({
         type: 'text',
         text: `ซอส (Extra Sauce): ${s.name} x ${s.qty} ชิ้น`,
+        size: 'sm',
+        wrap: true
+      });
+    });
+  }
+
+  if (data.croissants && data.croissants.length > 0) {
+    data.croissants.forEach(c => {
+      orderLines.push({
+        type: 'text',
+        text: `ครัวซองต์ (Croissant): ${c.name} x ${c.qty} ชิ้น`,
         size: 'sm',
         wrap: true
       });

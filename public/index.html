@@ -287,13 +287,18 @@
   <div class="subtitle">ทางร้านจัดส่งทุกวันและส่งฟรี 5 กิโลเมตรแรกนะคะ (กิโลเมตรถัดไปคิดเพิ่ม 10 บาทต่อกิโลเมตร หรือ หากยอดเกิน 400 บาท ส่งฟรีทุกออเดอร์เฉพาะในพื้นที่ Grab)</div>
 
   <div class="card">
-    <div class="label">เลือกรูปแบบรสชาติ (Flavor) <span class="required">*</span></div>
+    <div class="label">ชีสเค้กหน้าไหม้ (Molten Basque Cheesecake) <span class="required">*</span></div>
     <div id="flavorList"></div>
   </div>
 
   <div class="card">
-    <div class="label">เลือกซอส (Extra Sauce)</div>
+    <div class="label">ซอส (Extra Sauce)</div>
     <div id="sauceList"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">ครัวซองต์ (Croissant)</div>
+    <div id="croissantList"></div>
   </div>
 
   <div class="card">
@@ -414,6 +419,11 @@
     </div>
 
     <div class="card">
+      <div class="admin-section">🥐 ครัวซองต์ (Croissant)</div>
+      <div id="adminCroissants"></div>
+    </div>
+
+    <div class="card">
       <div class="admin-section">📅 วันหยุด - นัดรับ (Pickup)</div>
       <div class="admin-subtitle" style="margin-top:0;">กดที่วันในปฏิทินเพื่อเพิ่ม/ลบวันหยุด (สีแดง = วันหยุด)</div>
       <div id="adminPickupCalendar" class="calendar"></div>
@@ -456,8 +466,9 @@
       shopConfig = await res.json();
     } catch (e) {
       shopConfig = {
-        flavors: { original: true, pistachio: true, valrhona: true },
+        flavors: { original: true, valrhona: true },
         sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
+        croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, croissant_box_set: true },
         closedDates: { pickup: [], delivery: [] },
         sameDayOrder: false
       };
@@ -504,6 +515,27 @@
         el.querySelector('.qty-value').innerText = '0';
       }
     });
+
+    if (shopConfig.croissants) {
+      CROISSANTS.forEach(c => {
+        const available = shopConfig.croissants[c.id] !== false;
+        const el = document.querySelector(`[data-key="croissant-${c.id}"]`);
+        if (!el) return;
+        const item = el.closest('.flavor-item');
+        if (!available) {
+          item.classList.add('sold-out');
+          if (!item.querySelector('.sold-out-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'sold-out-badge';
+            badge.innerText = 'ของหมดชั่วคราวค่ะ';
+            item.style.position = 'relative';
+            item.appendChild(badge);
+          }
+          quantities['croissant-' + c.id] = 0;
+          el.querySelector('.qty-value').innerText = '0';
+        }
+      });
+    }
   }
 
   function isDateClosed(date) {
@@ -531,7 +563,6 @@
 
   const FLAVORS = [
     { id: 'original', name: '🧀 Original', displayName: '(195 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 195, image: '/pic/original.png' },
-    { id: 'pistachio', name: '🥜 Pistachio', displayName: '(220 ฿)🥜 Pistachio : หอมถั่วพิสตาชิโอ้เข้มข้น ผสมกับความนัวของชีส', price: 220, image: '/pic/pistachio.png' },
     { id: 'valrhona', name: '🍫 Valrhona Chocolate', displayName: '(220 ฿)🍫 Valrhona Chocolate : ดาร์กช็อคโกแลต เข้ม นุ่ม ลึก เต็มคำ', price: 220, image: '/pic/valrhona_chocolate.png' }
   ];
 
@@ -543,9 +574,17 @@
     { id: 'biscoff', name: '🍪 บิสคอฟ (Biscoff)', price: 25 }
   ];
 
+  const CROISSANTS = [
+    { id: 'croissant', name: '🥐 Croissant', displayName: '(95 ฿)🥐 Croissant', price: 95, image: '' },
+    { id: 'mixed_berry', name: '🍒 Mixed Berry Croissant', displayName: '(135 ฿)🍒 Mixed Berry Croissant', price: 135, image: '/pic/mixed_berry_croissant.png' },
+    { id: 'pain_au_chocolat', name: '🍫 Pain au Chocolat', displayName: '(135 ฿)🍫 Pain au Chocolat', price: 135, image: '/pic/pain_au_chocolat.png' },
+    { id: 'croissant_box_set', name: '🥐 Croissant Box Set', displayName: '(330 ฿)🥐 Croissant Box Set', price: 330, image: '/pic/croissant_box_set.png' }
+  ];
+
   const quantities = {};
   FLAVORS.forEach(f => quantities['flavor-' + f.id] = 0);
   SAUCES.forEach(s => quantities['sauce-' + s.id] = 0);
+  CROISSANTS.forEach(c => quantities['croissant-' + c.id] = 0);
 
   async function initLiff() {
     try {
@@ -600,6 +639,26 @@
       '</div>'
     ).join('');
 
+    const croissantList = document.getElementById("croissantList");
+    croissantList.innerHTML = CROISSANTS.map(c => {
+      const imgHtml = c.image
+        ? '<img class="flavor-img" src="' + c.image + '" alt="' + c.name + '">'
+        : '<div class="flavor-img" style="display:flex;align-items:center;justify-content:center;font-size:48px;background:#f5f0e8;">🥐</div>';
+      return '<div class="flavor-item">' +
+        '<div class="flavor-top">' +
+          imgHtml +
+          '<div class="qty-controls" data-key="croissant-' + c.id + '">' +
+            '<button class="qty-btn" data-action="minus"></button>' +
+            '<span class="qty-value">0</span>' +
+            '<button class="qty-btn plus" data-action="plus"></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flavor-meta">' +
+          '<div class="flavor-name">' + c.displayName + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
     document.querySelectorAll('.qty-controls').forEach(ctrl => {
       const key = ctrl.dataset.key;
       const minusBtn = ctrl.querySelector('[data-action="minus"]');
@@ -626,6 +685,7 @@
     let total = 0;
     FLAVORS.forEach(f => total += f.price * quantities['flavor-' + f.id]);
     SAUCES.forEach(s => total += s.price * quantities['sauce-' + s.id]);
+    CROISSANTS.forEach(c => total += c.price * quantities['croissant-' + c.id]);
     if (deliveryMethod === 'delivery' && deliveryFee > 0) {
       total += deliveryFee;
     }
@@ -914,9 +974,11 @@
       .map(f => ({ name: f.name, price: f.price, qty: quantities['flavor-' + f.id] }));
     const sauces = SAUCES.filter(s => quantities['sauce-' + s.id] > 0)
       .map(s => ({ name: s.name, price: s.price, qty: quantities['sauce-' + s.id] }));
+    const croissants = CROISSANTS.filter(c => quantities['croissant-' + c.id] > 0)
+      .map(c => ({ name: c.name, price: c.price, qty: quantities['croissant-' + c.id] }));
 
-    if (flavors.length === 0) {
-      showAlert("กรุณาเลือกรสชาติอย่างน้อย 1 รายการ");
+    if (flavors.length === 0 && croissants.length === 0) {
+      showAlert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
       return;
     }
 
@@ -951,12 +1013,13 @@
     let itemsTotal = 0;
     flavors.forEach(f => itemsTotal += f.price * f.qty);
     sauces.forEach(s => itemsTotal += s.price * s.qty);
+    croissants.forEach(c => itemsTotal += c.price * c.qty);
 
     const finalDeliveryFee = (deliveryMethod === 'delivery' && deliveryFee > 0) ? deliveryFee : 0;
     const total = itemsTotal + finalDeliveryFee;
 
     const data = {
-      userId, flavors, sauces, itemsTotal, deliveryFee: finalDeliveryFee,
+      userId, flavors, sauces, croissants, itemsTotal, deliveryFee: finalDeliveryFee,
       deliveryDistance, total, deliveryDate, deliveryMethod,
       name, phone, address, mapLink, note
     };
@@ -1002,10 +1065,14 @@
 
     document.getElementById('sameDayToggle').checked = shopConfig.sameDayOrder || false;
 
-    const flavorNames = { original: '🧀 Original', pistachio: '🥜 Pistachio', valrhona: '🍫 Valrhona Chocolate' };
+    const flavorNames = { original: '🧀 Original', valrhona: '🍫 Valrhona Chocolate' };
     const sauceNames = {
       darkchoco: '🍫 ดาร์กช็อกโกแลต', matcha: '🍵 มัทฉะ',
       strawberry: '🍓 สตรอว์เบอร์รี่', nutella: '🥜 นูเทลล่า', biscoff: '🍪 บิสคอฟ'
+    };
+    const croissantNames = {
+      croissant: '🥐 Croissant', mixed_berry: '🍒 Mixed Berry Croissant',
+      pain_au_chocolat: '🍫 Pain au Chocolat', croissant_box_set: '🥐 Croissant Box Set'
     };
 
     let flavorHtml = '';
@@ -1025,6 +1092,18 @@
         `<span class="toggle-slider"></span></label></div>`;
     }
     document.getElementById('adminSauces').innerHTML = sauceHtml;
+
+    if (!shopConfig.croissants) {
+      shopConfig.croissants = { croissant: true, mixed_berry: true, pain_au_chocolat: true, croissant_box_set: true };
+    }
+    let croissantHtml = '';
+    for (const [id, name] of Object.entries(croissantNames)) {
+      const checked = shopConfig.croissants[id] !== false ? 'checked' : '';
+      croissantHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
+        `<label class="toggle-switch"><input type="checkbox" data-type="croissant" data-id="${id}" ${checked}>` +
+        `<span class="toggle-slider"></span></label></div>`;
+    }
+    document.getElementById('adminCroissants').innerHTML = croissantHtml;
 
     renderAdminDates('pickup');
     renderAdminDates('delivery');
@@ -1137,6 +1216,10 @@
     });
     document.querySelectorAll('[data-type="sauce"]').forEach(cb => {
       shopConfig.sauces[cb.dataset.id] = cb.checked;
+    });
+    if (!shopConfig.croissants) shopConfig.croissants = {};
+    document.querySelectorAll('[data-type="croissant"]').forEach(cb => {
+      shopConfig.croissants[cb.dataset.id] = cb.checked;
     });
     shopConfig.sameDayOrder = document.getElementById('sameDayToggle').checked;
 
