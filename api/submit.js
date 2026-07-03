@@ -119,23 +119,18 @@ function buildFlexMessage(data) {
 
   const orderLines = [];
 
-  data.flavors.forEach(f => {
-    orderLines.push({
-      type: 'text',
-      text: `รสชาติ (Flavor): ${f.name} x ${f.qty} ชิ้น`,
-      size: 'sm',
-      wrap: true
+  if (data.flavors && data.flavors.length > 0) {
+    data.flavors.forEach(f => {
+      orderLines.push({
+        type: 'text',
+        text: `รสชาติ (Flavor): ${f.name} x ${f.qty} ชิ้น`,
+        size: 'sm',
+        wrap: true
+      });
     });
-  });
+  }
 
-  if (data.sauces.length === 0) {
-    orderLines.push({
-      type: 'text',
-      text: 'ซอส (Extra Sauce): -',
-      size: 'sm',
-      wrap: true
-    });
-  } else {
+  if (data.sauces && data.sauces.length > 0) {
     data.sauces.forEach(s => {
       orderLines.push({
         type: 'text',
