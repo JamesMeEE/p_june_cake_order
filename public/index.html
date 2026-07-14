@@ -106,6 +106,13 @@
     border-color: #8a623f; background: #8a623f; color: white;
     box-shadow: 0 2px 8px rgba(138,98,63,0.25);
   }
+  .time-dropdowns { display: flex; gap: 10px; align-items: center; }
+  .time-dropdowns select {
+    flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px;
+    font-size: 15px; font-weight: 600; color: #555; background: white;
+    font-family: inherit; text-align: center; appearance: auto;
+  }
+  .time-dropdowns span { font-size: 14px; color: #999; }
   .select-input.placeholder-shown { color: #999; }
   .select-arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
   .custom-select.open .select-arrow { transform: rotate(180deg); }
@@ -562,8 +569,8 @@
   });
 
   const FLAVORS = [
-    { id: 'original', name: '🧀 Original', displayName: '(195 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 195, image: '/pic/original.png' },
-    { id: 'valrhona', name: '🍫 Valrhona Chocolate', displayName: '(220 ฿)🍫 Valrhona Chocolate : ดาร์กช็อคโกแลต เข้ม นุ่ม ลึก เต็มคำ', price: 220, image: '/pic/valrhona_chocolate.png' }
+    { id: 'original', name: '🧀 Original', displayName: '(125 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 125, image: '/pic/original.png' },
+    { id: 'valrhona', name: '🍫 Valrhona Chocolate', displayName: '(140 ฿)🍫 Valrhona Chocolate : ดาร์กช็อคโกแลต เข้ม นุ่ม ลึก เต็มคำ', price: 140, image: '/pic/valrhona_chocolate.png' }
   ];
 
   const SAUCES = [
@@ -576,8 +583,8 @@
 
   const CROISSANTS = [
     { id: 'croissant', name: '🥐 Croissant', displayName: '(95 ฿)🥐 Croissant', price: 95, image: '/pic/croissant.png' },
-    { id: 'mixed_berry', name: '🍒 Mixed Berry Croissant', displayName: '(135 ฿)🍒 Mixed Berry Croissant', price: 135, image: '/pic/mixed_berry_croissant.png' },
-    { id: 'pain_au_chocolat', name: '🍫 Pain au Chocolat', displayName: '(135 ฿)🍫 Pain au Chocolat', price: 135, image: '/pic/pain_au_chocolat.png' },
+    { id: 'mixed_berry', name: '🍒 Mixed Berry Croissant', displayName: '(130 ฿)🍒 Mixed Berry Croissant', price: 130, image: '/pic/mixed_berry_croissant.png' },
+    { id: 'pain_au_chocolat', name: '🍫 Pain au Chocolat', displayName: '(130 ฿)🍫 Pain au Chocolat', price: 130, image: '/pic/pain_au_chocolat.png' },
     { id: 'croissant_box_set', name: '🥐 Croissant Box Set', displayName: '(330 ฿)🥐 Croissant Box Set', price: 330, image: '/pic/croissant_box_set.png' }
   ];
 
@@ -669,6 +676,14 @@
         valueEl.innerText = quantities[key];
         minusBtn.disabled = quantities[key] <= 0;
         updateTotal();
+        if (key.startsWith('flavor-') && deliveryMethod) {
+          if (hasCheesecake() && selectedDateObj && selectedDateObj.getTime() === todayStart().getTime()) {
+            selectedDateObj = null;
+            selectedTime = null;
+            document.getElementById('timeSection').classList.add('hidden');
+          }
+          renderCalendar();
+        }
       };
 
       minusBtn.addEventListener('click', () => {
@@ -813,10 +828,15 @@
     return t;
   }
 
+  function hasCheesecake() {
+    return FLAVORS.some(f => quantities['flavor-' + f.id] > 0);
+  }
+
   function isDateValid(date) {
     const today = todayStart();
     if (date < today) return false;
     if (date.getTime() === today.getTime()) {
+      if (hasCheesecake()) return false;
       if (!shopConfig || !shopConfig.sameDayOrder) return false;
     }
     if (isDateClosed(date)) return false;
@@ -882,33 +902,55 @@
 
   function renderTimeSlots() {
     if (!selectedDateObj) return;
-    let slots = [];
+    const isSaturday = selectedDateObj.getDay() === 6;
+
     if (deliveryMethod === 'pickup') {
-      if (selectedDateObj.getDay() === 6) {
-        slots = ['10.00-11.00', '11.00-12.00'];
-      } else {
-        slots = ['10.00-11.00', '11.00-12.00', '12.00-13.00', '13.00-14.00', '16.00-17.00'];
-      }
-    } else if (selectedDateObj.getDay() === 6) {
-      slots = ['8.00-9.00', '9.00-10.00'];
+      const hours = isSaturday ? [10, 11] : [10, 11, 12, 13, 14, 16, 17];
+      const minutes = ['00', '15', '30', '45'];
+
+      let html = '<div class="time-dropdowns">';
+      html += '<select id="pickupHour"><option value="">ชั่วโมง</option>';
+      hours.forEach(h => html += `<option value="${h}">${String(h).padStart(2,'0')}</option>`);
+      html += '</select>';
+      html += '<span>:</span>';
+      html += '<select id="pickupMinute"><option value="">นาที</option>';
+      minutes.forEach(m => html += `<option value="${m}">${m}</option>`);
+      html += '</select>';
+      html += '</div>';
+
+      document.getElementById('timeOptions').innerHTML = html;
+      document.getElementById('timeSection').classList.remove('hidden');
+
+      const updatePickupTime = () => {
+        const h = document.getElementById('pickupHour').value;
+        const m = document.getElementById('pickupMinute').value;
+        selectedTime = (h && m) ? `${String(h).padStart(2,'0')}.${m}` : null;
+      };
+      document.getElementById('pickupHour').addEventListener('change', updatePickupTime);
+      document.getElementById('pickupMinute').addEventListener('change', updatePickupTime);
     } else {
-      slots = ['8.00-9.00', '9.00-10.00', '14.00-15.00', '15.00-16.00'];
-    }
+      let slots = [];
+      if (isSaturday) {
+        slots = ['8.00-9.00', '9.00-10.00'];
+      } else {
+        slots = ['8.00-9.00', '9.00-10.00', '14.00-15.00', '15.00-16.00'];
+      }
 
-    const html = '<div class="time-list">' + slots.map(s =>
-      `<button type="button" class="time-opt" data-time="${s}">${s}</button>`
-    ).join('') + '</div>';
+      const html = '<div class="time-list">' + slots.map(s =>
+        `<button type="button" class="time-opt" data-time="${s}">${s}</button>`
+      ).join('') + '</div>';
 
-    document.getElementById('timeOptions').innerHTML = html;
-    document.getElementById('timeSection').classList.remove('hidden');
+      document.getElementById('timeOptions').innerHTML = html;
+      document.getElementById('timeSection').classList.remove('hidden');
 
-    document.querySelectorAll('.time-opt').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.time-opt').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedTime = btn.dataset.time;
+      document.querySelectorAll('.time-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.time-opt').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedTime = btn.dataset.time;
+        });
       });
-    });
+    }
   }
 
   document.querySelectorAll('.toggle-btn').forEach(btn => {
