@@ -206,7 +206,7 @@ function buildFlexMessage(data) {
     data.extras.forEach(e => {
       orderLines.push({
         type: 'text',
-        text: `ซื้อเพิ่ม (Extra): ${e.name} x ${e.qty} ชิ้น`,
+        text: `ซอส (Extra Sauce): ${e.name} x ${e.qty} ชิ้น`,
         size: 'sm',
         wrap: true
       });
