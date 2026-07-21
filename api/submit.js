@@ -39,9 +39,25 @@ async function appendToSheet(data) {
     ? data.croissants.map(c => `${c.name} x ${c.qty} ชิ้น`).join('\n')
     : '-';
 
+  let sourdoughsText = '-';
+  if (data.sourdoughs && data.sourdoughs.length > 0) {
+    const lines = data.sourdoughs.map(s => `${s.name} x ${s.qty} ชิ้น`);
+    if (data.trioSelections && data.trioSelections.length > 0) {
+      data.trioSelections.forEach((set, i) => {
+        lines.push(`  Trio #${i + 1}: ${set.join(', ')}`);
+      });
+    }
+    if (data.jam) lines.push(`Cream Cheese + ${data.jam}`);
+    sourdoughsText = lines.join('\n');
+  }
+
+  const extrasText = (data.extras && data.extras.length > 0)
+    ? data.extras.map(e => `${e.name} x ${e.qty} ชิ้น`).join('\n')
+    : '-';
+
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: `${SHEET_NAME}!A:L`,
+    range: `${SHEET_NAME}!A:N`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[
@@ -50,6 +66,8 @@ async function appendToSheet(data) {
         flavorsText,
         saucesText,
         croissantsText,
+        sourdoughsText,
+        extrasText,
         data.deliveryDate,
         data.name,
         data.phone,
@@ -76,11 +94,11 @@ async function ensureSheetExists(sheets) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!A:L`,
+      range: `${SHEET_NAME}!A:N`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
-          'Timestamp', 'UserID', 'Flavors', 'Sauces', 'Croissants', 'DeliveryDate',
+          'Timestamp', 'UserID', 'Flavors', 'Sauces', 'Croissants', 'Sourdoughs', 'Extras', 'DeliveryDate',
           'Name', 'Phone', 'Address', 'MapLink', 'Note', 'Total'
         ]]
       }
@@ -146,6 +164,49 @@ function buildFlexMessage(data) {
       orderLines.push({
         type: 'text',
         text: `ครัวซองต์ (Croissant): ${c.name} x ${c.qty} ชิ้น`,
+        size: 'sm',
+        wrap: true
+      });
+    });
+  }
+
+  if (data.sourdoughs && data.sourdoughs.length > 0) {
+    data.sourdoughs.forEach(s => {
+      orderLines.push({
+        type: 'text',
+        text: `ซาวร์โดว์ (Sourdough): ${s.name} x ${s.qty} ชิ้น`,
+        size: 'sm',
+        wrap: true
+      });
+    });
+  }
+
+  if (data.trioSelections && data.trioSelections.length > 0) {
+    data.trioSelections.forEach((set, i) => {
+      orderLines.push({
+        type: 'text',
+        text: `  └ Trio Set #${i + 1}: ${set.join(', ')}`,
+        size: 'xs',
+        wrap: true,
+        color: '#888888'
+      });
+    });
+  }
+
+  if (data.jam) {
+    orderLines.push({
+      type: 'text',
+      text: `ครีมชีสและแยม: Cream Cheese + ${data.jam}`,
+      size: 'sm',
+      wrap: true
+    });
+  }
+
+  if (data.extras && data.extras.length > 0) {
+    data.extras.forEach(e => {
+      orderLines.push({
+        type: 'text',
+        text: `ซื้อเพิ่ม (Extra): ${e.name} x ${e.qty} ชิ้น`,
         size: 'sm',
         wrap: true
       });

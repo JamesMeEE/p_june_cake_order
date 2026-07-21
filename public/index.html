@@ -113,6 +113,29 @@
     font-family: inherit; text-align: center; appearance: auto;
   }
   .time-dropdowns span { font-size: 14px; color: #999; }
+
+  .trio-group { margin-top: 12px; padding: 12px; background: #faf6f0; border-radius: 8px; }
+  .trio-group-title { font-weight: bold; font-size: 14px; color: #4b3619; margin-bottom: 10px; }
+  .trio-slot { margin-bottom: 12px; }
+  .trio-slot:last-child { margin-bottom: 0; }
+  .trio-slot-label { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 6px; }
+  .trio-slot select {
+    width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: white;
+  }
+
+  .spread-fixed {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px; border: 2px solid #8a623f; background: #fff5e8;
+    border-radius: 8px; margin-bottom: 10px; font-size: 14px; font-weight: 600;
+  }
+  .spread-fixed-badge { font-size: 12px; color: #8a623f; }
+  .spread-jam { margin-bottom: 10px; }
+  .spread-jam-label { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .spread-jam select {
+    width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: white;
+  }
   .select-input.placeholder-shown { color: #999; }
   .select-arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
   .custom-select.open .select-arrow { transform: rotate(180deg); }
@@ -309,6 +332,20 @@
   </div>
 
   <div class="card">
+    <div class="label">ซาวร์โดว์ (Sourdough)</div>
+    <div class="admin-subtitle" style="margin-top:0;">ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)</div>
+    <div id="sourdoughList"></div>
+    <div id="trioSelections" class="hidden"></div>
+  </div>
+
+  <div class="card hidden" id="spreadCard">
+    <div class="label">ครีมชีสและแยม (Cream Cheese &amp; Jam)</div>
+    <div id="spreadSection"></div>
+    <div class="label" style="margin-top:16px;">ซื้อเพิ่ม (Extra)</div>
+    <div id="extraList"></div>
+  </div>
+
+  <div class="card">
     <div class="label">วิธีการรับสินค้า (Delivery Method) <span class="required">*</span></div>
     <div class="toggle-group">
       <button type="button" class="toggle-btn" data-method="pickup">
@@ -431,6 +468,11 @@
     </div>
 
     <div class="card">
+      <div class="admin-section">🍞 ซาวร์โดว์ (Sourdough)</div>
+      <div id="adminSourdoughs"></div>
+    </div>
+
+    <div class="card">
       <div class="admin-section">📅 วันหยุด - นัดรับ (Pickup)</div>
       <div class="admin-subtitle" style="margin-top:0;">กดที่วันในปฏิทินเพื่อเพิ่ม/ลบวันหยุด (สีแดง = วันหยุด)</div>
       <div id="adminPickupCalendar" class="calendar"></div>
@@ -476,6 +518,7 @@
         flavors: { original: true, valrhona: true },
         sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, croissant_box_set: true },
+        sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, trio: true },
         closedDates: { pickup: [], delivery: [] },
         sameDayOrder: false
       };
@@ -543,6 +586,27 @@
         }
       });
     }
+
+    if (shopConfig.sourdoughs) {
+      SOURDOUGHS.forEach(s => {
+        const available = shopConfig.sourdoughs[s.id] !== false;
+        const el = document.querySelector(`[data-key="sourdough-${s.id}"]`);
+        if (!el) return;
+        const item = el.closest('.flavor-item');
+        if (!available) {
+          item.classList.add('sold-out');
+          if (!item.querySelector('.sold-out-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'sold-out-badge';
+            badge.innerText = 'ของหมดชั่วคราวค่ะ';
+            item.style.position = 'relative';
+            item.appendChild(badge);
+          }
+          quantities['sourdough-' + s.id] = 0;
+          el.querySelector('.qty-value').innerText = '0';
+        }
+      });
+    }
   }
 
   function isDateClosed(date) {
@@ -588,10 +652,38 @@
     { id: 'croissant_box_set', name: '🥐 Croissant Box Set', displayName: '(330 ฿)🥐 Croissant Box Set', price: 330, image: '/pic/croissant_box_set.png' }
   ];
 
+  const SOURDOUGHS = [
+    { id: 'country', name: 'Sourdough Country Bread', displayName: '(140 ฿) Sourdough Country Bread', price: 140, image: '/pic/sourdough_country_bread.jpg' },
+    { id: 'cranberry', name: 'Cranberry & Walnut Sourdough', displayName: '(155 ฿) Cranberry & Walnut Sourdough', price: 155, image: '/pic/cranberry_walnut_sourdough.jpg' },
+    { id: 'multigrain', name: 'Supper Multigrain Sourdough', displayName: '(150 ฿) Supper Multigrain Sourdough', price: 150, image: '/pic/supper_multigrain_sourdough.jpg' },
+    { id: 'darkrye', name: 'Dark Rye Sourdough', displayName: '(145 ฿) Dark Rye Sourdough', price: 145, image: '/pic/dark_rye_sourdough.png' },
+    { id: 'trio', name: 'Sourdough Trio Set', displayName: '(160 ฿) Sourdough Trio Set', price: 160, image: '/pic/sourdough_trio_set.png', isTrio: true }
+  ];
+
+  const TRIO_OPTIONS = [
+    'Sourdough Country Bread',
+    'Cranberry & Walnut Sourdough',
+    'Supper Multigrain Sourdough',
+    'Dark Rye Sourdough'
+  ];
+
+  const JAM_OPTIONS = ['Mixed Berry Jam', 'Apricot Jam'];
+
+  const EXTRAS = [
+    { id: 'extra_cream_cheese', name: 'Extra Cream Cheese', price: 30 },
+    { id: 'extra_mixed_berry_jam', name: 'Extra Mixed Berry Jam', price: 30 },
+    { id: 'extra_apricot_jam', name: 'Extra Apricot Jam', price: 30 }
+  ];
+
+  let trioSelections = [];
+  let selectedJam = '';
+
   const quantities = {};
   FLAVORS.forEach(f => quantities['flavor-' + f.id] = 0);
   SAUCES.forEach(s => quantities['sauce-' + s.id] = 0);
   CROISSANTS.forEach(c => quantities['croissant-' + c.id] = 0);
+  SOURDOUGHS.forEach(s => quantities['sourdough-' + s.id] = 0);
+  EXTRAS.forEach(e => quantities['extra-' + e.id] = 0);
 
   async function initLiff() {
     try {
@@ -666,6 +758,38 @@
       '</div>';
     }).join('');
 
+    const sourdoughList = document.getElementById("sourdoughList");
+    sourdoughList.innerHTML = SOURDOUGHS.map(s =>
+      '<div class="flavor-item">' +
+        '<div class="flavor-top">' +
+          '<img class="flavor-img" src="' + s.image + '" alt="' + s.name + '">' +
+          '<div class="qty-controls" data-key="sourdough-' + s.id + '">' +
+            '<button class="qty-btn" data-action="minus"></button>' +
+            '<span class="qty-value">0</span>' +
+            '<button class="qty-btn plus" data-action="plus"></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flavor-meta">' +
+          '<div class="flavor-name">' + s.displayName + '</div>' +
+        '</div>' +
+      '</div>'
+    ).join('');
+
+    const extraList = document.getElementById("extraList");
+    extraList.innerHTML = EXTRAS.map(e =>
+      '<div class="sauce-item">' +
+        '<div class="sauce-info">' +
+          '<div class="sauce-name">' + e.name + '</div>' +
+          '<div class="sauce-price">' + e.price + ' ฿</div>' +
+        '</div>' +
+        '<div class="qty-controls" data-key="extra-' + e.id + '">' +
+          '<button class="qty-btn" data-action="minus"></button>' +
+          '<span class="qty-value">0</span>' +
+          '<button class="qty-btn plus" data-action="plus"></button>' +
+        '</div>' +
+      '</div>'
+    ).join('');
+
     document.querySelectorAll('.qty-controls').forEach(ctrl => {
       const key = ctrl.dataset.key;
       const minusBtn = ctrl.querySelector('[data-action="minus"]');
@@ -684,6 +808,12 @@
           }
           renderCalendar();
         }
+        if (key === 'sourdough-trio') {
+          renderTrioSelections();
+        }
+        if (key.startsWith('sourdough-')) {
+          updateSpreadVisibility();
+        }
       };
 
       minusBtn.addEventListener('click', () => {
@@ -696,11 +826,90 @@
     });
   }
 
+  function renderTrioSelections() {
+    const container = document.getElementById('trioSelections');
+    const trioQty = quantities['sourdough-trio'];
+
+    if (trioQty <= 0) {
+      container.classList.add('hidden');
+      container.innerHTML = '';
+      trioSelections = [];
+      return;
+    }
+
+    while (trioSelections.length < trioQty) trioSelections.push(['', '', '']);
+    while (trioSelections.length > trioQty) trioSelections.pop();
+
+    let html = '';
+    for (let setIdx = 0; setIdx < trioQty; setIdx++) {
+      html += '<div class="trio-group">';
+      html += `<div class="trio-group-title">🍞 Trio Set ชุดที่ ${setIdx + 1} — เลือก 3 อัน</div>`;
+      for (let slot = 0; slot < 3; slot++) {
+        html += '<div class="trio-slot">';
+        html += `<div class="trio-slot-label">Sourdough #${slot + 1}</div>`;
+        html += `<select data-set="${setIdx}" data-slot="${slot}"><option value="">-- เลือก --</option>`;
+        TRIO_OPTIONS.forEach(opt => {
+          const sel = trioSelections[setIdx][slot] === opt ? 'selected' : '';
+          html += `<option value="${opt}" ${sel}>${opt}</option>`;
+        });
+        html += '</select></div>';
+      }
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+    container.classList.remove('hidden');
+
+    container.querySelectorAll('select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const setIdx = parseInt(sel.dataset.set);
+        const slot = parseInt(sel.dataset.slot);
+        trioSelections[setIdx][slot] = sel.value;
+      });
+    });
+  }
+
+  function hasSourdough() {
+    return SOURDOUGHS.some(s => quantities['sourdough-' + s.id] > 0);
+  }
+
+  function updateSpreadVisibility() {
+    const card = document.getElementById('spreadCard');
+    if (hasSourdough()) {
+      card.classList.remove('hidden');
+      if (!document.getElementById('jamSelect')) renderSpreadSection();
+    } else {
+      card.classList.add('hidden');
+      selectedJam = '';
+      EXTRAS.forEach(e => {
+        quantities['extra-' + e.id] = 0;
+        const el = document.querySelector(`[data-key="extra-${e.id}"]`);
+        if (el) el.querySelector('.qty-value').innerText = '0';
+      });
+      updateTotal();
+    }
+  }
+
+  function renderSpreadSection() {
+    let html = '<div class="spread-fixed"><span>Cream Cheese</span><span class="spread-fixed-badge">✓ แถมฟรี</span></div>';
+    html += '<div class="spread-jam"><div class="spread-jam-label">Jam (0 ฿)</div>';
+    html += '<select id="jamSelect"><option value="">-- เลือกแยม --</option>';
+    JAM_OPTIONS.forEach(j => html += `<option value="${j}">${j}</option>`);
+    html += '</select></div>';
+
+    document.getElementById('spreadSection').innerHTML = html;
+    document.getElementById('jamSelect').addEventListener('change', (e) => {
+      selectedJam = e.target.value;
+    });
+  }
+
   function updateTotal() {
     let total = 0;
     FLAVORS.forEach(f => total += f.price * quantities['flavor-' + f.id]);
     SAUCES.forEach(s => total += s.price * quantities['sauce-' + s.id]);
     CROISSANTS.forEach(c => total += c.price * quantities['croissant-' + c.id]);
+    SOURDOUGHS.forEach(s => total += s.price * quantities['sourdough-' + s.id]);
+    EXTRAS.forEach(e => total += e.price * quantities['extra-' + e.id]);
     if (deliveryMethod === 'delivery' && deliveryFee > 0) {
       total += deliveryFee;
     }
@@ -1018,9 +1227,27 @@
       .map(s => ({ name: s.name, price: s.price, qty: quantities['sauce-' + s.id] }));
     const croissants = CROISSANTS.filter(c => quantities['croissant-' + c.id] > 0)
       .map(c => ({ name: c.name, price: c.price, qty: quantities['croissant-' + c.id] }));
+    const sourdoughs = SOURDOUGHS.filter(s => quantities['sourdough-' + s.id] > 0)
+      .map(s => ({ name: s.name, price: s.price, qty: quantities['sourdough-' + s.id] }));
+    const extras = EXTRAS.filter(e => quantities['extra-' + e.id] > 0)
+      .map(e => ({ name: e.name, price: e.price, qty: quantities['extra-' + e.id] }));
 
-    if (flavors.length === 0 && croissants.length === 0) {
+    if (flavors.length === 0 && croissants.length === 0 && sourdoughs.length === 0) {
       showAlert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
+      return;
+    }
+
+    if (quantities['sourdough-trio'] > 0) {
+      for (let i = 0; i < trioSelections.length; i++) {
+        if (trioSelections[i].some(v => !v)) {
+          showAlert(`กรุณาเลือก Sourdough ให้ครบ 3 อัน ใน Trio Set ชุดที่ ${i + 1}`);
+          return;
+        }
+      }
+    }
+
+    if (hasSourdough() && !selectedJam) {
+      showAlert("กรุณาเลือกแยมสำหรับซาวร์โดว์");
       return;
     }
 
@@ -1056,12 +1283,17 @@
     flavors.forEach(f => itemsTotal += f.price * f.qty);
     sauces.forEach(s => itemsTotal += s.price * s.qty);
     croissants.forEach(c => itemsTotal += c.price * c.qty);
+    sourdoughs.forEach(s => itemsTotal += s.price * s.qty);
+    extras.forEach(e => itemsTotal += e.price * e.qty);
 
     const finalDeliveryFee = (deliveryMethod === 'delivery' && deliveryFee > 0) ? deliveryFee : 0;
     const total = itemsTotal + finalDeliveryFee;
 
     const data = {
-      userId, flavors, sauces, croissants, itemsTotal, deliveryFee: finalDeliveryFee,
+      userId, flavors, sauces, croissants, sourdoughs, extras,
+      trioSelections: quantities['sourdough-trio'] > 0 ? trioSelections : [],
+      jam: hasSourdough() ? selectedJam : '',
+      itemsTotal, deliveryFee: finalDeliveryFee,
       deliveryDistance, total, deliveryDate, deliveryMethod,
       name, phone, address, mapLink, note
     };
@@ -1146,6 +1378,23 @@
         `<span class="toggle-slider"></span></label></div>`;
     }
     document.getElementById('adminCroissants').innerHTML = croissantHtml;
+
+    const sourdoughNames = {
+      country: 'Sourdough Country Bread', cranberry: 'Cranberry & Walnut Sourdough',
+      multigrain: 'Supper Multigrain Sourdough', darkrye: 'Dark Rye Sourdough',
+      trio: 'Sourdough Trio Set'
+    };
+    if (!shopConfig.sourdoughs) {
+      shopConfig.sourdoughs = { country: true, cranberry: true, multigrain: true, darkrye: true, trio: true };
+    }
+    let sourdoughHtml = '';
+    for (const [id, name] of Object.entries(sourdoughNames)) {
+      const checked = shopConfig.sourdoughs[id] !== false ? 'checked' : '';
+      sourdoughHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
+        `<label class="toggle-switch"><input type="checkbox" data-type="sourdough" data-id="${id}" ${checked}>` +
+        `<span class="toggle-slider"></span></label></div>`;
+    }
+    document.getElementById('adminSourdoughs').innerHTML = sourdoughHtml;
 
     renderAdminDates('pickup');
     renderAdminDates('delivery');
@@ -1262,6 +1511,10 @@
     if (!shopConfig.croissants) shopConfig.croissants = {};
     document.querySelectorAll('[data-type="croissant"]').forEach(cb => {
       shopConfig.croissants[cb.dataset.id] = cb.checked;
+    });
+    if (!shopConfig.sourdoughs) shopConfig.sourdoughs = {};
+    document.querySelectorAll('[data-type="sourdough"]').forEach(cb => {
+      shopConfig.sourdoughs[cb.dataset.id] = cb.checked;
     });
     shopConfig.sameDayOrder = document.getElementById('sameDayToggle').checked;
 
