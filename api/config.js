@@ -18,6 +18,7 @@ const DEFAULT_CONFIG = {
   sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
   croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, croissant_box_set: true },
   sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, trio: true },
+  extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
   closedDates: { pickup: [], delivery: [] },
   sameDayOrder: false
 };

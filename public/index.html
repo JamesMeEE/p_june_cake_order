@@ -473,6 +473,11 @@
     </div>
 
     <div class="card">
+      <div class="admin-section">🧈 ครีมชีสและแยม (Cream Cheese &amp; Jam)</div>
+      <div id="adminExtras"></div>
+    </div>
+
+    <div class="card">
       <div class="admin-section">📅 วันหยุด - นัดรับ (Pickup)</div>
       <div class="admin-subtitle" style="margin-top:0;">กดที่วันในปฏิทินเพื่อเพิ่ม/ลบวันหยุด (สีแดง = วันหยุด)</div>
       <div id="adminPickupCalendar" class="calendar"></div>
@@ -519,6 +524,7 @@
         sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, croissant_box_set: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, trio: true },
+        extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
         closedDates: { pickup: [], delivery: [] },
         sameDayOrder: false
       };
@@ -607,6 +613,27 @@
         }
       });
     }
+
+    if (shopConfig.extras) {
+      EXTRAS.forEach(e => {
+        const available = shopConfig.extras[e.configId] !== false;
+        const el = document.querySelector(`[data-key="extra-${e.id}"]`);
+        if (!el) return;
+        const item = el.closest('.sauce-item');
+        if (!available) {
+          item.classList.add('sold-out');
+          if (!item.querySelector('.sold-out-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'sold-out-badge';
+            badge.innerText = 'ของหมดชั่วคราวค่ะ';
+            item.style.position = 'relative';
+            item.appendChild(badge);
+          }
+          quantities['extra-' + e.id] = 0;
+          el.querySelector('.qty-value').innerText = '0';
+        }
+      });
+    }
   }
 
   function isDateClosed(date) {
@@ -670,9 +697,9 @@
   const JAM_OPTIONS = ['Mixed Berry Jam', 'Apricot Jam'];
 
   const EXTRAS = [
-    { id: 'extra_cream_cheese', name: 'Extra Cream Cheese', price: 30 },
-    { id: 'extra_mixed_berry_jam', name: 'Extra Mixed Berry Jam', price: 30 },
-    { id: 'extra_apricot_jam', name: 'Extra Apricot Jam', price: 30 }
+    { id: 'extra_cream_cheese', configId: 'cream_cheese', name: 'Extra Cream Cheese', price: 30 },
+    { id: 'extra_mixed_berry_jam', configId: 'mixed_berry_jam', name: 'Extra Mixed Berry Jam', price: 30 },
+    { id: 'extra_apricot_jam', configId: 'apricot_jam', name: 'Extra Apricot Jam', price: 30 }
   ];
 
   let trioSelections = [];
@@ -891,16 +918,36 @@
   }
 
   function renderSpreadSection() {
-    let html = '<div class="spread-fixed"><span>Cream Cheese</span><span class="spread-fixed-badge">✓ แถมฟรี</span></div>';
+    const ccAvailable = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
+    const availableJams = JAM_OPTIONS.filter(j => {
+      if (!shopConfig || !shopConfig.extras) return true;
+      if (j === 'Mixed Berry Jam') return shopConfig.extras.mixed_berry_jam !== false;
+      if (j === 'Apricot Jam') return shopConfig.extras.apricot_jam !== false;
+      return true;
+    });
+
+    let html = '';
+    if (ccAvailable) {
+      html += '<div class="spread-fixed"><span>Cream Cheese</span><span class="spread-fixed-badge">✓ แถมฟรี</span></div>';
+    } else {
+      html += '<div class="spread-fixed" style="border-color:#ccc;background:#f5f5f5;opacity:0.5;"><span>Cream Cheese</span><span class="spread-fixed-badge">ของหมดชั่วคราวค่ะ</span></div>';
+    }
+
     html += '<div class="spread-jam"><div class="spread-jam-label">Jam (0 ฿)</div>';
-    html += '<select id="jamSelect"><option value="">-- เลือกแยม --</option>';
-    JAM_OPTIONS.forEach(j => html += `<option value="${j}">${j}</option>`);
-    html += '</select></div>';
+    if (availableJams.length === 0) {
+      html += '<div style="font-size:13px;color:#999;padding:10px;">แยมหมดชั่วคราวค่ะ</div>';
+    } else {
+      html += '<select id="jamSelect"><option value="">-- เลือกแยม --</option>';
+      availableJams.forEach(j => html += `<option value="${j}">${j}</option>`);
+      html += '</select>';
+    }
+    html += '</div>';
 
     document.getElementById('spreadSection').innerHTML = html;
-    document.getElementById('jamSelect').addEventListener('change', (e) => {
-      selectedJam = e.target.value;
-    });
+    const jamSel = document.getElementById('jamSelect');
+    if (jamSel) {
+      jamSel.addEventListener('change', (e) => { selectedJam = e.target.value; });
+    }
   }
 
   function updateTotal() {
@@ -1246,7 +1293,7 @@
       }
     }
 
-    if (hasSourdough() && !selectedJam) {
+    if (hasSourdough() && !selectedJam && document.getElementById('jamSelect')) {
       showAlert("กรุณาเลือกแยมสำหรับซาวร์โดว์");
       return;
     }
@@ -1396,6 +1443,23 @@
     }
     document.getElementById('adminSourdoughs').innerHTML = sourdoughHtml;
 
+    const extraNames = {
+      cream_cheese: 'Cream Cheese',
+      mixed_berry_jam: 'Mixed Berry Jam',
+      apricot_jam: 'Apricot Jam'
+    };
+    if (!shopConfig.extras) {
+      shopConfig.extras = { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true };
+    }
+    let extraHtml = '';
+    for (const [id, name] of Object.entries(extraNames)) {
+      const checked = shopConfig.extras[id] !== false ? 'checked' : '';
+      extraHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
+        `<label class="toggle-switch"><input type="checkbox" data-type="extra" data-id="${id}" ${checked}>` +
+        `<span class="toggle-slider"></span></label></div>`;
+    }
+    document.getElementById('adminExtras').innerHTML = extraHtml;
+
     renderAdminDates('pickup');
     renderAdminDates('delivery');
     initAdminCalendarMonth('pickup');
@@ -1515,6 +1579,10 @@
     if (!shopConfig.sourdoughs) shopConfig.sourdoughs = {};
     document.querySelectorAll('[data-type="sourdough"]').forEach(cb => {
       shopConfig.sourdoughs[cb.dataset.id] = cb.checked;
+    });
+    if (!shopConfig.extras) shopConfig.extras = {};
+    document.querySelectorAll('[data-type="extra"]').forEach(cb => {
+      shopConfig.extras[cb.dataset.id] = cb.checked;
     });
     shopConfig.sameDayOrder = document.getElementById('sameDayToggle').checked;
 
