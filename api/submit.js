@@ -47,7 +47,7 @@ async function appendToSheet(data) {
         lines.push(`  Trio #${i + 1}: ${set.join(', ')}`);
       });
     }
-    if (data.creamCheeseQty > 0) lines.push(`Cream Cheese x ${data.creamCheeseQty}`);
+    if (data.creamCheese) lines.push('Cream Cheese (แถมฟรี)');
     if (data.jams && data.jams.length > 0) {
       data.jams.forEach(j => lines.push(`${j.name} x ${j.qty}`));
     }
@@ -196,10 +196,10 @@ function buildFlexMessage(data) {
     });
   }
 
-  if (data.creamCheeseQty > 0) {
+  if (data.creamCheese) {
     orderLines.push({
       type: 'text',
-      text: `ครีมชีส (Cream Cheese) x ${data.creamCheeseQty} อัน`,
+      text: 'ครีมชีส (Cream Cheese): แถมฟรี',
       size: 'sm',
       wrap: true
     });

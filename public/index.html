@@ -924,6 +924,12 @@
     return count;
   }
 
+  function sourdoughUnitCount() {
+    let count = 0;
+    SOURDOUGHS.forEach(s => count += quantities['sourdough-' + s.id]);
+    return count;
+  }
+
   function hasSourdough() {
     return sourdoughCount() > 0;
   }
@@ -952,12 +958,8 @@
   }
 
   function renderSpreadSection() {
-    const maxQty = sourdoughCount();
+    const maxQty = sourdoughUnitCount();
     const ccAvailable = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
-
-    if (!ccAvailable) creamCheeseQty = 0;
-    if (creamCheeseQty > maxQty) creamCheeseQty = maxQty;
-    if (ccAvailable && creamCheeseQty === 0 && !spreadInitialized) creamCheeseQty = maxQty;
 
     JAM_OPTIONS.forEach(j => {
       const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
@@ -969,20 +971,11 @@
       }
     }
 
-    let html = '<div class="spread-sub">Cream Cheese (0 ฿)</div>';
+    let html = '<div class="spread-sub" style="margin-top:0;">Cream Cheese (0 ฿)</div>';
     if (ccAvailable) {
-      html += '<div class="spread-row"><div class="spread-row-info">' +
-        '<div class="spread-row-name">Cream Cheese</div>' +
-        '<div class="spread-row-price">0 ฿</div></div>' +
-        '<div class="qty-controls" data-spread="cream">' +
-          '<button class="qty-btn" data-action="minus"></button>' +
-          `<span class="qty-value">${creamCheeseQty}</span>` +
-          '<button class="qty-btn plus" data-action="plus"></button>' +
-        '</div></div>';
+      html += '<div class="spread-fixed"><span>Cream Cheese</span><span class="spread-fixed-badge">✓ แถมฟรี</span></div>';
     } else {
-      html += '<div class="spread-row" style="opacity:0.4;"><div class="spread-row-info">' +
-        '<div class="spread-row-name">Cream Cheese</div>' +
-        '<div class="spread-row-price">ของหมดชั่วคราวค่ะ</div></div></div>';
+      html += '<div class="spread-fixed" style="border-color:#ccc;background:#f5f5f5;opacity:0.5;"><span>Cream Cheese</span><span class="spread-fixed-badge">ของหมดชั่วคราวค่ะ</span></div>';
     }
 
     html += `<div class="spread-note" style="margin-top:14px;">📌 เลือกได้สูงสุด ${maxQty} อัน (ตามจำนวนซาวร์โดว์)</div>`;
@@ -1008,45 +1001,29 @@
     document.getElementById('spreadSection').innerHTML = html;
 
     document.querySelectorAll('[data-spread]').forEach(ctrl => {
-      const key = ctrl.dataset.spread;
+      const jamId = ctrl.dataset.spread.replace('jam-', '');
       const minusBtn = ctrl.querySelector('[data-action="minus"]');
       const plusBtn = ctrl.querySelector('[data-action="plus"]');
-      const valueEl = ctrl.querySelector('.qty-value');
-
-      const getVal = () => key === 'cream' ? creamCheeseQty : jamQty[key.replace('jam-', '')];
-      const setVal = (v) => {
-        if (key === 'cream') creamCheeseQty = v;
-        else jamQty[key.replace('jam-', '')] = v;
-      };
-      const canAdd = () => key === 'cream' ? creamCheeseQty < maxQty : jamTotal() < maxQty;
-
-      const sync = () => {
-        valueEl.innerText = getVal();
-        minusBtn.disabled = getVal() <= 0;
-        plusBtn.disabled = !canAdd();
-      };
 
       minusBtn.addEventListener('click', () => {
-        if (getVal() > 0) { setVal(getVal() - 1); refreshSpreadButtons(); }
+        if (jamQty[jamId] > 0) { jamQty[jamId]--; refreshSpreadButtons(); }
       });
       plusBtn.addEventListener('click', () => {
-        if (canAdd()) { setVal(getVal() + 1); refreshSpreadButtons(); }
+        if (jamTotal() < maxQty) { jamQty[jamId]++; refreshSpreadButtons(); }
       });
-      sync();
     });
 
+    refreshSpreadButtons();
     spreadInitialized = true;
   }
 
   function refreshSpreadButtons() {
-    const maxQty = sourdoughCount();
+    const maxQty = sourdoughUnitCount();
     document.querySelectorAll('[data-spread]').forEach(ctrl => {
-      const key = ctrl.dataset.spread;
-      const val = key === 'cream' ? creamCheeseQty : jamQty[key.replace('jam-', '')];
-      const canAdd = key === 'cream' ? creamCheeseQty < maxQty : jamTotal() < maxQty;
-      ctrl.querySelector('.qty-value').innerText = val;
-      ctrl.querySelector('[data-action="minus"]').disabled = val <= 0;
-      ctrl.querySelector('[data-action="plus"]').disabled = !canAdd;
+      const jamId = ctrl.dataset.spread.replace('jam-', '');
+      ctrl.querySelector('.qty-value').innerText = jamQty[jamId];
+      ctrl.querySelector('[data-action="minus"]').disabled = jamQty[jamId] <= 0;
+      ctrl.querySelector('[data-action="plus"]').disabled = jamTotal() >= maxQty;
     });
   }
 
@@ -1394,9 +1371,9 @@
     }
 
     if (hasSourdough()) {
-      const maxQty = sourdoughCount();
-      if (creamCheeseQty + 0 === 0 && jamTotal() === 0) {
-        showAlert("กรุณาเลือกครีมชีสหรือแยมอย่างน้อย 1 อัน");
+      const maxQty = sourdoughUnitCount();
+      if (jamTotal() === 0 && document.querySelector('[data-spread]')) {
+        showAlert("กรุณาเลือกแยมอย่างน้อย 1 อัน");
         return;
       }
       if (jamTotal() > maxQty) {
@@ -1446,7 +1423,7 @@
     const data = {
       userId, flavors, sauces, croissants, sourdoughs, extras,
       trioSelections: quantities['sourdough-trio'] > 0 ? trioSelections : [],
-      creamCheeseQty: hasSourdough() ? creamCheeseQty : 0,
+      creamCheese: hasSourdough() && (!shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false),
       jams: hasSourdough()
         ? JAM_OPTIONS.filter(j => jamQty[j.id] > 0).map(j => ({ name: j.name, qty: jamQty[j.id] }))
         : [],
