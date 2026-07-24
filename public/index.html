@@ -969,9 +969,7 @@
       }
     }
 
-    let html = `<div class="spread-note">📌 เลือกได้สูงสุด ${maxQty} อัน (ตามจำนวนซาวร์โดว์)</div>`;
-
-    html += '<div class="spread-sub">Cream Cheese (0 ฿)</div>';
+    let html = '<div class="spread-sub">Cream Cheese (0 ฿)</div>';
     if (ccAvailable) {
       html += '<div class="spread-row"><div class="spread-row-info">' +
         '<div class="spread-row-name">Cream Cheese</div>' +
@@ -987,7 +985,8 @@
         '<div class="spread-row-price">ของหมดชั่วคราวค่ะ</div></div></div>';
     }
 
-    html += '<div class="spread-sub">Jam (0 ฿)</div>';
+    html += `<div class="spread-note" style="margin-top:14px;">📌 เลือกได้สูงสุด ${maxQty} อัน (ตามจำนวนซาวร์โดว์)</div>`;
+    html += '<div class="spread-sub" style="margin-top:0;">Jam (0 ฿)</div>';
     JAM_OPTIONS.forEach(j => {
       const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
       if (avail) {
