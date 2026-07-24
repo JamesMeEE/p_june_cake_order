@@ -124,6 +124,20 @@
     font-size: 14px; font-family: inherit; background: white;
   }
 
+  .spread-note {
+    font-size: 12px; color: #8a623f; background: #fff5e8;
+    padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; font-weight: 600;
+  }
+  .spread-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid #f0f0f0; gap: 12px;
+  }
+  .spread-row:last-child { border-bottom: none; }
+  .spread-row-info { flex: 1; }
+  .spread-row-name { font-size: 14px; font-weight: 600; }
+  .spread-row-price { color: #06c755; font-weight: bold; font-size: 13px; margin-top: 2px; }
+  .spread-sub { font-weight: bold; font-size: 14px; margin: 14px 0 6px; color: #4b3619; }
+
   .spread-fixed {
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px; border: 2px solid #8a623f; background: #fff5e8;
@@ -694,7 +708,10 @@
     'Dark Rye Sourdough'
   ];
 
-  const JAM_OPTIONS = ['Mixed Berry Jam', 'Apricot Jam'];
+  const JAM_OPTIONS = [
+    { id: 'mixed_berry', name: 'Mixed Berry Jam', configId: 'mixed_berry_jam' },
+    { id: 'apricot', name: 'Apricot Jam', configId: 'apricot_jam' }
+  ];
 
   const EXTRAS = [
     { id: 'extra_cream_cheese', configId: 'cream_cheese', name: 'Extra Cream Cheese', price: 30 },
@@ -703,7 +720,9 @@
   ];
 
   let trioSelections = [];
-  let selectedJam = '';
+  let creamCheeseQty = 0;
+  let spreadInitialized = false;
+  const jamQty = { mixed_berry: 0, apricot: 0 };
 
   const quantities = {};
   FLAVORS.forEach(f => quantities['flavor-' + f.id] = 0);
@@ -896,18 +915,33 @@
     });
   }
 
+  function sourdoughCount() {
+    let count = 0;
+    SOURDOUGHS.forEach(s => {
+      const q = quantities['sourdough-' + s.id];
+      count += s.isTrio ? q * 3 : q;
+    });
+    return count;
+  }
+
   function hasSourdough() {
-    return SOURDOUGHS.some(s => quantities['sourdough-' + s.id] > 0);
+    return sourdoughCount() > 0;
+  }
+
+  function jamTotal() {
+    return JAM_OPTIONS.reduce((sum, j) => sum + jamQty[j.id], 0);
   }
 
   function updateSpreadVisibility() {
     const card = document.getElementById('spreadCard');
     if (hasSourdough()) {
       card.classList.remove('hidden');
-      if (!document.getElementById('jamSelect')) renderSpreadSection();
+      renderSpreadSection();
     } else {
       card.classList.add('hidden');
-      selectedJam = '';
+      creamCheeseQty = 0;
+      spreadInitialized = false;
+      JAM_OPTIONS.forEach(j => jamQty[j.id] = 0);
       EXTRAS.forEach(e => {
         quantities['extra-' + e.id] = 0;
         const el = document.querySelector(`[data-key="extra-${e.id}"]`);
@@ -918,36 +952,103 @@
   }
 
   function renderSpreadSection() {
+    const maxQty = sourdoughCount();
     const ccAvailable = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
-    const availableJams = JAM_OPTIONS.filter(j => {
-      if (!shopConfig || !shopConfig.extras) return true;
-      if (j === 'Mixed Berry Jam') return shopConfig.extras.mixed_berry_jam !== false;
-      if (j === 'Apricot Jam') return shopConfig.extras.apricot_jam !== false;
-      return true;
+
+    if (!ccAvailable) creamCheeseQty = 0;
+    if (creamCheeseQty > maxQty) creamCheeseQty = maxQty;
+    if (ccAvailable && creamCheeseQty === 0 && !spreadInitialized) creamCheeseQty = maxQty;
+
+    JAM_OPTIONS.forEach(j => {
+      const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
+      if (!avail) jamQty[j.id] = 0;
+    });
+    while (jamTotal() > maxQty) {
+      for (const j of JAM_OPTIONS) {
+        if (jamQty[j.id] > 0) { jamQty[j.id]--; break; }
+      }
+    }
+
+    let html = `<div class="spread-note">📌 เลือกได้สูงสุด ${maxQty} อัน (ตามจำนวนซาวร์โดว์)</div>`;
+
+    html += '<div class="spread-sub">Cream Cheese (0 ฿)</div>';
+    if (ccAvailable) {
+      html += '<div class="spread-row"><div class="spread-row-info">' +
+        '<div class="spread-row-name">Cream Cheese</div>' +
+        '<div class="spread-row-price">0 ฿</div></div>' +
+        '<div class="qty-controls" data-spread="cream">' +
+          '<button class="qty-btn" data-action="minus"></button>' +
+          `<span class="qty-value">${creamCheeseQty}</span>` +
+          '<button class="qty-btn plus" data-action="plus"></button>' +
+        '</div></div>';
+    } else {
+      html += '<div class="spread-row" style="opacity:0.4;"><div class="spread-row-info">' +
+        '<div class="spread-row-name">Cream Cheese</div>' +
+        '<div class="spread-row-price">ของหมดชั่วคราวค่ะ</div></div></div>';
+    }
+
+    html += '<div class="spread-sub">Jam (0 ฿)</div>';
+    JAM_OPTIONS.forEach(j => {
+      const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
+      if (avail) {
+        html += '<div class="spread-row"><div class="spread-row-info">' +
+          `<div class="spread-row-name">${j.name}</div>` +
+          '<div class="spread-row-price">0 ฿</div></div>' +
+          `<div class="qty-controls" data-spread="jam-${j.id}">` +
+            '<button class="qty-btn" data-action="minus"></button>' +
+            `<span class="qty-value">${jamQty[j.id]}</span>` +
+            '<button class="qty-btn plus" data-action="plus"></button>' +
+          '</div></div>';
+      } else {
+        html += '<div class="spread-row" style="opacity:0.4;"><div class="spread-row-info">' +
+          `<div class="spread-row-name">${j.name}</div>` +
+          '<div class="spread-row-price">ของหมดชั่วคราวค่ะ</div></div></div>';
+      }
     });
 
-    let html = '';
-    if (ccAvailable) {
-      html += '<div class="spread-fixed"><span>Cream Cheese</span><span class="spread-fixed-badge">✓ แถมฟรี</span></div>';
-    } else {
-      html += '<div class="spread-fixed" style="border-color:#ccc;background:#f5f5f5;opacity:0.5;"><span>Cream Cheese</span><span class="spread-fixed-badge">ของหมดชั่วคราวค่ะ</span></div>';
-    }
-
-    html += '<div class="spread-jam"><div class="spread-jam-label">Jam (0 ฿)</div>';
-    if (availableJams.length === 0) {
-      html += '<div style="font-size:13px;color:#999;padding:10px;">แยมหมดชั่วคราวค่ะ</div>';
-    } else {
-      html += '<select id="jamSelect"><option value="">-- เลือกแยม --</option>';
-      availableJams.forEach(j => html += `<option value="${j}">${j}</option>`);
-      html += '</select>';
-    }
-    html += '</div>';
-
     document.getElementById('spreadSection').innerHTML = html;
-    const jamSel = document.getElementById('jamSelect');
-    if (jamSel) {
-      jamSel.addEventListener('change', (e) => { selectedJam = e.target.value; });
-    }
+
+    document.querySelectorAll('[data-spread]').forEach(ctrl => {
+      const key = ctrl.dataset.spread;
+      const minusBtn = ctrl.querySelector('[data-action="minus"]');
+      const plusBtn = ctrl.querySelector('[data-action="plus"]');
+      const valueEl = ctrl.querySelector('.qty-value');
+
+      const getVal = () => key === 'cream' ? creamCheeseQty : jamQty[key.replace('jam-', '')];
+      const setVal = (v) => {
+        if (key === 'cream') creamCheeseQty = v;
+        else jamQty[key.replace('jam-', '')] = v;
+      };
+      const canAdd = () => key === 'cream' ? creamCheeseQty < maxQty : jamTotal() < maxQty;
+
+      const sync = () => {
+        valueEl.innerText = getVal();
+        minusBtn.disabled = getVal() <= 0;
+        plusBtn.disabled = !canAdd();
+      };
+
+      minusBtn.addEventListener('click', () => {
+        if (getVal() > 0) { setVal(getVal() - 1); refreshSpreadButtons(); }
+      });
+      plusBtn.addEventListener('click', () => {
+        if (canAdd()) { setVal(getVal() + 1); refreshSpreadButtons(); }
+      });
+      sync();
+    });
+
+    spreadInitialized = true;
+  }
+
+  function refreshSpreadButtons() {
+    const maxQty = sourdoughCount();
+    document.querySelectorAll('[data-spread]').forEach(ctrl => {
+      const key = ctrl.dataset.spread;
+      const val = key === 'cream' ? creamCheeseQty : jamQty[key.replace('jam-', '')];
+      const canAdd = key === 'cream' ? creamCheeseQty < maxQty : jamTotal() < maxQty;
+      ctrl.querySelector('.qty-value').innerText = val;
+      ctrl.querySelector('[data-action="minus"]').disabled = val <= 0;
+      ctrl.querySelector('[data-action="plus"]').disabled = !canAdd;
+    });
   }
 
   function updateTotal() {
@@ -1293,9 +1394,16 @@
       }
     }
 
-    if (hasSourdough() && !selectedJam && document.getElementById('jamSelect')) {
-      showAlert("กรุณาเลือกแยมสำหรับซาวร์โดว์");
-      return;
+    if (hasSourdough()) {
+      const maxQty = sourdoughCount();
+      if (creamCheeseQty + 0 === 0 && jamTotal() === 0) {
+        showAlert("กรุณาเลือกครีมชีสหรือแยมอย่างน้อย 1 อัน");
+        return;
+      }
+      if (jamTotal() > maxQty) {
+        showAlert(`เลือกแยมได้สูงสุด ${maxQty} อัน`);
+        return;
+      }
     }
 
     const deliveryDate = buildDeliveryDate();
@@ -1339,7 +1447,10 @@
     const data = {
       userId, flavors, sauces, croissants, sourdoughs, extras,
       trioSelections: quantities['sourdough-trio'] > 0 ? trioSelections : [],
-      jam: hasSourdough() ? selectedJam : '',
+      creamCheeseQty: hasSourdough() ? creamCheeseQty : 0,
+      jams: hasSourdough()
+        ? JAM_OPTIONS.filter(j => jamQty[j.id] > 0).map(j => ({ name: j.name, qty: jamQty[j.id] }))
+        : [],
       itemsTotal, deliveryFee: finalDeliveryFee,
       deliveryDistance, total, deliveryDate, deliveryMethod,
       name, phone, address, mapLink, note

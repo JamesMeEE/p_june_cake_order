@@ -47,7 +47,10 @@ async function appendToSheet(data) {
         lines.push(`  Trio #${i + 1}: ${set.join(', ')}`);
       });
     }
-    if (data.jam) lines.push(`Cream Cheese + ${data.jam}`);
+    if (data.creamCheeseQty > 0) lines.push(`Cream Cheese x ${data.creamCheeseQty}`);
+    if (data.jams && data.jams.length > 0) {
+      data.jams.forEach(j => lines.push(`${j.name} x ${j.qty}`));
+    }
     sourdoughsText = lines.join('\n');
   }
 
@@ -193,12 +196,23 @@ function buildFlexMessage(data) {
     });
   }
 
-  if (data.jam) {
+  if (data.creamCheeseQty > 0) {
     orderLines.push({
       type: 'text',
-      text: `ครีมชีสและแยม: Cream Cheese + ${data.jam}`,
+      text: `ครีมชีส (Cream Cheese) x ${data.creamCheeseQty} อัน`,
       size: 'sm',
       wrap: true
+    });
+  }
+
+  if (data.jams && data.jams.length > 0) {
+    data.jams.forEach(j => {
+      orderLines.push({
+        type: 'text',
+        text: `แยม (Jam): ${j.name} x ${j.qty} อัน`,
+        size: 'sm',
+        wrap: true
+      });
     });
   }
 
