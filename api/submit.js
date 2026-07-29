@@ -42,11 +42,6 @@ async function appendToSheet(data) {
   let sourdoughsText = '-';
   if (data.sourdoughs && data.sourdoughs.length > 0) {
     const lines = data.sourdoughs.map(s => `${s.name} x ${s.qty} ชิ้น`);
-    if (data.trioSelections && data.trioSelections.length > 0) {
-      data.trioSelections.forEach((set, i) => {
-        lines.push(`  Trio #${i + 1}: ${set.join(', ')}`);
-      });
-    }
     if (data.creamCheese) lines.push('Cream Cheese (แถมฟรี)');
     if (data.jams && data.jams.length > 0) {
       data.jams.forEach(j => lines.push(`${j.name} x ${j.qty}`));
@@ -59,7 +54,7 @@ async function appendToSheet(data) {
     : '-';
 
   const sandwichesText = (data.sandwiches && data.sandwiches.length > 0)
-    ? data.sandwiches.map(s => `${s.name} (${s.bread}) x ${s.qty} ชิ้น`).join('\n')
+    ? data.sandwiches.map(s => `${s.name} x ${s.qty} ชิ้น (${summarizeBreads(s.breads)})`).join('\n')
     : '-';
 
   await sheets.spreadsheets.values.append({
@@ -139,6 +134,12 @@ async function sendOrderSummary(data) {
   await sendLineMessage(data.userId, { type: 'text', text: paymentText });
 }
 
+function summarizeBreads(breads) {
+  const counts = {};
+  breads.forEach(b => { counts[b] = (counts[b] || 0) + 1; });
+  return Object.entries(counts).map(([name, n]) => `${name} x${n}`).join(', ');
+}
+
 function buildFlexMessage(data) {
   const blank = { type: 'text', text: ' ', size: 'sm' };
   const brown = '#6b4a26';
@@ -191,23 +192,12 @@ function buildFlexMessage(data) {
 
   if (data.sandwiches && data.sandwiches.length > 0) {
     data.sandwiches.forEach(s => {
+      const breadSummary = summarizeBreads(s.breads);
       orderLines.push({
         type: 'text',
-        text: `แซนด์วิช (Sandwich): ${s.name} (${s.bread}) x ${s.qty} ชิ้น`,
+        text: `แซนด์วิช (Sandwich): ${s.name} x ${s.qty} ชิ้น (${breadSummary})`,
         size: 'sm',
         wrap: true
-      });
-    });
-  }
-
-  if (data.trioSelections && data.trioSelections.length > 0) {
-    data.trioSelections.forEach((set, i) => {
-      orderLines.push({
-        type: 'text',
-        text: `  └ Trio Set #${i + 1}: ${set.join(', ')}`,
-        size: 'xs',
-        wrap: true,
-        color: '#888888'
       });
     });
   }

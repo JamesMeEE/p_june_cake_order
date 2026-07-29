@@ -147,6 +147,9 @@
     cursor: pointer; text-align: center; font-family: inherit; transition: 0.15s;
   }
   .bread-opt.active { border-color: #8a623f; background: #8a623f; color: white; }
+  .bread-piece { margin-bottom: 8px; }
+  .bread-piece:last-child { margin-bottom: 0; }
+  .bread-piece-num { font-size: 12px; font-weight: 700; color: #8a623f; margin-bottom: 4px; }
 
   .spread-fixed {
     display: flex; align-items: center; justify-content: space-between;
@@ -359,11 +362,7 @@
     <div class="label">ซาวร์โดว์ (Sourdough)</div>
     <div class="label" style="font-size:14px;color:#4b3619;">ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)</div>
     <div id="sourdoughList"></div>
-    <div id="trioSelections" class="hidden"></div>
-  </div>
-
-  <div class="card">
-    <div class="label">ซาวร์โดว์แซนด์วิชเปิดหน้า (Sourdough Open Sandwich)</div>
+    <div class="label" style="font-size:14px;color:#4b3619;margin-top:16px;">ซาวร์โดว์แซนด์วิชเปิดหน้า (Sourdough Open Sandwich)</div>
     <div id="sandwichList"></div>
   </div>
 
@@ -557,7 +556,7 @@
         flavors: { original: true, valrhona: true },
         sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
-        sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, trio: true },
+        sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true },
         sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true },
         extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
         closedDates: { pickup: [], delivery: [] },
@@ -748,15 +747,7 @@
     { id: 'country', name: 'Sourdough Country Bread', displayName: '(145 ฿) Sourdough Country Bread', price: 145, image: '/pic/sourdough_country_bread.jpg' },
     { id: 'cranberry', name: 'Cranberry & Walnut Sourdough', displayName: '(160 ฿) Cranberry & Walnut Sourdough', price: 160, image: '/pic/cranberry_walnut_sourdough.jpg' },
     { id: 'multigrain', name: 'Supper Multigrain Sourdough', displayName: '(155 ฿) Supper Multigrain Sourdough', price: 155, image: '/pic/supper_multigrain_sourdough.jpg' },
-    { id: 'darkrye', name: 'Dark Rye Sourdough', displayName: '(160 ฿) Dark Rye Sourdough', price: 160, image: '/pic/dark_rye_sourdough.png' },
-    { id: 'trio', name: 'Sourdough Trio Set', displayName: '(165 ฿) Sourdough Trio Set', price: 165, image: '/pic/sourdough_trio_set.png', isTrio: true }
-  ];
-
-  const TRIO_OPTIONS = [
-    'Sourdough Country Bread',
-    'Cranberry & Walnut Sourdough',
-    'Supper Multigrain Sourdough',
-    'Dark Rye Sourdough'
+    { id: 'darkrye', name: 'Dark Rye Sourdough', displayName: '(160 ฿) Dark Rye Sourdough', price: 160, image: '/pic/dark_rye_sourdough.png' }
   ];
 
   const JAM_OPTIONS = [
@@ -770,7 +761,6 @@
     { id: 'extra_apricot_jam', configId: 'apricot_jam', name: 'Extra Apricot Jam', price: 30 }
   ];
 
-  let trioSelections = [];
   let creamCheeseQty = 0;
   let spreadInitialized = false;
   const jamQty = { mixed_berry: 0, apricot: 0 };
@@ -784,7 +774,7 @@
   EXTRAS.forEach(e => quantities['extra-' + e.id] = 0);
 
   const sandwichBread = {};
-  SANDWICHES.forEach(s => sandwichBread[s.id] = 'normal');
+  SANDWICHES.forEach(s => sandwichBread[s.id] = []);
 
   async function initLiff() {
     try {
@@ -905,25 +895,9 @@
         '<div class="flavor-meta">' +
           '<div class="flavor-name">' + s.displayName + '</div>' +
         '</div>' +
-        '<div class="bread-choice hidden" data-bread-for="' + s.id + '">' +
-          '<div class="bread-choice-label">เลือกแป้งขนมปัง</div>' +
-          '<div class="bread-options">' +
-            '<button type="button" class="bread-opt active" data-sandwich="' + s.id + '" data-bread="normal">ธรรมดา</button>' +
-            '<button type="button" class="bread-opt" data-sandwich="' + s.id + '" data-bread="supper">Supper Multigrain (+5฿)</button>' +
-          '</div>' +
-        '</div>' +
+        '<div class="bread-choice hidden" data-bread-for="' + s.id + '"></div>' +
       '</div>'
     ).join('');
-
-    document.querySelectorAll('.bread-opt').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const sid = btn.dataset.sandwich;
-        sandwichBread[sid] = btn.dataset.bread;
-        document.querySelectorAll(`.bread-opt[data-sandwich="${sid}"]`).forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        updateTotal();
-      });
-    });
 
     document.querySelectorAll('.qty-controls').forEach(ctrl => {
       const key = ctrl.dataset.key;
@@ -943,16 +917,12 @@
           }
           renderCalendar();
         }
-        if (key === 'sourdough-trio') {
-          renderTrioSelections();
-        }
         if (key.startsWith('sourdough-')) {
           updateSpreadVisibility();
         }
         if (key.startsWith('sandwich-')) {
           const sid = key.replace('sandwich-', '');
-          const breadEl = document.querySelector(`[data-bread-for="${sid}"]`);
-          if (breadEl) breadEl.classList.toggle('hidden', quantities[key] <= 0);
+          renderBreadChoice(sid);
         }
       };
 
@@ -966,54 +936,11 @@
     });
   }
 
-  function renderTrioSelections() {
-    const container = document.getElementById('trioSelections');
-    const trioQty = quantities['sourdough-trio'];
-
-    if (trioQty <= 0) {
-      container.classList.add('hidden');
-      container.innerHTML = '';
-      trioSelections = [];
-      return;
-    }
-
-    while (trioSelections.length < trioQty) trioSelections.push(['', '', '']);
-    while (trioSelections.length > trioQty) trioSelections.pop();
-
-    let html = '';
-    for (let setIdx = 0; setIdx < trioQty; setIdx++) {
-      html += '<div class="trio-group">';
-      html += `<div class="trio-group-title">🍞 Trio Set ชุดที่ ${setIdx + 1} — เลือก 3 อัน</div>`;
-      for (let slot = 0; slot < 3; slot++) {
-        html += '<div class="trio-slot">';
-        html += `<div class="trio-slot-label">Sourdough #${slot + 1}</div>`;
-        html += `<select data-set="${setIdx}" data-slot="${slot}"><option value="">-- เลือก --</option>`;
-        TRIO_OPTIONS.forEach(opt => {
-          const sel = trioSelections[setIdx][slot] === opt ? 'selected' : '';
-          html += `<option value="${opt}" ${sel}>${opt}</option>`;
-        });
-        html += '</select></div>';
-      }
-      html += '</div>';
-    }
-
-    container.innerHTML = html;
-    container.classList.remove('hidden');
-
-    container.querySelectorAll('select').forEach(sel => {
-      sel.addEventListener('change', () => {
-        const setIdx = parseInt(sel.dataset.set);
-        const slot = parseInt(sel.dataset.slot);
-        trioSelections[setIdx][slot] = sel.value;
-      });
-    });
-  }
-
   function sourdoughCount() {
     let count = 0;
     SOURDOUGHS.forEach(s => {
       const q = quantities['sourdough-' + s.id];
-      count += s.isTrio ? q * 3 : q;
+      count += q;
     });
     return count;
   }
@@ -1121,6 +1048,45 @@
     });
   }
 
+  function renderBreadChoice(sid) {
+    const qty = quantities['sandwich-' + sid];
+    const container = document.querySelector(`[data-bread-for="${sid}"]`);
+    if (!container) return;
+
+    if (qty <= 0) {
+      container.classList.add('hidden');
+      container.innerHTML = '';
+      sandwichBread[sid] = [];
+      return;
+    }
+
+    while (sandwichBread[sid].length < qty) sandwichBread[sid].push('normal');
+    while (sandwichBread[sid].length > qty) sandwichBread[sid].pop();
+
+    let html = '<div class="bread-choice-label">เลือกแป้งขนมปัง</div>';
+    for (let i = 0; i < qty; i++) {
+      const cur = sandwichBread[sid][i];
+      html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
+      html += '<div class="bread-options">';
+      html += `<button type="button" class="bread-opt ${cur === 'normal' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="normal">Country Bread</button>`;
+      html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">Supper Multigrain (+5฿)</button>`;
+      html += '</div></div>';
+    }
+
+    container.innerHTML = html;
+    container.classList.remove('hidden');
+
+    container.querySelectorAll('.bread-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const piece = parseInt(btn.dataset.piece);
+        sandwichBread[sid][piece] = btn.dataset.bread;
+        container.querySelectorAll(`.bread-opt[data-piece="${piece}"]`).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateTotal();
+      });
+    });
+  }
+
   function updateTotal() {
     let total = 0;
     FLAVORS.forEach(f => total += f.price * quantities['flavor-' + f.id]);
@@ -1130,7 +1096,8 @@
     SANDWICHES.forEach(s => {
       const q = quantities['sandwich-' + s.id];
       total += s.price * q;
-      if (sandwichBread[s.id] === 'supper') total += SUPPER_UPGRADE_PRICE * q;
+      const breads = sandwichBread[s.id] || [];
+      breads.forEach(b => { if (b === 'supper') total += SUPPER_UPGRADE_PRICE; });
     });
     EXTRAS.forEach(e => total += e.price * quantities['extra-' + e.id]);
     if (deliveryMethod === 'delivery' && deliveryFee > 0) {
@@ -1453,26 +1420,21 @@
     const sourdoughs = SOURDOUGHS.filter(s => quantities['sourdough-' + s.id] > 0)
       .map(s => ({ name: s.name, price: s.price, qty: quantities['sourdough-' + s.id] }));
     const sandwiches = SANDWICHES.filter(s => quantities['sandwich-' + s.id] > 0)
-      .map(s => ({
-        name: s.name, price: s.price, qty: quantities['sandwich-' + s.id],
-        bread: sandwichBread[s.id] === 'supper' ? 'Supper Multigrain' : 'ธรรมดา',
-        breadUpgrade: sandwichBread[s.id] === 'supper' ? SUPPER_UPGRADE_PRICE : 0
-      }));
+      .map(s => {
+        const breads = sandwichBread[s.id] || [];
+        const supperCount = breads.filter(b => b === 'supper').length;
+        return {
+          name: s.name, price: s.price, qty: quantities['sandwich-' + s.id],
+          breads: breads.map(b => b === 'supper' ? 'Supper Multigrain' : 'Country Bread'),
+          breadUpgradeTotal: supperCount * SUPPER_UPGRADE_PRICE
+        };
+      });
     const extras = EXTRAS.filter(e => quantities['extra-' + e.id] > 0)
       .map(e => ({ name: e.name, price: e.price, qty: quantities['extra-' + e.id] }));
 
     if (flavors.length === 0 && croissants.length === 0 && sourdoughs.length === 0 && sandwiches.length === 0) {
       showAlert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
       return;
-    }
-
-    if (quantities['sourdough-trio'] > 0) {
-      for (let i = 0; i < trioSelections.length; i++) {
-        if (trioSelections[i].some(v => !v)) {
-          showAlert(`กรุณาเลือก Sourdough ให้ครบ 3 อัน ใน Trio Set ชุดที่ ${i + 1}`);
-          return;
-        }
-      }
     }
 
     if (hasSourdough()) {
@@ -1520,7 +1482,7 @@
     sauces.forEach(s => itemsTotal += s.price * s.qty);
     croissants.forEach(c => itemsTotal += c.price * c.qty);
     sourdoughs.forEach(s => itemsTotal += s.price * s.qty);
-    sandwiches.forEach(s => itemsTotal += (s.price + s.breadUpgrade) * s.qty);
+    sandwiches.forEach(s => itemsTotal += (s.price * s.qty) + s.breadUpgradeTotal);
     extras.forEach(e => itemsTotal += e.price * e.qty);
 
     const finalDeliveryFee = (deliveryMethod === 'delivery' && deliveryFee > 0) ? deliveryFee : 0;
@@ -1528,7 +1490,6 @@
 
     const data = {
       userId, flavors, sauces, croissants, sourdoughs, sandwiches, extras,
-      trioSelections: quantities['sourdough-trio'] > 0 ? trioSelections : [],
       creamCheese: hasSourdough() && (!shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false),
       jams: hasSourdough()
         ? JAM_OPTIONS.filter(j => jamQty[j.id] > 0).map(j => ({ name: j.name, qty: jamQty[j.id] }))
@@ -1622,11 +1583,10 @@
 
     const sourdoughNames = {
       country: 'Sourdough Country Bread', cranberry: 'Cranberry & Walnut Sourdough',
-      multigrain: 'Supper Multigrain Sourdough', darkrye: 'Dark Rye Sourdough',
-      trio: 'Sourdough Trio Set'
+      multigrain: 'Supper Multigrain Sourdough', darkrye: 'Dark Rye Sourdough'
     };
     if (!shopConfig.sourdoughs) {
-      shopConfig.sourdoughs = { country: true, cranberry: true, multigrain: true, darkrye: true, trio: true };
+      shopConfig.sourdoughs = { country: true, cranberry: true, multigrain: true, darkrye: true };
     }
     let sourdoughHtml = '';
     for (const [id, name] of Object.entries(sourdoughNames)) {
