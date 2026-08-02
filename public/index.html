@@ -774,8 +774,8 @@
   ];
 
   const TIRAMISUS = [
-    { id: 'og', name: '☕ The OG Tiramisu', displayName: '(115 ฿)☕ The OG Tiramisu', price: 115, image: '/pic/the_og_tiramisu.png' },
-    { id: 'ferrero', name: '🍫 Ferrero Tiramisu', displayName: '(145 ฿)🍫 Ferrero Tiramisu', price: 145, image: '/pic/ferrero_tiramisu.png' }
+    { id: 'og', name: 'The OG Tiramisu', displayName: '(115 ฿) The OG Tiramisu', price: 115, image: '/pic/the_og_tiramisu.png' },
+    { id: 'ferrero', name: 'Ferrero Tiramisu', displayName: '(145 ฿) Ferrero Tiramisu', price: 145, image: '/pic/ferrero_tiramisu.png' }
   ];
 
   const SANDWICHES = [
@@ -1683,7 +1683,7 @@
     }
     document.getElementById('adminCroissants').innerHTML = croissantHtml;
 
-    const tiramisuNames = { og: '☕ The OG Tiramisu', ferrero: '🍫 Ferrero Tiramisu' };
+    const tiramisuNames = { og: 'The OG Tiramisu', ferrero: 'Ferrero Tiramisu' };
     if (!shopConfig.tiramisus) {
       shopConfig.tiramisus = { og: true, ferrero: true };
     }
