@@ -365,6 +365,11 @@
   </div>
 
   <div class="card">
+    <div class="label">ที-รา-มิ-สุ (Tiramisu)</div>
+    <div id="tiramisuList"></div>
+  </div>
+
+  <div class="card">
     <div class="label">ซาวร์โดว์ (Sourdough)</div>
     <div class="label" style="font-size:14px;color:#4b3619;">ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)</div>
     <div id="sourdoughList"></div>
@@ -502,6 +507,11 @@
     </div>
 
     <div class="card">
+      <div class="admin-section">☕ ที-รา-มิ-สุ (Tiramisu)</div>
+      <div id="adminTiramisus"></div>
+    </div>
+
+    <div class="card">
       <div class="admin-section">🍞 ซาวร์โดว์ (Sourdough)</div>
       <div id="adminSourdoughs"></div>
     </div>
@@ -562,6 +572,7 @@
         flavors: { original: true, valrhona: true },
         sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
+        tiramisus: { og: true, ferrero: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true },
         sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
         extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
@@ -628,6 +639,27 @@
             item.appendChild(badge);
           }
           quantities['croissant-' + c.id] = 0;
+          el.querySelector('.qty-value').innerText = '0';
+        }
+      });
+    }
+
+    if (shopConfig.tiramisus) {
+      TIRAMISUS.forEach(t => {
+        const available = shopConfig.tiramisus[t.id] !== false;
+        const el = document.querySelector(`[data-key="tiramisu-${t.id}"]`);
+        if (!el) return;
+        const item = el.closest('.flavor-item');
+        if (!available) {
+          item.classList.add('sold-out');
+          if (!item.querySelector('.sold-out-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'sold-out-badge';
+            badge.innerText = 'ของหมดชั่วคราวค่ะ';
+            item.style.position = 'relative';
+            item.appendChild(badge);
+          }
+          quantities['tiramisu-' + t.id] = 0;
           el.querySelector('.qty-value').innerText = '0';
         }
       });
@@ -741,6 +773,11 @@
     { id: 'strawberry_nutella', name: '🍓 Strawberry Nutella Croissant', displayName: '(155 ฿)🍓 Strawberry Nutella Croissant', price: 155, image: '/pic/strawberry_nutella_croissant.png' }
   ];
 
+  const TIRAMISUS = [
+    { id: 'og', name: '☕ The OG Tiramisu', displayName: '(115 ฿)☕ The OG Tiramisu', price: 115, image: '/pic/the_og_tiramisu.png' },
+    { id: 'ferrero', name: '🍫 Ferrero Tiramisu', displayName: '(145 ฿)🍫 Ferrero Tiramisu', price: 145, image: '/pic/ferrero_tiramisu.png' }
+  ];
+
   const SANDWICHES = [
     { id: 'avocado_shrimps', name: 'Avocado & Shrimps with Scrambled Egg Sourdough', displayName: '(170 ฿) Avocado & Shrimps with Scrambled Egg Sourdough', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg' },
     { id: 'smoked_salmon', name: 'Smoked Salmon Sourdough', displayName: '(170 ฿) Smoked Salmon Sourdough', price: 170, image: '/pic/smoked_salmon_sourdough.jpg' },
@@ -776,6 +813,7 @@
   FLAVORS.forEach(f => quantities['flavor-' + f.id] = 0);
   SAUCES.forEach(s => quantities['sauce-' + s.id] = 0);
   CROISSANTS.forEach(c => quantities['croissant-' + c.id] = 0);
+  TIRAMISUS.forEach(t => quantities['tiramisu-' + t.id] = 0);
   SOURDOUGHS.forEach(s => quantities['sourdough-' + s.id] = 0);
   SANDWICHES.forEach(s => quantities['sandwich-' + s.id] = 0);
   EXTRAS.forEach(e => quantities['extra-' + e.id] = 0);
@@ -887,6 +925,23 @@
           '<button class="qty-btn" data-action="minus"></button>' +
           '<span class="qty-value">0</span>' +
           '<button class="qty-btn plus" data-action="plus"></button>' +
+        '</div>' +
+      '</div>'
+    ).join('');
+
+    const tiramisuList = document.getElementById("tiramisuList");
+    tiramisuList.innerHTML = TIRAMISUS.map(t =>
+      '<div class="flavor-item">' +
+        '<div class="flavor-top">' +
+          '<img class="flavor-img" src="' + t.image + '" alt="' + t.name + '">' +
+          '<div class="qty-controls" data-key="tiramisu-' + t.id + '">' +
+            '<button class="qty-btn" data-action="minus"></button>' +
+            '<span class="qty-value">0</span>' +
+            '<button class="qty-btn plus" data-action="plus"></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flavor-meta">' +
+          '<div class="flavor-name">' + t.displayName + '</div>' +
         '</div>' +
       '</div>'
     ).join('');
@@ -1131,6 +1186,7 @@
     FLAVORS.forEach(f => total += f.price * quantities['flavor-' + f.id]);
     SAUCES.forEach(s => total += s.price * quantities['sauce-' + s.id]);
     CROISSANTS.forEach(c => total += c.price * quantities['croissant-' + c.id]);
+    TIRAMISUS.forEach(t => total += t.price * quantities['tiramisu-' + t.id]);
     SOURDOUGHS.forEach(s => total += s.price * quantities['sourdough-' + s.id]);
     SANDWICHES.forEach(s => {
       const q = quantities['sandwich-' + s.id];
@@ -1456,6 +1512,8 @@
       .map(s => ({ name: s.name, price: s.price, qty: quantities['sauce-' + s.id] }));
     const croissants = CROISSANTS.filter(c => quantities['croissant-' + c.id] > 0)
       .map(c => ({ name: c.name, price: c.price, qty: quantities['croissant-' + c.id] }));
+    const tiramisus = TIRAMISUS.filter(t => quantities['tiramisu-' + t.id] > 0)
+      .map(t => ({ name: t.name, price: t.price, qty: quantities['tiramisu-' + t.id] }));
     const sourdoughs = SOURDOUGHS.filter(s => quantities['sourdough-' + s.id] > 0)
       .map(s => ({ name: s.name, price: s.price, qty: quantities['sourdough-' + s.id] }));
     const sandwiches = SANDWICHES.filter(s => quantities['sandwich-' + s.id] > 0)
@@ -1475,7 +1533,7 @@
     const extras = EXTRAS.filter(e => quantities['extra-' + e.id] > 0)
       .map(e => ({ name: e.name, price: e.price, qty: quantities['extra-' + e.id] }));
 
-    if (flavors.length === 0 && croissants.length === 0 && sourdoughs.length === 0 && sandwiches.length === 0) {
+    if (flavors.length === 0 && croissants.length === 0 && sourdoughs.length === 0 && sandwiches.length === 0 && tiramisus.length === 0) {
       showAlert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
       return;
     }
@@ -1524,6 +1582,7 @@
     flavors.forEach(f => itemsTotal += f.price * f.qty);
     sauces.forEach(s => itemsTotal += s.price * s.qty);
     croissants.forEach(c => itemsTotal += c.price * c.qty);
+    tiramisus.forEach(t => itemsTotal += t.price * t.qty);
     sourdoughs.forEach(s => itemsTotal += s.price * s.qty);
     sandwiches.forEach(s => itemsTotal += (s.price * s.qty) + s.breadUpgradeTotal);
     extras.forEach(e => itemsTotal += e.price * e.qty);
@@ -1532,7 +1591,7 @@
     const total = itemsTotal + finalDeliveryFee;
 
     const data = {
-      userId, flavors, sauces, croissants, sourdoughs, sandwiches, extras,
+      userId, flavors, sauces, croissants, tiramisus, sourdoughs, sandwiches, extras,
       creamCheese: hasSourdough() && (!shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false),
       jams: hasSourdough()
         ? JAM_OPTIONS.filter(j => jamQty[j.id] > 0).map(j => ({ name: j.name, qty: jamQty[j.id] }))
@@ -1623,6 +1682,19 @@
         `<span class="toggle-slider"></span></label></div>`;
     }
     document.getElementById('adminCroissants').innerHTML = croissantHtml;
+
+    const tiramisuNames = { og: '☕ The OG Tiramisu', ferrero: '🍫 Ferrero Tiramisu' };
+    if (!shopConfig.tiramisus) {
+      shopConfig.tiramisus = { og: true, ferrero: true };
+    }
+    let tiramisuHtml = '';
+    for (const [id, name] of Object.entries(tiramisuNames)) {
+      const checked = shopConfig.tiramisus[id] !== false ? 'checked' : '';
+      tiramisuHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
+        `<label class="toggle-switch"><input type="checkbox" data-type="tiramisu" data-id="${id}" ${checked}>` +
+        `<span class="toggle-slider"></span></label></div>`;
+    }
+    document.getElementById('adminTiramisus').innerHTML = tiramisuHtml;
 
     const sourdoughNames = {
       country: 'Sourdough Country Bread', cranberry: 'Cranberry & Walnut Sourdough',
@@ -1802,6 +1874,10 @@
     if (!shopConfig.sandwiches) shopConfig.sandwiches = {};
     document.querySelectorAll('[data-type="sandwich"]').forEach(cb => {
       shopConfig.sandwiches[cb.dataset.id] = cb.checked;
+    });
+    if (!shopConfig.tiramisus) shopConfig.tiramisus = {};
+    document.querySelectorAll('[data-type="tiramisu"]').forEach(cb => {
+      shopConfig.tiramisus[cb.dataset.id] = cb.checked;
     });
     shopConfig.sameDayOrder = document.getElementById('sameDayToggle').checked;
 

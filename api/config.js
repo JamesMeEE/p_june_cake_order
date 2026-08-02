@@ -17,6 +17,7 @@ const DEFAULT_CONFIG = {
   flavors: { original: true, valrhona: true },
   sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
   croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
+  tiramisus: { og: true, ferrero: true },
   sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true },
   sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
   extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },

@@ -39,6 +39,10 @@ async function appendToSheet(data) {
     ? data.croissants.map(c => `${c.name} x ${c.qty} ชิ้น`).join('\n')
     : '-';
 
+  const tiramisusText = (data.tiramisus && data.tiramisus.length > 0)
+    ? data.tiramisus.map(t => `${t.name} x ${t.qty} ชิ้น`).join('\n')
+    : '-';
+
   let sourdoughsText = '-';
   if (data.sourdoughs && data.sourdoughs.length > 0) {
     const lines = data.sourdoughs.map(s => `${s.name} x ${s.qty} ชิ้น`);
@@ -63,7 +67,7 @@ async function appendToSheet(data) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: `${SHEET_NAME}!A:O`,
+    range: `${SHEET_NAME}!A:P`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[
@@ -72,6 +76,7 @@ async function appendToSheet(data) {
         flavorsText,
         saucesText,
         croissantsText,
+        tiramisusText,
         sourdoughsText,
         sandwichesText,
         extrasText,
@@ -101,11 +106,11 @@ async function ensureSheetExists(sheets) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!A:O`,
+      range: `${SHEET_NAME}!A:P`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
-          'Timestamp', 'UserID', 'Flavors', 'Sauces', 'Croissants', 'Sourdoughs', 'Sandwiches', 'Extras', 'DeliveryDate',
+          'Timestamp', 'UserID', 'Flavors', 'Sauces', 'Croissants', 'Tiramisus', 'Sourdoughs', 'Sandwiches', 'Extras', 'DeliveryDate',
           'Name', 'Phone', 'Address', 'MapLink', 'Note', 'Total'
         ]]
       }
@@ -177,6 +182,17 @@ function buildFlexMessage(data) {
       orderLines.push({
         type: 'text',
         text: `ครัวซองต์ (Croissant): ${c.name} x ${c.qty} ชิ้น`,
+        size: 'sm',
+        wrap: true
+      });
+    });
+  }
+
+  if (data.tiramisus && data.tiramisus.length > 0) {
+    data.tiramisus.forEach(t => {
+      orderLines.push({
+        type: 'text',
+        text: `ทีรามิสุ (Tiramisu): ${t.name} x ${t.qty} ชิ้น`,
         size: 'sm',
         wrap: true
       });
