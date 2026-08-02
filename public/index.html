@@ -147,6 +147,12 @@
     cursor: pointer; text-align: center; font-family: inherit; transition: 0.15s;
   }
   .bread-opt.active { border-color: #8a623f; background: #8a623f; color: white; }
+  .base-opt {
+    flex: 1; padding: 10px; border: 2px solid #e0e0e0; background: white;
+    border-radius: 8px; font-size: 12px; font-weight: 600; color: #555;
+    cursor: pointer; text-align: center; font-family: inherit; transition: 0.15s;
+  }
+  .base-opt.active { border-color: #8a623f; background: #8a623f; color: white; }
   .bread-piece { margin-bottom: 8px; }
   .bread-piece:last-child { margin-bottom: 0; }
   .bread-piece-num { font-size: 12px; font-weight: 700; color: #8a623f; margin-bottom: 4px; }
@@ -557,7 +563,7 @@
         sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true },
-        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true },
+        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
         extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
         closedDates: { pickup: [], delivery: [] },
         sameDayOrder: false
@@ -738,7 +744,8 @@
   const SANDWICHES = [
     { id: 'avocado_shrimps', name: 'Avocado & Shrimps with Scrambled Egg Sourdough', displayName: '(170 ฿) Avocado & Shrimps with Scrambled Egg Sourdough', price: 170, image: '/pic/avocado_shrimps_sourdough.png' },
     { id: 'smoked_salmon', name: 'Smoked Salmon Sourdough', displayName: '(170 ฿) Smoked Salmon Sourdough', price: 170, image: '/pic/smoked_salmon_sourdough.png' },
-    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt Sourdough', displayName: '(160 ฿) Sunny Side Up Chicken Melt Sourdough', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.png' }
+    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt Sourdough', displayName: '(160 ฿) Sunny Side Up Chicken Melt Sourdough', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.png' },
+    { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry Sourdough', displayName: '(155 ฿) Strawberry & Blueberry Sourdough', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true }
   ];
 
   const SUPPER_UPGRADE_PRICE = 5;
@@ -775,6 +782,9 @@
 
   const sandwichBread = {};
   SANDWICHES.forEach(s => sandwichBread[s.id] = []);
+
+  const sandwichBaseSauce = {};
+  SANDWICHES.forEach(s => sandwichBaseSauce[s.id] = []);
 
   async function initLiff() {
     try {
@@ -1053,15 +1063,23 @@
     const container = document.querySelector(`[data-bread-for="${sid}"]`);
     if (!container) return;
 
+    const sandwich = SANDWICHES.find(s => s.id === sid);
+    const hasBase = sandwich && sandwich.hasBaseSauce;
+
     if (qty <= 0) {
       container.classList.add('hidden');
       container.innerHTML = '';
       sandwichBread[sid] = [];
+      sandwichBaseSauce[sid] = [];
       return;
     }
 
     while (sandwichBread[sid].length < qty) sandwichBread[sid].push('normal');
     while (sandwichBread[sid].length > qty) sandwichBread[sid].pop();
+    if (hasBase) {
+      while (sandwichBaseSauce[sid].length < qty) sandwichBaseSauce[sid].push('cream_cheese');
+      while (sandwichBaseSauce[sid].length > qty) sandwichBaseSauce[sid].pop();
+    }
 
     let html = '<div class="bread-choice-label">เลือกแป้งขนมปัง</div>';
     for (let i = 0; i < qty; i++) {
@@ -1071,6 +1089,18 @@
       html += `<button type="button" class="bread-opt ${cur === 'normal' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="normal">Country Bread</button>`;
       html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">Supper Multigrain (+5฿)</button>`;
       html += '</div></div>';
+    }
+
+    if (hasBase) {
+      html += '<div class="bread-choice-label" style="margin-top:12px;">เลือก Base Sauce</div>';
+      for (let i = 0; i < qty; i++) {
+        const cur = sandwichBaseSauce[sid][i];
+        html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
+        html += '<div class="bread-options">';
+        html += `<button type="button" class="base-opt ${cur === 'cream_cheese' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="cream_cheese">Cream Cheese</button>`;
+        html += `<button type="button" class="base-opt ${cur === 'nutella' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="nutella">Nutella</button>`;
+        html += '</div></div>';
+      }
     }
 
     container.innerHTML = html;
@@ -1083,6 +1113,15 @@
         container.querySelectorAll(`.bread-opt[data-piece="${piece}"]`).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         updateTotal();
+      });
+    });
+
+    container.querySelectorAll('.base-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const piece = parseInt(btn.dataset.piece);
+        sandwichBaseSauce[sid][piece] = btn.dataset.base;
+        container.querySelectorAll(`.base-opt[data-piece="${piece}"]`).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
       });
     });
   }
@@ -1423,11 +1462,15 @@
       .map(s => {
         const breads = sandwichBread[s.id] || [];
         const supperCount = breads.filter(b => b === 'supper').length;
-        return {
+        const result = {
           name: s.name, price: s.price, qty: quantities['sandwich-' + s.id],
           breads: breads.map(b => b === 'supper' ? 'Supper Multigrain' : 'Country Bread'),
           breadUpgradeTotal: supperCount * SUPPER_UPGRADE_PRICE
         };
+        if (s.hasBaseSauce) {
+          result.baseSauces = (sandwichBaseSauce[s.id] || []).map(b => b === 'nutella' ? 'Nutella' : 'Cream Cheese');
+        }
+        return result;
       });
     const extras = EXTRAS.filter(e => quantities['extra-' + e.id] > 0)
       .map(e => ({ name: e.name, price: e.price, qty: quantities['extra-' + e.id] }));
@@ -1600,10 +1643,11 @@
     const sandwichNames = {
       avocado_shrimps: 'Avocado & Shrimps with Scrambled Egg',
       smoked_salmon: 'Smoked Salmon',
-      sunny_side_up: 'Sunny Side Up Chicken Melt'
+      sunny_side_up: 'Sunny Side Up Chicken Melt',
+      strawberry_blueberry: 'Strawberry & Blueberry'
     };
     if (!shopConfig.sandwiches) {
-      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true };
+      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true };
     }
     let sandwichHtml = '';
     for (const [id, name] of Object.entries(sandwichNames)) {

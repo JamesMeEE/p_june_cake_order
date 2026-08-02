@@ -54,7 +54,11 @@ async function appendToSheet(data) {
     : '-';
 
   const sandwichesText = (data.sandwiches && data.sandwiches.length > 0)
-    ? data.sandwiches.map(s => `${s.name} x ${s.qty} ชิ้น (${summarizeBreads(s.breads)})`).join('\n')
+    ? data.sandwiches.map(s => {
+        let t = `${s.name} x ${s.qty} ชิ้น (${summarizeBreads(s.breads)})`;
+        if (s.baseSauces && s.baseSauces.length > 0) t += ` [Base: ${summarizeBreads(s.baseSauces)}]`;
+        return t;
+      }).join('\n')
     : '-';
 
   await sheets.spreadsheets.values.append({
@@ -193,9 +197,13 @@ function buildFlexMessage(data) {
   if (data.sandwiches && data.sandwiches.length > 0) {
     data.sandwiches.forEach(s => {
       const breadSummary = summarizeBreads(s.breads);
+      let txt = `แซนด์วิช (Sandwich): ${s.name} x ${s.qty} ชิ้น (${breadSummary})`;
+      if (s.baseSauces && s.baseSauces.length > 0) {
+        txt += ` [Base: ${summarizeBreads(s.baseSauces)}]`;
+      }
       orderLines.push({
         type: 'text',
-        text: `แซนด์วิช (Sandwich): ${s.name} x ${s.qty} ชิ้น (${breadSummary})`,
+        text: txt,
         size: 'sm',
         wrap: true
       });
