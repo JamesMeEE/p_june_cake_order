@@ -21,6 +21,7 @@ const DEFAULT_CONFIG = {
   sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true },
   sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
   extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
+  prices: {},
   closedDates: { pickup: [], delivery: [] },
   sameDayOrder: false
 };

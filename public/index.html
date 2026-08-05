@@ -257,6 +257,16 @@
     border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;
     white-space: nowrap;
   }
+  .admin-price-group { font-weight: bold; font-size: 13px; color: #8a623f; margin: 14px 0 6px; }
+  .admin-price-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; gap: 12px;
+  }
+  .admin-price-label { font-size: 13px; flex: 1; }
+  .admin-price-input {
+    width: 90px; padding: 8px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; font-family: inherit; text-align: right;
+  }
   .admin-save {
     width: 100%; padding: 14px; background: #06c755; color: white; border: none;
     border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
@@ -540,6 +550,11 @@
       <div id="adminDeliveryDates" style="margin-top:8px;"></div>
     </div>
 
+    <div class="card">
+      <div class="admin-section">💰 แก้ไขราคา (Prices)</div>
+      <div id="adminPrices"></div>
+    </div>
+
     <button type="button" class="admin-save" id="adminSaveBtn">💾 บันทึกการตั้งค่า</button>
     <button type="button" class="admin-back" id="adminBackBtn">← กลับหน้าสั่งซื้อ</button>
   </div>
@@ -577,7 +592,8 @@
         sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
         extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
         closedDates: { pickup: [], delivery: [] },
-        sameDayOrder: false
+        sameDayOrder: false,
+        prices: {}
       };
     }
   }
@@ -753,8 +769,8 @@
   });
 
   const FLAVORS = [
-    { id: 'original', name: '🧀 Original', displayName: '(125 ฿)🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 125, image: '/pic/original.png' },
-    { id: 'valrhona', name: '🍫 Valrhona Chocolate', displayName: '(140 ฿)🍫 Valrhona Chocolate : ดาร์กช็อคโกแลต เข้ม นุ่ม ลึก เต็มคำ', price: 140, image: '/pic/valrhona_chocolate.png' }
+    { id: 'original', name: '🧀 Original', label: '🧀 Original : นุ่มละมุน หอม มัน ชีสเน้นๆ ละลายในปาก', price: 125, image: '/pic/original.png' },
+    { id: 'valrhona', name: '🍫 Valrhona Chocolate', label: '🍫 Valrhona Chocolate : ดาร์กช็อคโกแลต เข้ม นุ่ม ลึก เต็มคำ', price: 140, image: '/pic/valrhona_chocolate.png' }
   ];
 
   const SAUCES = [
@@ -766,32 +782,32 @@
   ];
 
   const CROISSANTS = [
-    { id: 'croissant', name: '🥐 Croissant', displayName: '(95 ฿)🥐 Croissant', price: 95, image: '/pic/croissant.png' },
-    { id: 'mixed_berry', name: '🍒 Mixed Berry Croissant', displayName: '(130 ฿)🍒 Mixed Berry Croissant', price: 130, image: '/pic/mixed_berry_croissant.png' },
-    { id: 'pain_au_chocolat', name: '🍫 Pain au Chocolat', displayName: '(130 ฿)🍫 Pain au Chocolat', price: 130, image: '/pic/pain_au_chocolat.png' },
-    { id: 'biscoff', name: '🍪 Biscoff Croissant', displayName: '(145 ฿)🍪 Biscoff Croissant', price: 145, image: '/pic/biscoff_croissant.png' },
-    { id: 'strawberry_nutella', name: '🍓 Strawberry Nutella Croissant', displayName: '(155 ฿)🍓 Strawberry Nutella Croissant', price: 155, image: '/pic/strawberry_nutella_croissant.png' }
+    { id: 'croissant', name: '🥐 Croissant', label: '🥐 Croissant', price: 95, image: '/pic/croissant.png' },
+    { id: 'mixed_berry', name: '🍒 Mixed Berry Croissant', label: '🍒 Mixed Berry Croissant', price: 130, image: '/pic/mixed_berry_croissant.png' },
+    { id: 'pain_au_chocolat', name: '🍫 Pain au Chocolat', label: '🍫 Pain au Chocolat', price: 130, image: '/pic/pain_au_chocolat.png' },
+    { id: 'biscoff', name: '🍪 Biscoff Croissant', label: '🍪 Biscoff Croissant', price: 145, image: '/pic/biscoff_croissant.png' },
+    { id: 'strawberry_nutella', name: '🍓 Strawberry Nutella Croissant', label: '🍓 Strawberry Nutella Croissant', price: 155, image: '/pic/strawberry_nutella_croissant.png' }
   ];
 
   const TIRAMISUS = [
-    { id: 'og', name: 'The OG Tiramisu', displayName: '(115 ฿) The OG Tiramisu', price: 115, image: '/pic/the_og_tiramisu.png' },
-    { id: 'ferrero', name: 'Ferrero Tiramisu', displayName: '(145 ฿) Ferrero Tiramisu', price: 145, image: '/pic/ferrero_tiramisu.png' }
+    { id: 'og', name: 'The OG Tiramisu', label: 'The OG Tiramisu', price: 115, image: '/pic/the_og_tiramisu.png' },
+    { id: 'ferrero', name: 'Ferrero Tiramisu', label: 'Ferrero Tiramisu', price: 145, image: '/pic/ferrero_tiramisu.png' }
   ];
 
   const SANDWICHES = [
-    { id: 'avocado_shrimps', name: 'Avocado & Shrimps with Scrambled Egg Sourdough', displayName: '(170 ฿) Avocado & Shrimps with Scrambled Egg Sourdough', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg' },
-    { id: 'smoked_salmon', name: 'Smoked Salmon Sourdough', displayName: '(170 ฿) Smoked Salmon Sourdough', price: 170, image: '/pic/smoked_salmon_sourdough.jpg' },
-    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt Sourdough', displayName: '(160 ฿) Sunny Side Up Chicken Melt Sourdough', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg' },
-    { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry Sourdough', displayName: '(155 ฿) Strawberry & Blueberry Sourdough', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true }
+    { id: 'avocado_shrimps', name: 'Avocado & Shrimps with Scrambled Egg Sourdough', label: 'Avocado & Shrimps with Scrambled Egg Sourdough', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg' },
+    { id: 'smoked_salmon', name: 'Smoked Salmon Sourdough', label: 'Smoked Salmon Sourdough', price: 170, image: '/pic/smoked_salmon_sourdough.jpg' },
+    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt Sourdough', label: 'Sunny Side Up Chicken Melt Sourdough', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg' },
+    { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry Sourdough', label: 'Strawberry & Blueberry Sourdough', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true }
   ];
 
-  const SUPPER_UPGRADE_PRICE = 5;
+  let SUPPER_UPGRADE_PRICE = 5;
 
   const SOURDOUGHS = [
-    { id: 'country', name: 'Sourdough Country Bread', displayName: '(145 ฿) Sourdough Country Bread', price: 145, image: '/pic/sourdough_country_bread.jpg' },
-    { id: 'cranberry', name: 'Cranberry & Walnut Sourdough', displayName: '(160 ฿) Cranberry & Walnut Sourdough', price: 160, image: '/pic/cranberry_walnut_sourdough.jpg' },
-    { id: 'multigrain', name: 'Supper Multigrain Sourdough', displayName: '(155 ฿) Supper Multigrain Sourdough', price: 155, image: '/pic/supper_multigrain_sourdough.jpg' },
-    { id: 'darkrye', name: 'Dark Rye Sourdough', displayName: '(160 ฿) Dark Rye Sourdough', price: 160, image: '/pic/dark_rye_sourdough.png' }
+    { id: 'country', name: 'Sourdough Country Bread', label: 'Sourdough Country Bread', price: 145, image: '/pic/sourdough_country_bread.jpg' },
+    { id: 'cranberry', name: 'Cranberry & Walnut Sourdough', label: 'Cranberry & Walnut Sourdough', price: 160, image: '/pic/cranberry_walnut_sourdough.jpg' },
+    { id: 'multigrain', name: 'Supper Multigrain Sourdough', label: 'Supper Multigrain Sourdough', price: 155, image: '/pic/supper_multigrain_sourdough.jpg' },
+    { id: 'darkrye', name: 'Dark Rye Sourdough', label: 'Dark Rye Sourdough', price: 160, image: '/pic/dark_rye_sourdough.png' }
   ];
 
   const JAM_OPTIONS = [
@@ -804,6 +820,32 @@
     { id: 'extra_mixed_berry_jam', configId: 'mixed_berry_jam', name: 'Extra Mixed Berry Jam', price: 30 },
     { id: 'extra_apricot_jam', configId: 'apricot_jam', name: 'Extra Apricot Jam', price: 30 }
   ];
+
+  const PRICE_GROUPS = {
+    flavors: FLAVORS, croissants: CROISSANTS, tiramisus: TIRAMISUS,
+    sourdoughs: SOURDOUGHS, sandwiches: SANDWICHES, sauces: SAUCES, extras: EXTRAS
+  };
+
+  function applyPrices() {
+    if (!shopConfig || !shopConfig.prices) return;
+    for (const [group, arr] of Object.entries(PRICE_GROUPS)) {
+      const overrides = shopConfig.prices[group];
+      if (!overrides) continue;
+      arr.forEach(item => {
+        if (overrides[item.id] !== undefined && overrides[item.id] !== null && overrides[item.id] !== '') {
+          item.price = Number(overrides[item.id]);
+        }
+      });
+    }
+    if (shopConfig.prices.supperUpgrade !== undefined && shopConfig.prices.supperUpgrade !== null && shopConfig.prices.supperUpgrade !== '') {
+      SUPPER_UPGRADE_PRICE = Number(shopConfig.prices.supperUpgrade);
+    }
+    [FLAVORS, CROISSANTS, TIRAMISUS, SOURDOUGHS, SANDWICHES].forEach(arr => {
+      arr.forEach(item => {
+        if (item.label !== undefined) item.displayName = `(${item.price} ฿) ${item.label}`;
+      });
+    });
+  }
 
   let creamCheeseQty = 0;
   let spreadInitialized = false;
@@ -834,6 +876,7 @@
       const profile = await liff.getProfile();
       userId = profile.userId;
       await fetchConfig();
+      applyPrices();
       renderMenu();
       applyConfig();
       document.getElementById("loading").classList.add("hidden");
@@ -1424,10 +1467,11 @@
       document.getElementById('pickupMinute').addEventListener('change', updatePickupTime);
     } else {
       let slots = [];
-      if (isSaturday) {
-        slots = ['7.00-8.00', '8.00-9.00', '9.00-10.00'];
+      const isWeekend = selectedDateObj.getDay() === 6 || selectedDateObj.getDay() === 0;
+      if (isWeekend) {
+        slots = ['7.00-8.00', '8.00-9.00', '9.00-10.00', '10.00-11.00', '11.00-12.00', '12.00-13.00', '13.00-14.00', '14.00-15.00'];
       } else {
-        slots = ['7.00-8.00', '8.00-9.00', '9.00-10.00', '14.00-15.00', '15.00-16.00'];
+        slots = ['7.00-8.00', '8.00-9.00', '9.00-10.00', '10.00-11.00', '11.00-12.00', '12.00-13.00', '13.00-14.00', '14.00-15.00', '15.00-16.00'];
       }
 
       const html = '<div class="time-list">' + slots.map(s =>
@@ -1696,6 +1740,8 @@
     }
     document.getElementById('adminTiramisus').innerHTML = tiramisuHtml;
 
+    renderAdminPrices();
+
     const sourdoughNames = {
       country: 'Sourdough Country Bread', cranberry: 'Cranberry & Walnut Sourdough',
       multigrain: 'Supper Multigrain Sourdough', darkrye: 'Dark Rye Sourdough'
@@ -1753,6 +1799,40 @@
     initAdminCalendarMonth('delivery');
     renderAdminCalendar('pickup');
     renderAdminCalendar('delivery');
+  }
+
+  function renderAdminPrices() {
+    const groups = [
+      { key: 'flavors', title: '🧀 เค้ก', arr: FLAVORS },
+      { key: 'sauces', title: '🍫 ซอส', arr: SAUCES },
+      { key: 'croissants', title: '🥐 ครัวซองต์', arr: CROISSANTS },
+      { key: 'tiramisus', title: '☕ ทีรามิสุ', arr: TIRAMISUS },
+      { key: 'sourdoughs', title: '🍞 ซาวร์โดว์', arr: SOURDOUGHS },
+      { key: 'sandwiches', title: '🥪 แซนด์วิช', arr: SANDWICHES },
+      { key: 'extras', title: '🧈 เพิ่มเติม', arr: EXTRAS }
+    ];
+
+    if (!shopConfig.prices) shopConfig.prices = {};
+
+    let html = '';
+    groups.forEach(g => {
+      html += `<div class="admin-price-group">${g.title}</div>`;
+      g.arr.forEach(item => {
+        const label = item.label || item.name;
+        html += '<div class="admin-price-row">' +
+          `<span class="admin-price-label">${label}</span>` +
+          `<input type="number" class="admin-price-input" data-price-group="${g.key}" data-price-id="${item.id}" value="${item.price}"> ฿` +
+          '</div>';
+      });
+    });
+
+    html += '<div class="admin-price-group">🥖 อัพเกรดแป้ง Supper Multigrain</div>';
+    html += '<div class="admin-price-row">' +
+      '<span class="admin-price-label">ค่าอัพเกรด (+฿/ชิ้น)</span>' +
+      `<input type="number" class="admin-price-input" id="supperUpgradeInput" value="${SUPPER_UPGRADE_PRICE}"> ฿` +
+      '</div>';
+
+    document.getElementById('adminPrices').innerHTML = html;
   }
 
   function renderAdminDates(type) {
@@ -1881,6 +1961,18 @@
     });
     shopConfig.sameDayOrder = document.getElementById('sameDayToggle').checked;
 
+    if (!shopConfig.prices) shopConfig.prices = {};
+    document.querySelectorAll('[data-price-group]').forEach(inp => {
+      const g = inp.dataset.priceGroup;
+      const id = inp.dataset.priceId;
+      if (!shopConfig.prices[g]) shopConfig.prices[g] = {};
+      if (inp.value !== '') shopConfig.prices[g][id] = Number(inp.value);
+    });
+    const supperInp = document.getElementById('supperUpgradeInput');
+    if (supperInp && supperInp.value !== '') shopConfig.prices.supperUpgrade = Number(supperInp.value);
+
+    applyPrices();
+
     try {
       const res = await fetch('/api/config', {
         method: 'POST',
@@ -1902,7 +1994,10 @@
 
   document.getElementById('adminBackBtn').addEventListener('click', () => {
     closeAdminPanel();
+    applyPrices();
+    renderMenu();
     applyConfig();
+    updateTotal();
   });
 
   initLiff();
