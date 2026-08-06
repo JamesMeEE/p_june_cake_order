@@ -827,18 +827,19 @@
   };
 
   function applyPrices() {
-    if (!shopConfig || !shopConfig.prices) return;
-    for (const [group, arr] of Object.entries(PRICE_GROUPS)) {
-      const overrides = shopConfig.prices[group];
-      if (!overrides) continue;
-      arr.forEach(item => {
-        if (overrides[item.id] !== undefined && overrides[item.id] !== null && overrides[item.id] !== '') {
-          item.price = Number(overrides[item.id]);
-        }
-      });
-    }
-    if (shopConfig.prices.supperUpgrade !== undefined && shopConfig.prices.supperUpgrade !== null && shopConfig.prices.supperUpgrade !== '') {
-      SUPPER_UPGRADE_PRICE = Number(shopConfig.prices.supperUpgrade);
+    if (shopConfig && shopConfig.prices) {
+      for (const [group, arr] of Object.entries(PRICE_GROUPS)) {
+        const overrides = shopConfig.prices[group];
+        if (!overrides) continue;
+        arr.forEach(item => {
+          if (overrides[item.id] !== undefined && overrides[item.id] !== null && overrides[item.id] !== '') {
+            item.price = Number(overrides[item.id]);
+          }
+        });
+      }
+      if (shopConfig.prices.supperUpgrade !== undefined && shopConfig.prices.supperUpgrade !== null && shopConfig.prices.supperUpgrade !== '') {
+        SUPPER_UPGRADE_PRICE = Number(shopConfig.prices.supperUpgrade);
+      }
     }
     [FLAVORS, CROISSANTS, TIRAMISUS, SOURDOUGHS, SANDWICHES].forEach(arr => {
       arr.forEach(item => {
