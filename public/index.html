@@ -437,10 +437,8 @@
 
   <div class="card" id="mapCard">
     <div class="label">ตำแหน่งจัดส่ง (Map) <span class="required">*</span></div>
-    <div class="map-row">
-      <input type="text" id="mapLink" placeholder="วางลิงก์ หรือ กดปุ่มด้านล่าง">
-      <button type="button" class="pick-btn" id="pickBtn">📍 ตำแหน่งปัจจุบัน</button>
-    </div>
+    <input type="hidden" id="mapLink">
+    <button type="button" class="pick-btn" id="pickBtn" style="width:100%;">📍 กดเพื่อปักหมุดตำแหน่งจัดส่ง</button>
     <div id="gpsStatus" class="gps-status"></div>
     <div id="deliveryInfo" class="delivery-info hidden">
       <div>📏 ระยะทาง: <span id="distanceText">-</span></div>
