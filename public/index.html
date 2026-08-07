@@ -1274,6 +1274,36 @@
   document.getElementById("pickBtn").addEventListener("click", openMapPicker);
   document.getElementById("closeMapBtn").addEventListener("click", closeMapPicker);
 
+  function haversineKm(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function applyDistance(km) {
+    const rangeWarn = document.getElementById('outOfRange');
+    deliveryDistance = km;
+    if (km > 20) {
+      isOutOfRange = true;
+      rangeWarn.classList.remove('hidden');
+      document.getElementById('distanceText').innerText = km.toFixed(2) + ' km';
+      document.getElementById('feeText').innerText = 'ไม่สามารถจัดส่งได้';
+      deliveryFee = 0;
+      updateTotal();
+      return;
+    }
+    let fee = 0;
+    if (km > 5) fee = Math.ceil(km - 5) * 10;
+    deliveryFee = fee;
+    document.getElementById('distanceText').innerText = km.toFixed(2) + ' km';
+    document.getElementById('feeText').innerText = fee > 0 ? fee + ' ฿' : 'ฟรี! (ภายใน 5 km)';
+    updateTotal();
+  }
+
   async function calculateDistance(lat, lng) {
     const info = document.getElementById('deliveryInfo');
     const rangeWarn = document.getElementById('outOfRange');
@@ -1295,41 +1325,16 @@
 
     try {
       const url = `https://router.project-osrm.org/route/v1/driving/${SHOP_COORDS.lng},${SHOP_COORDS.lat};${lng},${lat}?overview=false`;
-      const res = await fetch(url);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
       const data = await res.json();
-      const meters = data.routes[0].distance;
-      const km = meters / 1000;
-      deliveryDistance = km;
-
-      if (km > 20) {
-        isOutOfRange = true;
-        rangeWarn.classList.remove('hidden');
-        document.getElementById('distanceText').innerText = km.toFixed(2) + ' km';
-        document.getElementById('feeText').innerText = 'ไม่สามารถจัดส่งได้';
-        deliveryFee = 0;
-        updateTotal();
-        return;
-      }
-
-      let fee = 0;
-      if (km > 5) {
-        fee = Math.ceil(km - 5) * 10;
-      }
-      deliveryFee = fee;
-
-      document.getElementById('distanceText').innerText = km.toFixed(2) + ' km';
-      document.getElementById('feeText').innerText = fee > 0
-        ? fee + ' ฿'
-        : 'ฟรี! (ภายใน 5 km)';
-
-      updateTotal();
+      if (!data.routes || !data.routes[0]) throw new Error('no route');
+      applyDistance(data.routes[0].distance / 1000);
     } catch (err) {
-      document.getElementById('distanceText').innerText = '-';
-      document.getElementById('feeText').innerHTML = '<span class="calc">คำนวณไม่สำเร็จ ทางร้านจะคำนวณให้ภายหลัง</span>';
-      deliveryFee = 0;
-      deliveryDistance = null;
-      isOutOfRange = false;
-      updateTotal();
+      const km = haversineKm(SHOP_COORDS.lat, SHOP_COORDS.lng, lat, lng) * 1.3;
+      applyDistance(km);
     }
   }
 
@@ -1339,6 +1344,7 @@
     const lat = center.lat.toFixed(6);
     const lng = center.lng.toFixed(6);
     document.getElementById("mapLink").value = `https://www.google.com/maps?q=${lat},${lng}`;
+    resolvedMapLink = `https://www.google.com/maps?q=${lat},${lng}`;
     const status = document.getElementById("gpsStatus");
     status.className = "gps-status success";
     status.innerText = "✓ เลือกตำแหน่งเรียบร้อย (" + lat + ", " + lng + ")";
@@ -1368,10 +1374,13 @@
   let mapLinkTimer = null;
   document.getElementById("mapLink").addEventListener("input", (e) => {
     const val = e.target.value.trim();
+    resolvedMapLink = null;
     if (mapLinkTimer) clearTimeout(mapLinkTimer);
     if (!val) return;
     mapLinkTimer = setTimeout(() => resolveMapLink(val), 800);
   });
+
+  let resolvedMapLink = null;
 
   async function resolveMapLink(val) {
     const status = document.getElementById("gpsStatus");
@@ -1380,6 +1389,7 @@
     if (coords) {
       customerLat = coords.lat;
       customerLng = coords.lng;
+      resolvedMapLink = `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
       status.className = "gps-status success";
       status.innerText = "✓ อ่านตำแหน่งจากลิงก์เรียบร้อย";
       calculateDistance(customerLat, customerLng);
@@ -1395,6 +1405,7 @@
         if (data.status === 'ok') {
           customerLat = data.lat;
           customerLng = data.lng;
+          resolvedMapLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
           status.className = "gps-status success";
           status.innerText = "✓ อ่านตำแหน่งจากลิงก์เรียบร้อย";
           calculateDistance(customerLat, customerLng);
@@ -1403,6 +1414,7 @@
           status.innerText = "ไม่สามารถอ่านตำแหน่งจากลิงก์นี้ได้ กรุณากดปุ่มปักหมุดแทน";
           customerLat = null;
           customerLng = null;
+          resolvedMapLink = null;
         }
       } catch (err) {
         status.className = "gps-status error";
@@ -1660,7 +1672,8 @@
 
     const deliveryDate = buildDeliveryDate();
     const phone = document.getElementById("phone").value.trim();
-    const mapLink = document.getElementById("mapLink").value.trim();
+    const mapLinkRaw = document.getElementById("mapLink").value.trim();
+    const mapLink = resolvedMapLink || mapLinkRaw;
     const note = document.getElementById("note").value.trim();
 
     if (!deliveryDate || !name || !phone) {
