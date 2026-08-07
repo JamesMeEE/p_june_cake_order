@@ -23,7 +23,7 @@ const DEFAULT_CONFIG = {
   extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
   prices: {},
   closedDates: { pickup: [], delivery: [] },
-  sameDayOrder: false
+  sameDayClosedDate: ''
 };
 
 async function ensureConfigSheet(sheets) {

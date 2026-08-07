@@ -494,14 +494,6 @@
     <div class="admin-subtitle">จัดการสินค้า, ซอส, และวันหยุด</div>
 
     <div class="card">
-      <div class="admin-section">⏰ โหมดรับออเดอร์วันปัจจุบัน</div>
-      <div class="admin-row">
-        <span class="admin-row-label">เปิดรับออเดอร์วันนี้</span>
-        <label class="toggle-switch"><input type="checkbox" id="sameDayToggle"><span class="toggle-slider"></span></label>
-      </div>
-    </div>
-
-    <div class="card">
       <div class="admin-section">🧀 เค้ก (Flavor)</div>
       <div id="adminFlavors"></div>
     </div>
@@ -534,6 +526,14 @@
     <div class="card">
       <div class="admin-section">🧈 ครีมชีสและแยม (Cream Cheese &amp; Jam)</div>
       <div id="adminExtras"></div>
+    </div>
+
+    <div class="card">
+      <div class="admin-section">⏰ โหมดรับออเดอร์วันปัจจุบัน</div>
+      <div class="admin-row">
+        <span class="admin-row-label">เปิดรับออเดอร์วันนี้</span>
+        <label class="toggle-switch"><input type="checkbox" id="sameDayToggle"><span class="toggle-slider"></span></label>
+      </div>
     </div>
 
     <div class="card">
@@ -592,7 +592,7 @@
         sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
         extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
         closedDates: { pickup: [], delivery: [] },
-        sameDayOrder: false,
+        sameDayClosedDate: '',
         prices: {}
       };
     }
@@ -1371,57 +1371,33 @@
     return null;
   }
 
-  let mapLinkTimer = null;
+  let resolvedMapLink = null;
   document.getElementById("mapLink").addEventListener("input", (e) => {
     const val = e.target.value.trim();
     resolvedMapLink = null;
-    if (mapLinkTimer) clearTimeout(mapLinkTimer);
-    if (!val) return;
-    mapLinkTimer = setTimeout(() => resolveMapLink(val), 800);
-  });
-
-  let resolvedMapLink = null;
-
-  async function resolveMapLink(val) {
     const status = document.getElementById("gpsStatus");
-    let coords = extractCoordsFromUrl(val);
-
-    if (coords) {
-      customerLat = coords.lat;
-      customerLng = coords.lng;
-      resolvedMapLink = `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
-      status.className = "gps-status success";
-      status.innerText = "✓ อ่านตำแหน่งจากลิงก์เรียบร้อย";
-      calculateDistance(customerLat, customerLng);
+    if (!val) {
+      status.className = "gps-status";
+      status.innerText = "";
       return;
     }
-
     if (/^https?:\/\//.test(val)) {
-      status.className = "gps-status";
-      status.innerText = "⏳ กำลังอ่านตำแหน่งจากลิงก์...";
-      try {
-        const res = await fetch('/api/resolve?url=' + encodeURIComponent(val));
-        const data = await res.json();
-        if (data.status === 'ok') {
-          customerLat = data.lat;
-          customerLng = data.lng;
-          resolvedMapLink = `https://www.google.com/maps?q=${data.lat},${data.lng}`;
-          status.className = "gps-status success";
-          status.innerText = "✓ อ่านตำแหน่งจากลิงก์เรียบร้อย";
-          calculateDistance(customerLat, customerLng);
-        } else {
-          status.className = "gps-status error";
-          status.innerText = "ไม่สามารถอ่านตำแหน่งจากลิงก์นี้ได้ กรุณากดปุ่มปักหมุดแทน";
-          customerLat = null;
-          customerLng = null;
-          resolvedMapLink = null;
-        }
-      } catch (err) {
-        status.className = "gps-status error";
-        status.innerText = "อ่านลิงก์ไม่สำเร็จ กรุณากดปุ่มปักหมุดแทน";
-      }
+      status.className = "gps-status success";
+      status.innerText = "✓ ใช้ลิงก์ที่วาง (ทางร้านจะคำนวณค่าจัดส่งให้ภายหลัง)";
+      customerLat = null;
+      customerLng = null;
+      deliveryFee = 0;
+      deliveryDistance = null;
+      isOutOfRange = false;
+      document.getElementById('deliveryInfo').classList.add('hidden');
+      document.getElementById('outOfRange').classList.add('hidden');
+      updateTotal();
+    } else {
+      status.className = "gps-status error";
+      status.innerText = "ลิงก์ไม่ถูกต้อง (ต้องขึ้นต้นด้วย http:// หรือ https://)";
     }
-  }
+  });
+
 
   const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -1445,12 +1421,22 @@
     return FLAVORS.some(f => quantities['flavor-' + f.id] > 0);
   }
 
+  function todayDateStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function isSameDayOpen() {
+    if (!shopConfig) return true;
+    return shopConfig.sameDayClosedDate !== todayDateStr();
+  }
+
   function isDateValid(date) {
     const today = todayStart();
     if (date < today) return false;
     if (date.getTime() === today.getTime()) {
       if (hasCheesecake()) return false;
-      if (!shopConfig || !shopConfig.sameDayOrder) return false;
+      if (!isSameDayOpen()) return false;
     }
     if (isDateClosed(date)) return false;
     return true;
@@ -1761,7 +1747,7 @@
   function renderAdminPanel() {
     if (!shopConfig) return;
 
-    document.getElementById('sameDayToggle').checked = shopConfig.sameDayOrder || false;
+    document.getElementById('sameDayToggle').checked = isSameDayOpen();
 
     const flavorNames = { original: '🧀 Original', valrhona: '🍫 Valrhona Chocolate' };
     const sauceNames = {
@@ -2036,7 +2022,11 @@
     document.querySelectorAll('[data-type="tiramisu"]').forEach(cb => {
       shopConfig.tiramisus[cb.dataset.id] = cb.checked;
     });
-    shopConfig.sameDayOrder = document.getElementById('sameDayToggle').checked;
+    if (document.getElementById('sameDayToggle').checked) {
+      shopConfig.sameDayClosedDate = '';
+    } else {
+      shopConfig.sameDayClosedDate = todayDateStr();
+    }
 
     if (!shopConfig.prices) shopConfig.prices = {};
     document.querySelectorAll('[data-price-group]').forEach(inp => {
