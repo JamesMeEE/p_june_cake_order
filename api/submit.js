@@ -46,6 +46,11 @@ async function appendToSheet(data) {
   let sourdoughsText = '-';
   if (data.sourdoughs && data.sourdoughs.length > 0) {
     const lines = data.sourdoughs.map(s => `${s.name} x ${s.qty} ชิ้น`);
+    if (data.trioSelections && data.trioSelections.length > 0) {
+      data.trioSelections.forEach((set, i) => {
+        lines.push(`  Trio #${i + 1}: ${set.join(', ')}`);
+      });
+    }
     if (data.creamCheese) lines.push('Cream Cheese (แถมฟรี)');
     if (data.jams && data.jams.length > 0) {
       data.jams.forEach(j => lines.push(`${j.name} x ${j.qty}`));
@@ -61,6 +66,7 @@ async function appendToSheet(data) {
     ? data.sandwiches.map(s => {
         let t = `${s.name} x ${s.qty} ชิ้น (${summarizeBreads(s.breads)})`;
         if (s.baseSauces && s.baseSauces.length > 0) t += ` [Base: ${summarizeBreads(s.baseSauces)}]`;
+        if (s.addons && s.addons.length > 0) t += ` [Add-on: ${summarizeBreads(s.addons)}]`;
         return t;
       }).join('\n')
     : '-';
@@ -210,12 +216,27 @@ function buildFlexMessage(data) {
     });
   }
 
+  if (data.trioSelections && data.trioSelections.length > 0) {
+    data.trioSelections.forEach((set, i) => {
+      orderLines.push({
+        type: 'text',
+        text: `  └ Trio Set #${i + 1}: ${set.join(', ')}`,
+        size: 'xs',
+        wrap: true,
+        color: '#888888'
+      });
+    });
+  }
+
   if (data.sandwiches && data.sandwiches.length > 0) {
     data.sandwiches.forEach(s => {
       const breadSummary = summarizeBreads(s.breads);
       let txt = `แซนด์วิช (Sandwich): ${s.name} x ${s.qty} ชิ้น (${breadSummary})`;
       if (s.baseSauces && s.baseSauces.length > 0) {
         txt += ` [Base: ${summarizeBreads(s.baseSauces)}]`;
+      }
+      if (s.addons && s.addons.length > 0) {
+        txt += ` [Add-on: ${summarizeBreads(s.addons)}]`;
       }
       orderLines.push({
         type: 'text',
