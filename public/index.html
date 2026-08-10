@@ -408,7 +408,6 @@
   <div class="card">
     <div class="label">ซาวร์โดว์ (Sourdough)</div>
     <div class="label" style="font-size:14px;color:#4b3619;">ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)</div>
-    <div style="font-size:12px;color:#333;margin:4px 0 10px;">หากขนมปังที่เลือกหมด ทางร้านจะใส่ขนมปังแบบอื่นไปให้แทนนะคะ</div>
     <div class="sourdough-header-imgs">
       <img src="/pic/sourdough_cream_cheese_1.png" alt="Sourdough 1">
       <img src="/pic/sourdough_cream_cheese_2.jpg" alt="Sourdough 2">
@@ -1205,6 +1204,8 @@
     }
 
     let html = '<div class="spread-inline-box">';
+    html += '<div class="label" style="margin-top:0;">ครีมชีสและแยม (Cream Cheese and Jam)</div>';
+    html += '<div style="font-size:12px;color:#333;margin:0 0 10px;">หากขนมปังที่เลือกหมด ทางร้านจะใส่ขนมปังแบบอื่นไปให้แทนนะคะ</div>';
     html += '<div class="spread-sub" style="margin-top:0;">Cream Cheese (0 ฿)</div>';
     if (ccAvailable) {
       html += '<div class="spread-fixed"><span>Cream Cheese</span><span class="spread-fixed-badge">✓ แถมฟรี</span></div>';
