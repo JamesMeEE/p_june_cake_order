@@ -124,6 +124,10 @@
     font-size: 14px; font-family: inherit; background: white;
   }
 
+  .spread-inline-box {
+    margin: 4px 0 12px; padding: 12px; background: #faf6f0;
+    border-radius: 8px; border: 1px solid #efe6da;
+  }
   .spread-note {
     font-size: 12px; color: #8a623f; background: #fff5e8;
     padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; font-weight: 600;
@@ -404,6 +408,7 @@
   <div class="card">
     <div class="label">ซาวร์โดว์ (Sourdough)</div>
     <div class="label" style="font-size:14px;color:#4b3619;">ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)</div>
+    <div style="font-size:12px;color:#333;margin:4px 0 10px;">หากขนมปังที่เลือกหมด ทางร้านจะใส่ขนมปังแบบอื่นไปให้แทนนะคะ</div>
     <div class="sourdough-header-imgs">
       <img src="/pic/sourdough_cream_cheese_1.png" alt="Sourdough 1">
       <img src="/pic/sourdough_cream_cheese_2.jpg" alt="Sourdough 2">
@@ -411,9 +416,7 @@
     <div id="sourdoughList"></div>
     <div id="trioSelections" class="hidden"></div>
 
-    <div id="spreadCard" class="hidden">
-      <div class="label" style="margin-top:16px;">ครีมชีสและแยม (Cream Cheese &amp; Jam)</div>
-      <div id="spreadSection"></div>
+    <div id="extraCard" class="hidden">
       <div class="label" style="margin-top:16px;">เพิ่มเติม (Extra)</div>
       <div id="extraList"></div>
     </div>
@@ -552,6 +555,11 @@
     </div>
 
     <div class="card">
+      <div class="admin-section">🥖 ตัวเลือกแป้ง &amp; Base Sauce</div>
+      <div id="adminOptions"></div>
+    </div>
+
+    <div class="card">
       <div class="admin-section">🧈 ครีมชีสและแยม (Cream Cheese &amp; Jam)</div>
       <div id="adminExtras"></div>
     </div>
@@ -623,6 +631,7 @@
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
         sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
         extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
+        options: { supper: true, cream_cheese: true, nutella: true },
         closedDates: { pickup: [], delivery: [] },
         sameDayClosedDate: '',
         prices: {}
@@ -827,7 +836,7 @@
   ];
 
   const SANDWICHES = [
-    { id: 'avocado_shrimps', name: 'Avocado & Shrimps with Scrambled Egg Sourdough', label: 'Avocado & Shrimps with Scrambled Egg Sourdough', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg' },
+    { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', label: 'Avocado & Shrimp with Scrambled Egg', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg' },
     { id: 'smoked_salmon', name: 'Smoked Salmon Sourdough', label: 'Smoked Salmon Sourdough', price: 170, image: '/pic/smoked_salmon_sourdough.jpg' },
     { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt Sourdough', label: 'Sunny Side Up Chicken Melt Sourdough', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg' },
     { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry Sourdough', label: 'Strawberry & Blueberry Sourdough', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true }
@@ -836,21 +845,21 @@
   let SUPPER_UPGRADE_PRICE = 5;
 
   const SOURDOUGHS = [
-    { id: 'country', name: 'Sourdough Country Bread', label: 'Sourdough Country Bread', price: 145, image: '/pic/sourdough_country_bread.jpg' },
-    { id: 'cranberry', name: 'Cranberry & Walnut Sourdough', label: 'Cranberry & Walnut Sourdough', price: 160, image: '/pic/cranberry_walnut_sourdough.jpg' },
-    { id: 'multigrain', name: 'Supper Multigrain Sourdough', label: 'Supper Multigrain Sourdough', price: 155, image: '/pic/supper_multigrain_sourdough.jpg' },
-    { id: 'darkrye', name: 'Dark Rye Sourdough', label: 'Dark Rye Sourdough', price: 160, image: '/pic/dark_rye_sourdough.png' },
-    { id: 'fig_walnut', name: 'Fig Walnut Sourdough', label: 'Fig Walnut Sourdough', price: 170, image: '/pic/sourdough_country_bread.jpg' },
+    { id: 'country', name: 'Country Bread', label: 'Country Bread', price: 145, image: '/pic/sourdough_country_bread.jpg' },
+    { id: 'cranberry', name: 'Cranberry & Walnut', label: 'Cranberry & Walnut', price: 160, image: '/pic/cranberry_walnut_sourdough.jpg' },
+    { id: 'multigrain', name: 'Supper Multigrain', label: 'Supper Multigrain', price: 155, image: '/pic/supper_multigrain_sourdough.jpg' },
+    { id: 'darkrye', name: 'Dark Rye', label: 'Dark Rye', price: 160, image: '/pic/dark_rye_sourdough.png' },
+    { id: 'fig_walnut', name: 'Fig Walnut', label: 'Fig Walnut', price: 170, image: '/pic/sourdough_country_bread.jpg' },
     { id: 'olive_lemon', name: 'Olive Lemon Italian Herb', label: 'Olive Lemon Italian Herb', price: 175, image: '/pic/sourdough_country_bread.jpg' },
-    { id: 'trio', name: 'Sourdough Trio Set', label: 'Sourdough Trio Set', price: 165, image: '/pic/sourdough_country_bread.jpg', isTrio: true }
+    { id: 'trio', name: 'Sourdough Trio Set', label: 'Sourdough Trio Set', price: 175, image: '/pic/sourdough_country_bread.jpg', isTrio: true }
   ];
 
   const TRIO_OPTIONS = [
-    'Sourdough Country Bread',
-    'Cranberry & Walnut Sourdough',
-    'Supper Multigrain Sourdough',
-    'Dark Rye Sourdough',
-    'Fig Walnut Sourdough',
+    'Country Bread',
+    'Cranberry & Walnut',
+    'Supper Multigrain',
+    'Dark Rye',
+    'Fig Walnut',
     'Olive Lemon Italian Herb'
   ];
 
@@ -892,10 +901,8 @@
     });
   }
 
-  let creamCheeseQty = 0;
-  let spreadInitialized = false;
   let trioSelections = [];
-  const jamQty = { mixed_berry: 0, apricot: 0 };
+  const sourdoughJam = {};
 
   const quantities = {};
   FLAVORS.forEach(f => quantities['flavor-' + f.id] = 0);
@@ -1004,7 +1011,8 @@
           '<span class="qty-value">0</span>' +
           '<button class="qty-btn plus" data-action="plus"></button>' +
         '</div>' +
-      '</div>'
+      '</div>' +
+      '<div class="spread-inline hidden" data-spread-for="' + s.id + '"></div>'
     ).join('');
 
     const extraList = document.getElementById("extraList");
@@ -1071,7 +1079,9 @@
           renderTrioSelections();
         }
         if (key.startsWith('sourdough-')) {
-          updateSpreadVisibility();
+          const sid = key.replace('sourdough-', '');
+          renderSpreadForItem(sid);
+          updateExtraVisibility();
         }
         if (key.startsWith('sandwich-')) {
           const sid = key.replace('sandwich-', '');
@@ -1148,20 +1158,17 @@
     return sourdoughCount() > 0;
   }
 
-  function jamTotal() {
-    return JAM_OPTIONS.reduce((sum, j) => sum + jamQty[j.id], 0);
+  function itemJamTotal(sid) {
+    if (!sourdoughJam[sid]) return 0;
+    return JAM_OPTIONS.reduce((sum, j) => sum + (sourdoughJam[sid][j.id] || 0), 0);
   }
 
-  function updateSpreadVisibility() {
-    const card = document.getElementById('spreadCard');
+  function updateExtraVisibility() {
+    const card = document.getElementById('extraCard');
     if (hasSourdough()) {
       card.classList.remove('hidden');
-      renderSpreadSection();
     } else {
       card.classList.add('hidden');
-      creamCheeseQty = 0;
-      spreadInitialized = false;
-      JAM_OPTIONS.forEach(j => jamQty[j.id] = 0);
       EXTRAS.forEach(e => {
         quantities['extra-' + e.id] = 0;
         const el = document.querySelector(`[data-key="extra-${e.id}"]`);
@@ -1171,21 +1178,34 @@
     }
   }
 
-  function renderSpreadSection() {
-    const maxQty = sourdoughUnitCount();
+  function renderSpreadForItem(sid) {
+    const container = document.querySelector(`[data-spread-for="${sid}"]`);
+    if (!container) return;
+    const qty = quantities['sourdough-' + sid];
+
+    if (qty <= 0) {
+      container.classList.add('hidden');
+      container.innerHTML = '';
+      delete sourdoughJam[sid];
+      return;
+    }
+
+    if (!sourdoughJam[sid]) sourdoughJam[sid] = { mixed_berry: 0, apricot: 0 };
+    const maxQty = qty;
     const ccAvailable = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
 
     JAM_OPTIONS.forEach(j => {
       const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
-      if (!avail) jamQty[j.id] = 0;
+      if (!avail) sourdoughJam[sid][j.id] = 0;
     });
-    while (jamTotal() > maxQty) {
+    while (itemJamTotal(sid) > maxQty) {
       for (const j of JAM_OPTIONS) {
-        if (jamQty[j.id] > 0) { jamQty[j.id]--; break; }
+        if (sourdoughJam[sid][j.id] > 0) { sourdoughJam[sid][j.id]--; break; }
       }
     }
 
-    let html = '<div class="spread-sub" style="margin-top:0;">Cream Cheese (0 ฿)</div>';
+    let html = '<div class="spread-inline-box">';
+    html += '<div class="spread-sub" style="margin-top:0;">Cream Cheese (0 ฿)</div>';
     if (ccAvailable) {
       html += '<div class="spread-fixed"><span>Cream Cheese</span><span class="spread-fixed-badge">✓ แถมฟรี</span></div>';
     } else {
@@ -1200,9 +1220,9 @@
         html += '<div class="spread-row"><div class="spread-row-info">' +
           `<div class="spread-row-name">${j.name}</div>` +
           '<div class="spread-row-price">0 ฿</div></div>' +
-          `<div class="qty-controls" data-spread="jam-${j.id}">` +
+          `<div class="qty-controls" data-itemjam="${sid}:${j.id}">` +
             '<button class="qty-btn" data-action="minus"></button>' +
-            `<span class="qty-value">${jamQty[j.id]}</span>` +
+            `<span class="qty-value">${sourdoughJam[sid][j.id]}</span>` +
             '<button class="qty-btn plus" data-action="plus"></button>' +
           '</div></div>';
       } else {
@@ -1211,33 +1231,34 @@
           '<div class="spread-row-price">ของหมดชั่วคราวค่ะ</div></div></div>';
       }
     });
+    html += '</div>';
 
-    document.getElementById('spreadSection').innerHTML = html;
+    container.innerHTML = html;
+    container.classList.remove('hidden');
 
-    document.querySelectorAll('[data-spread]').forEach(ctrl => {
-      const jamId = ctrl.dataset.spread.replace('jam-', '');
+    container.querySelectorAll('[data-itemjam]').forEach(ctrl => {
+      const [csid, jamId] = ctrl.dataset.itemjam.split(':');
       const minusBtn = ctrl.querySelector('[data-action="minus"]');
       const plusBtn = ctrl.querySelector('[data-action="plus"]');
-
       minusBtn.addEventListener('click', () => {
-        if (jamQty[jamId] > 0) { jamQty[jamId]--; refreshSpreadButtons(); }
+        if (sourdoughJam[csid][jamId] > 0) { sourdoughJam[csid][jamId]--; refreshItemJam(csid); }
       });
       plusBtn.addEventListener('click', () => {
-        if (jamTotal() < maxQty) { jamQty[jamId]++; refreshSpreadButtons(); }
+        if (itemJamTotal(csid) < quantities['sourdough-' + csid]) { sourdoughJam[csid][jamId]++; refreshItemJam(csid); }
       });
     });
-
-    refreshSpreadButtons();
-    spreadInitialized = true;
+    refreshItemJam(sid);
   }
 
-  function refreshSpreadButtons() {
-    const maxQty = sourdoughUnitCount();
-    document.querySelectorAll('[data-spread]').forEach(ctrl => {
-      const jamId = ctrl.dataset.spread.replace('jam-', '');
-      ctrl.querySelector('.qty-value').innerText = jamQty[jamId];
-      ctrl.querySelector('[data-action="minus"]').disabled = jamQty[jamId] <= 0;
-      ctrl.querySelector('[data-action="plus"]').disabled = jamTotal() >= maxQty;
+  function refreshItemJam(sid) {
+    const container = document.querySelector(`[data-spread-for="${sid}"]`);
+    if (!container) return;
+    const maxQty = quantities['sourdough-' + sid];
+    container.querySelectorAll('[data-itemjam]').forEach(ctrl => {
+      const jamId = ctrl.dataset.itemjam.split(':')[1];
+      ctrl.querySelector('.qty-value').innerText = sourdoughJam[sid][jamId];
+      ctrl.querySelector('[data-action="minus"]').disabled = sourdoughJam[sid][jamId] <= 0;
+      ctrl.querySelector('[data-action="plus"]').disabled = itemJamTotal(sid) >= maxQty;
     });
   }
 
@@ -1271,30 +1292,49 @@
       while (sandwichAddons[sid].length > qty) sandwichAddons[sid].pop();
     }
 
+    const supperAvail = !shopConfig || !shopConfig.options || shopConfig.options.supper !== false;
+    const ccAvail = !shopConfig || !shopConfig.options || shopConfig.options.cream_cheese !== false;
+    const nutellaAvail = !shopConfig || !shopConfig.options || shopConfig.options.nutella !== false;
+
     let html = '<div class="bread-choice-label">เลือกแป้งขนมปัง</div>';
     for (let i = 0; i < qty; i++) {
-      const cur = sandwichBread[sid][i];
+      let cur = sandwichBread[sid][i];
+      if (cur === 'supper' && !supperAvail) { cur = 'normal'; sandwichBread[sid][i] = 'normal'; }
       html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
       html += '<div class="bread-options">';
       html += `<button type="button" class="bread-opt ${cur === 'normal' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="normal">Country Bread</button>`;
-      html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">Supper Multigrain (+5฿)</button>`;
+      if (supperAvail) {
+        html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">Supper Multigrain (+5฿)</button>`;
+      } else {
+        html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Supper Multigrain (หมด)</button>`;
+      }
       html += '</div></div>';
     }
 
     if (hasBase) {
       html += '<div class="bread-choice-label" style="margin-top:12px;">เลือก Base Sauce</div>';
       for (let i = 0; i < qty; i++) {
-        const cur = sandwichBaseSauce[sid][i];
+        let cur = sandwichBaseSauce[sid][i];
+        if (cur === 'cream_cheese' && !ccAvail) { cur = nutellaAvail ? 'nutella' : ''; sandwichBaseSauce[sid][i] = cur; }
+        if (cur === 'nutella' && !nutellaAvail) { cur = ccAvail ? 'cream_cheese' : ''; sandwichBaseSauce[sid][i] = cur; }
         html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
         html += '<div class="bread-options">';
-        html += `<button type="button" class="base-opt ${cur === 'cream_cheese' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="cream_cheese">Cream Cheese</button>`;
-        html += `<button type="button" class="base-opt ${cur === 'nutella' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="nutella">Nutella</button>`;
+        if (ccAvail) {
+          html += `<button type="button" class="base-opt ${cur === 'cream_cheese' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="cream_cheese">Cream Cheese</button>`;
+        } else {
+          html += `<button type="button" class="base-opt" disabled style="opacity:0.4;">Cream Cheese (หมด)</button>`;
+        }
+        if (nutellaAvail) {
+          html += `<button type="button" class="base-opt ${cur === 'nutella' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="nutella">Nutella</button>`;
+        } else {
+          html += `<button type="button" class="base-opt" disabled style="opacity:0.4;">Nutella (หมด)</button>`;
+        }
         html += '</div></div>';
       }
     }
 
     if (hasAddon) {
-      html += '<div class="bread-choice-label" style="margin-top:12px;">Add-on (เลือกได้หลายอย่าง)</div>';
+      html += '<div class="bread-choice-label" style="margin-top:12px;">Add-on (เพิ่ม)</div>';
       for (let i = 0; i < qty; i++) {
         const cur = sandwichAddons[sid][i] || [];
         html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
@@ -1625,10 +1665,9 @@
 
   function renderTimeSlots() {
     if (!selectedDateObj) return;
-    const isSaturday = selectedDateObj.getDay() === 6;
 
     if (deliveryMethod === 'pickup') {
-      const hours = isSaturday ? [10, 11] : [10, 11, 12, 13, 14, 16, 17];
+      const hours = [10, 11, 12, 13, 14, 15];
       const minutes = ['00', '15', '30', '45'];
 
       let html = '<div class="time-dropdowns">';
@@ -1652,13 +1691,7 @@
       document.getElementById('pickupHour').addEventListener('change', updatePickupTime);
       document.getElementById('pickupMinute').addEventListener('change', updatePickupTime);
     } else {
-      let slots = [];
-      const isWeekend = selectedDateObj.getDay() === 6 || selectedDateObj.getDay() === 0;
-      if (isWeekend) {
-        slots = ['7.00-8.00', '8.00-9.00', '9.00-10.00', '10.00-11.00', '11.00-12.00', '12.00-13.00', '13.00-14.00', '14.00-15.00'];
-      } else {
-        slots = ['7.00-8.00', '8.00-9.00', '9.00-10.00', '10.00-11.00', '11.00-12.00', '12.00-13.00', '13.00-14.00', '14.00-15.00', '15.00-16.00'];
-      }
+      const slots = ['7.00-8.00', '8.00-9.00', '9.00-10.00', '10.00-11.00', '11.00-12.00', '12.00-13.00', '13.00-14.00', '14.00-15.00'];
 
       const html = '<div class="time-list">' + slots.map(s =>
         `<button type="button" class="time-opt" data-time="${s}">${s}</button>`
@@ -1744,8 +1777,18 @@
       .map(c => ({ name: c.name, price: c.price, qty: quantities['croissant-' + c.id] }));
     const tiramisus = TIRAMISUS.filter(t => quantities['tiramisu-' + t.id] > 0)
       .map(t => ({ name: t.name, price: t.price, qty: quantities['tiramisu-' + t.id] }));
+    const ccAvail = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
     const sourdoughs = SOURDOUGHS.filter(s => quantities['sourdough-' + s.id] > 0)
-      .map(s => ({ name: s.name, price: s.price, qty: quantities['sourdough-' + s.id] }));
+      .map(s => {
+        const jams = sourdoughJam[s.id]
+          ? JAM_OPTIONS.filter(j => (sourdoughJam[s.id][j.id] || 0) > 0).map(j => ({ name: j.name, qty: sourdoughJam[s.id][j.id] }))
+          : [];
+        return {
+          name: s.name, price: s.price, qty: quantities['sourdough-' + s.id],
+          creamCheese: ccAvail,
+          jams
+        };
+      });
     const sandwiches = SANDWICHES.filter(s => quantities['sandwich-' + s.id] > 0)
       .map(s => {
         const breads = sandwichBread[s.id] || [];
@@ -1789,15 +1832,13 @@
       }
     }
 
-    if (hasSourdough()) {
-      const maxQty = sourdoughUnitCount();
-      if (jamTotal() === 0 && document.querySelector('[data-spread]')) {
-        showAlert("กรุณาเลือกแยมอย่างน้อย 1 อัน");
-        return;
-      }
-      if (jamTotal() > maxQty) {
-        showAlert(`เลือกแยมได้สูงสุด ${maxQty} อัน`);
-        return;
+    for (const s of sourdoughs) {
+      if (s.jams.length === 0) {
+        const anyJamAvail = JAM_OPTIONS.some(j => !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false);
+        if (anyJamAvail) {
+          showAlert(`กรุณาเลือกแยมสำหรับ ${s.name} อย่างน้อย 1 อัน`);
+          return;
+        }
       }
     }
 
@@ -1845,10 +1886,6 @@
     const data = {
       userId, flavors, sauces, croissants, tiramisus, sourdoughs, sandwiches, extras,
       trioSelections: quantities['sourdough-trio'] > 0 ? trioSelections : [],
-      creamCheese: hasSourdough() && (!shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false),
-      jams: hasSourdough()
-        ? JAM_OPTIONS.filter(j => jamQty[j.id] > 0).map(j => ({ name: j.name, qty: jamQty[j.id] }))
-        : [],
       itemsTotal, deliveryFee: finalDeliveryFee,
       deliveryDistance, total, deliveryDate, deliveryMethod,
       name, phone, address, mapLink, note
@@ -1952,9 +1989,9 @@
     renderAdminPrices();
 
     const sourdoughNames = {
-      country: 'Sourdough Country Bread', cranberry: 'Cranberry & Walnut Sourdough',
-      multigrain: 'Supper Multigrain Sourdough', darkrye: 'Dark Rye Sourdough',
-      fig_walnut: 'Fig Walnut Sourdough', olive_lemon: 'Olive Lemon Italian Herb',
+      country: 'Country Bread', cranberry: 'Cranberry & Walnut',
+      multigrain: 'Supper Multigrain', darkrye: 'Dark Rye',
+      fig_walnut: 'Fig Walnut', olive_lemon: 'Olive Lemon Italian Herb',
       trio: 'Sourdough Trio Set'
     };
     if (!shopConfig.sourdoughs) {
@@ -1970,7 +2007,7 @@
     document.getElementById('adminSourdoughs').innerHTML = sourdoughHtml;
 
     const sandwichNames = {
-      avocado_shrimps: 'Avocado & Shrimps with Scrambled Egg',
+      avocado_shrimps: 'Avocado & Shrimp with Scrambled Egg',
       smoked_salmon: 'Smoked Salmon',
       sunny_side_up: 'Sunny Side Up Chicken Melt',
       strawberry_blueberry: 'Strawberry & Blueberry'
@@ -1986,6 +2023,23 @@
         `<span class="toggle-slider"></span></label></div>`;
     }
     document.getElementById('adminSandwiches').innerHTML = sandwichHtml;
+
+    const optionNames = {
+      supper: 'Supper Multigrain (แป้ง)',
+      cream_cheese: 'Cream Cheese (Base Sauce)',
+      nutella: 'Nutella (Base Sauce)'
+    };
+    if (!shopConfig.options) {
+      shopConfig.options = { supper: true, cream_cheese: true, nutella: true };
+    }
+    let optionHtml = '';
+    for (const [id, name] of Object.entries(optionNames)) {
+      const checked = shopConfig.options[id] !== false ? 'checked' : '';
+      optionHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
+        `<label class="toggle-switch"><input type="checkbox" data-type="option" data-id="${id}" ${checked}>` +
+        `<span class="toggle-slider"></span></label></div>`;
+    }
+    document.getElementById('adminOptions').innerHTML = optionHtml;
 
     const extraNames = {
       cream_cheese: 'Cream Cheese',
@@ -2169,6 +2223,10 @@
     if (!shopConfig.tiramisus) shopConfig.tiramisus = {};
     document.querySelectorAll('[data-type="tiramisu"]').forEach(cb => {
       shopConfig.tiramisus[cb.dataset.id] = cb.checked;
+    });
+    if (!shopConfig.options) shopConfig.options = {};
+    document.querySelectorAll('[data-type="option"]').forEach(cb => {
+      shopConfig.options[cb.dataset.id] = cb.checked;
     });
     if (document.getElementById('sameDayToggle').checked) {
       shopConfig.sameDayClosedDate = '';
