@@ -390,7 +390,7 @@
     <div id="flavorList"></div>
   </div>
 
-  <div class="card">
+  <div class="card hidden" id="sauceCard">
     <div class="label">ซอส (Extra Sauce)</div>
     <div id="sauceList"></div>
   </div>
@@ -566,8 +566,12 @@
     <div class="card">
       <div class="admin-section">⏰ โหมดรับออเดอร์วันปัจจุบัน</div>
       <div class="admin-row">
-        <span class="admin-row-label">เปิดรับออเดอร์วันนี้</span>
-        <label class="toggle-switch"><input type="checkbox" id="sameDayToggle"><span class="toggle-slider"></span></label>
+        <span class="admin-row-label">เปิดรับออเดอร์วันนี้ (นัดรับ Pickup)</span>
+        <label class="toggle-switch"><input type="checkbox" id="sameDayTogglePickup"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="admin-row">
+        <span class="admin-row-label">เปิดรับออเดอร์วันนี้ (จัดส่ง Delivery)</span>
+        <label class="toggle-switch"><input type="checkbox" id="sameDayToggleDelivery"><span class="toggle-slider"></span></label>
       </div>
     </div>
 
@@ -630,9 +634,10 @@
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
         sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
         extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
-        options: { supper: true, cream_cheese: true, nutella: true },
+        options: { country: true, supper: true, cream_cheese: true, nutella: true },
         closedDates: { pickup: [], delivery: [] },
-        sameDayClosedDate: '',
+        sameDayClosedPickup: '',
+        sameDayClosedDelivery: '',
         prices: {}
       };
     }
@@ -836,9 +841,9 @@
 
   const SANDWICHES = [
     { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', label: 'Avocado & Shrimp with Scrambled Egg', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg' },
-    { id: 'smoked_salmon', name: 'Smoked Salmon Sourdough', label: 'Smoked Salmon Sourdough', price: 170, image: '/pic/smoked_salmon_sourdough.jpg' },
-    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt Sourdough', label: 'Sunny Side Up Chicken Melt Sourdough', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg' },
-    { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry Sourdough', label: 'Strawberry & Blueberry Sourdough', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true }
+    { id: 'smoked_salmon', name: 'Smoked Salmon', label: 'Smoked Salmon', price: 170, image: '/pic/smoked_salmon_sourdough.jpg' },
+    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt', label: 'Sunny Side Up Chicken Melt', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg' },
+    { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry', label: 'Strawberry & Blueberry', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true }
   ];
 
   let SUPPER_UPGRADE_PRICE = 5;
@@ -849,7 +854,7 @@
     { id: 'multigrain', name: 'Supper Multigrain', label: 'Supper Multigrain', price: 155, image: '/pic/supper_multigrain_sourdough.jpg' },
     { id: 'darkrye', name: 'Dark Rye', label: 'Dark Rye', price: 160, image: '/pic/dark_rye_sourdough.png' },
     { id: 'fig_walnut', name: 'Fig Walnut', label: 'Fig Walnut', price: 170, image: '/pic/sourdough_country_bread.jpg' },
-    { id: 'olive_lemon', name: 'Olive Lemon Italian Herb', label: 'Olive Lemon Italian Herb', price: 175, image: '/pic/sourdough_country_bread.jpg' },
+    { id: 'olive_lemon', name: 'Black Olive', label: 'Black Olive', price: 175, image: '/pic/sourdough_country_bread.jpg' },
     { id: 'trio', name: 'Sourdough Trio Set', label: 'Sourdough Trio Set', price: 175, image: '/pic/sourdough_country_bread.jpg', isTrio: true }
   ];
 
@@ -859,7 +864,7 @@
     'Supper Multigrain',
     'Dark Rye',
     'Fig Walnut',
-    'Olive Lemon Italian Herb'
+    'Black Olive'
   ];
 
   const JAM_OPTIONS = [
@@ -1074,6 +1079,9 @@
         valueEl.innerText = quantities[key];
         minusBtn.disabled = quantities[key] <= 0;
         updateTotal();
+        if (key.startsWith('flavor-')) {
+          updateSauceVisibility();
+        }
         if (key === 'sourdough-trio') {
           renderTrioSelections();
         }
@@ -1110,7 +1118,7 @@
     while (trioSelections.length < trioQty) trioSelections.push(['', '', '']);
     while (trioSelections.length > trioQty) trioSelections.pop();
 
-    let html = '';
+    let html = '<div style="font-size:12px;color:#333;margin:8px 0 4px;">หากขนมปังที่เลือกหมด ทางร้านจะใส่ขนมปังแบบอื่นไปให้แทนนะคะ</div>';
     for (let setIdx = 0; setIdx < trioQty; setIdx++) {
       html += '<div class="trio-group">';
       html += `<div class="trio-group-title">🍞 Trio Set ชุดที่ ${setIdx + 1} — เลือก 3 อัน</div>`;
@@ -1205,7 +1213,6 @@
 
     let html = '<div class="spread-inline-box">';
     html += '<div class="label" style="margin-top:0;">ครีมชีสและแยม (Cream Cheese and Jam)</div>';
-    html += '<div style="font-size:12px;color:#333;margin:0 0 10px;">หากขนมปังที่เลือกหมด ทางร้านจะใส่ขนมปังแบบอื่นไปให้แทนนะคะ</div>';
     html += '<div class="spread-sub" style="margin-top:0;">Cream Cheese (0 ฿)</div>';
     if (ccAvailable) {
       html += '<div class="spread-fixed"><span>Cream Cheese</span><span class="spread-fixed-badge">✓ แถมฟรี</span></div>';
@@ -1293,6 +1300,7 @@
       while (sandwichAddons[sid].length > qty) sandwichAddons[sid].pop();
     }
 
+    const countryAvail = !shopConfig || !shopConfig.options || shopConfig.options.country !== false;
     const supperAvail = !shopConfig || !shopConfig.options || shopConfig.options.supper !== false;
     const ccAvail = !shopConfig || !shopConfig.options || shopConfig.options.cream_cheese !== false;
     const nutellaAvail = !shopConfig || !shopConfig.options || shopConfig.options.nutella !== false;
@@ -1301,9 +1309,14 @@
     for (let i = 0; i < qty; i++) {
       let cur = sandwichBread[sid][i];
       if (cur === 'supper' && !supperAvail) { cur = 'normal'; sandwichBread[sid][i] = 'normal'; }
+      if (cur === 'normal' && !countryAvail && supperAvail) { cur = 'supper'; sandwichBread[sid][i] = 'supper'; }
       html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
       html += '<div class="bread-options">';
-      html += `<button type="button" class="bread-opt ${cur === 'normal' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="normal">Country Bread</button>`;
+      if (countryAvail) {
+        html += `<button type="button" class="bread-opt ${cur === 'normal' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="normal">Country Bread</button>`;
+      } else {
+        html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Country Bread (หมด)</button>`;
+      }
       if (supperAvail) {
         html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">Supper Multigrain (+5฿)</button>`;
       } else {
@@ -1587,14 +1600,32 @@
     return FLAVORS.some(f => quantities['flavor-' + f.id] > 0);
   }
 
+  function updateSauceVisibility() {
+    const card = document.getElementById('sauceCard');
+    if (hasCheesecake()) {
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+      SAUCES.forEach(s => {
+        quantities['sauce-' + s.id] = 0;
+        const el = document.querySelector(`[data-key="sauce-${s.id}"]`);
+        if (el) el.querySelector('.qty-value').innerText = '0';
+      });
+      updateTotal();
+    }
+  }
+
   function todayDateStr() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
 
-  function isSameDayOpen() {
+  function isSameDayOpen(method) {
     if (!shopConfig) return true;
-    return shopConfig.sameDayClosedDate !== todayDateStr();
+    const m = method || deliveryMethod;
+    if (m === 'pickup') return shopConfig.sameDayClosedPickup !== todayDateStr();
+    if (m === 'delivery') return shopConfig.sameDayClosedDelivery !== todayDateStr();
+    return true;
   }
 
   function isDateValid(date) {
@@ -1931,7 +1962,8 @@
   function renderAdminPanel() {
     if (!shopConfig) return;
 
-    document.getElementById('sameDayToggle').checked = isSameDayOpen();
+    document.getElementById('sameDayTogglePickup').checked = isSameDayOpen('pickup');
+    document.getElementById('sameDayToggleDelivery').checked = isSameDayOpen('delivery');
 
     const flavorNames = { original: '🧀 Original', valrhona: '🍫 Valrhona Chocolate' };
     const sauceNames = {
@@ -1992,7 +2024,7 @@
     const sourdoughNames = {
       country: 'Country Bread', cranberry: 'Cranberry & Walnut',
       multigrain: 'Supper Multigrain', darkrye: 'Dark Rye',
-      fig_walnut: 'Fig Walnut', olive_lemon: 'Olive Lemon Italian Herb',
+      fig_walnut: 'Fig Walnut', olive_lemon: 'Black Olive',
       trio: 'Sourdough Trio Set'
     };
     if (!shopConfig.sourdoughs) {
@@ -2026,12 +2058,13 @@
     document.getElementById('adminSandwiches').innerHTML = sandwichHtml;
 
     const optionNames = {
+      country: 'Country Bread (แป้ง)',
       supper: 'Supper Multigrain (แป้ง)',
       cream_cheese: 'Cream Cheese (Base Sauce)',
       nutella: 'Nutella (Base Sauce)'
     };
     if (!shopConfig.options) {
-      shopConfig.options = { supper: true, cream_cheese: true, nutella: true };
+      shopConfig.options = { country: true, supper: true, cream_cheese: true, nutella: true };
     }
     let optionHtml = '';
     for (const [id, name] of Object.entries(optionNames)) {
@@ -2229,10 +2262,15 @@
     document.querySelectorAll('[data-type="option"]').forEach(cb => {
       shopConfig.options[cb.dataset.id] = cb.checked;
     });
-    if (document.getElementById('sameDayToggle').checked) {
-      shopConfig.sameDayClosedDate = '';
+    if (document.getElementById('sameDayTogglePickup').checked) {
+      shopConfig.sameDayClosedPickup = '';
     } else {
-      shopConfig.sameDayClosedDate = todayDateStr();
+      shopConfig.sameDayClosedPickup = todayDateStr();
+    }
+    if (document.getElementById('sameDayToggleDelivery').checked) {
+      shopConfig.sameDayClosedDelivery = '';
+    } else {
+      shopConfig.sameDayClosedDelivery = todayDateStr();
     }
 
     if (!shopConfig.prices) shopConfig.prices = {};
