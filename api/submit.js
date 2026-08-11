@@ -48,14 +48,19 @@ async function appendToSheet(data) {
     const lines = [];
     data.sourdoughs.forEach(s => {
       lines.push(`${s.name} x ${s.qty} ชิ้น`);
-      if (s.creamCheese) lines.push('  + Cream Cheese (แถมฟรี)');
-      if (s.jams && s.jams.length > 0) {
-        s.jams.forEach(j => lines.push(`  + ${j.name} x ${j.qty}`));
-      }
-      if (s.name === 'Sourdough Trio Set' && data.trioSelections && data.trioSelections.length > 0) {
-        data.trioSelections.forEach((set, i) => {
-          lines.push(`  Trio #${i + 1}: ${set.join(', ')}`);
+      if (s.isTrio && s.trioSets && s.trioSets.length > 0) {
+        s.trioSets.forEach((set, i) => {
+          lines.push(`  เซ็ท ${i + 1}: ${set.breads.join(', ')}`);
+          if (set.creamCheese) lines.push(`    + Cream Cheese (แถมฟรี)`);
+          if (set.jams && set.jams.length > 0) {
+            set.jams.forEach(j => lines.push(`    + ${j.name} x ${j.qty}`));
+          }
         });
+      } else {
+        if (s.creamCheese) lines.push('  + Cream Cheese (แถมฟรี)');
+        if (s.jams && s.jams.length > 0) {
+          s.jams.forEach(j => lines.push(`  + ${j.name} x ${j.qty}`));
+        }
       }
     });
     sourdoughsText = lines.join('\n');
@@ -216,36 +221,57 @@ function buildFlexMessage(data) {
         size: 'sm',
         wrap: true
       });
-      if (s.name === 'Sourdough Trio Set' && data.trioSelections && data.trioSelections.length > 0) {
-        data.trioSelections.forEach((set, i) => {
+      if (s.isTrio && s.trioSets && s.trioSets.length > 0) {
+        s.trioSets.forEach((set, i) => {
           orderLines.push({
             type: 'text',
-            text: `  └ Trio Set #${i + 1}: ${set.join(', ')}`,
+            text: `  └ เซ็ท ${i + 1}: ${set.breads.join(', ')}`,
             size: 'xs',
             wrap: true,
             color: '#888888'
           });
+          if (set.creamCheese) {
+            orderLines.push({
+              type: 'text',
+              text: `      • ครีมชีส (Cream Cheese): แถมฟรี`,
+              size: 'xs',
+              wrap: true,
+              color: '#aaaaaa'
+            });
+          }
+          if (set.jams && set.jams.length > 0) {
+            set.jams.forEach(j => {
+              orderLines.push({
+                type: 'text',
+                text: `      • แยม (Jam): ${j.name} x ${j.qty} อัน`,
+                size: 'xs',
+                wrap: true,
+                color: '#aaaaaa'
+              });
+            });
+          }
         });
-      }
-      if (s.creamCheese) {
-        orderLines.push({
-          type: 'text',
-          text: '  └ ครีมชีส (Cream Cheese): แถมฟรี',
-          size: 'xs',
-          wrap: true,
-          color: '#888888'
-        });
-      }
-      if (s.jams && s.jams.length > 0) {
-        s.jams.forEach(j => {
+      } else {
+        if (s.creamCheese) {
           orderLines.push({
             type: 'text',
-            text: `  └ แยม (Jam): ${j.name} x ${j.qty} อัน`,
+            text: '  └ ครีมชีส (Cream Cheese): แถมฟรี',
             size: 'xs',
             wrap: true,
             color: '#888888'
           });
-        });
+        }
+        if (s.jams && s.jams.length > 0) {
+          s.jams.forEach(j => {
+            orderLines.push({
+              type: 'text',
+              text: `  └ แยม (Jam): ${j.name} x ${j.qty} อัน`,
+              size: 'xs',
+              wrap: true,
+              color: '#888888'
+            });
+          });
+        }
       }
     });
   }
