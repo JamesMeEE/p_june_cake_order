@@ -20,7 +20,7 @@ const DEFAULT_CONFIG = {
   tiramisus: { og: true, ferrero: true },
   sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
   sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, tuna_melt: true, ham_cheese: true },
-  extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
+  extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
   options: { country: true, supper: true, cream_cheese: true, nutella: true },
   prices: {},
   closedDates: { pickup: [], delivery: [] },
