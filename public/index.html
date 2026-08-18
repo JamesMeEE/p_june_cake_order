@@ -917,12 +917,19 @@
     { id: 'apricot', name: 'Apricot Jam', configId: 'apricot_jam' }
   ];
 
+  const SPREAD_OPTIONS = [
+    { id: 'cream_cheese', name: 'Cream Cheese', price: 0, configId: 'cream_cheese' },
+    { id: 'cream_cheese_garlic', name: 'Cream Cheese Garlic & Chives', price: 5, configId: 'cream_cheese_garlic' },
+    { id: 'mixed_berry', name: 'Mixed Berry Jam', price: 0, configId: 'mixed_berry_jam' },
+    { id: 'apricot', name: 'Apricot Jam', price: 0, configId: 'apricot_jam' }
+  ];
+
   const EXTRAS = [
     { id: 'extra_cream_cheese', configId: 'cream_cheese', name: 'Extra Cream Cheese', price: 30 },
     { id: 'extra_cream_cheese_garlic', configId: 'cream_cheese_garlic', name: 'Extra Cream Cheese Garlic & Chives', price: 30 },
-    { id: 'extra_tuna_spread', configId: 'tuna_spread', name: 'Tuna Spread', price: 30 },
     { id: 'extra_mixed_berry_jam', configId: 'mixed_berry_jam', name: 'Extra Mixed Berry Jam', price: 30 },
-    { id: 'extra_apricot_jam', configId: 'apricot_jam', name: 'Extra Apricot Jam', price: 30 }
+    { id: 'extra_apricot_jam', configId: 'apricot_jam', name: 'Extra Apricot Jam', price: 30 },
+    { id: 'extra_tuna_spread', configId: 'tuna_spread', name: 'Tuna Spread', price: 30 }
   ];
 
   const PRICE_GROUPS = {
@@ -953,10 +960,8 @@
   }
 
   let trioSelections = [];
-  const sourdoughJam = {};
-  const sourdoughCream = {};
-  const trioCream = [];
-  let trioJam = [];
+  const sourdoughSpread = {};
+  const trioSpread = [];
 
   const quantities = {};
   FLAVORS.forEach(f => quantities['flavor-' + f.id] = 0);
@@ -1180,17 +1185,19 @@
       container.classList.add('hidden');
       container.innerHTML = '';
       trioSelections = [];
-      trioJam = [];
+      trioSpread.length = 0;
       return;
     }
     while (trioSelections.length < trioQty) trioSelections.push(['', '', '']);
     while (trioSelections.length > trioQty) trioSelections.pop();
-    while (trioJam.length < trioQty) trioJam.push({ mixed_berry: 0, apricot: 0 });
-    while (trioJam.length > trioQty) trioJam.pop();
-    while (trioCream.length < trioQty) trioCream.push({ plain: true, garlic: false });
-    while (trioCream.length > trioQty) trioCream.pop();
+    while (trioSpread.length < trioQty) trioSpread.push([]);
+    while (trioSpread.length > trioQty) trioSpread.pop();
 
-    const ccAvailable = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
+    trioSpread.forEach(sel => {
+      for (let k = sel.length - 1; k >= 0; k--) {
+        if (!spreadOptAvailable(sel[k])) sel.splice(k, 1);
+      }
+    });
 
     let html = '<div style="font-size:12px;color:#e02424;font-weight:bold;margin:8px 0 4px;">**หากขนมปังที่เลือกหมด ทางร้านจะใส่ขนมปังแบบอื่นไปให้แทนนะคะ**</div>';
     for (let setIdx = 0; setIdx < trioQty; setIdx++) {
@@ -1207,58 +1214,18 @@
         html += '</select></div>';
       }
 
-      JAM_OPTIONS.forEach(j => {
-        const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
-        if (!avail) trioJam[setIdx][j.id] = 0;
-      });
-      while (trioJamTotal(setIdx) > 1) {
-        for (const j of JAM_OPTIONS) {
-          if (trioJam[setIdx][j.id] > 0) { trioJam[setIdx][j.id]--; break; }
-        }
-      }
-
-      const ccGarlicAvailable = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese_garlic !== false;
-      if (!ccAvailable) trioCream[setIdx].plain = false;
-      if (!ccGarlicAvailable) trioCream[setIdx].garlic = false;
-
+      const sel = trioSpread[setIdx];
       html += '<div class="spread-inline-box" style="margin-top:12px;">';
       html += `<div class="label" style="margin-top:0;">ครีมชีสและแยม (Cream Cheese and Jam) เซ็ท ${setIdx + 1}</div>`;
-      html += '<div class="spread-sub" style="margin-top:0;">Cream Cheese</div>';
-      if (ccAvailable) {
-        const on = trioCream[setIdx].plain ? 'active' : '';
-        html += `<div class="cc-check-row ${on}" data-triocc="${setIdx}:plain">` +
-          `<div class="cc-check-box">${trioCream[setIdx].plain ? '✓' : ''}</div>` +
-          '<div class="cc-check-name">Cream Cheese</div>' +
-          '<div class="cc-check-price">แถมฟรี</div></div>';
-      }
-      if (ccGarlicAvailable) {
-        const on = trioCream[setIdx].garlic ? 'active' : '';
-        html += `<div class="cc-check-row ${on}" data-triocc="${setIdx}:garlic">` +
-          `<div class="cc-check-box">${trioCream[setIdx].garlic ? '✓' : ''}</div>` +
-          '<div class="cc-check-name">Cream Cheese Garlic & Chives</div>' +
-          '<div class="cc-check-price">+5 ฿</div></div>';
-      }
-      if (!ccAvailable && !ccGarlicAvailable) {
-        html += '<div class="spread-fixed" style="border-color:#ccc;background:#f5f5f5;opacity:0.5;"><span>Cream Cheese</span><span class="spread-fixed-badge">ของหมดชั่วคราวค่ะ</span></div>';
-      }
-      html += '<div class="spread-note" style="margin-top:14px;">📌 เลือกได้สูงสุด 1 อัน (ต่อเซ็ท)</div>';
-      html += '<div class="spread-sub" style="margin-top:0;">Jam (0 ฿)</div>';
-      JAM_OPTIONS.forEach(j => {
-        const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
-        if (avail) {
-          html += '<div class="spread-row"><div class="spread-row-info">' +
-            `<div class="spread-row-name">${j.name}</div>` +
-            '<div class="spread-row-price">0 ฿</div></div>' +
-            `<div class="qty-controls" data-triojam="${setIdx}:${j.id}">` +
-              '<button class="qty-btn" data-action="minus"></button>' +
-              `<span class="qty-value">${trioJam[setIdx][j.id]}</span>` +
-              '<button class="qty-btn plus" data-action="plus"></button>' +
-            '</div></div>';
-        } else {
-          html += '<div class="spread-row" style="opacity:0.4;"><div class="spread-row-info">' +
-            `<div class="spread-row-name">${j.name}</div>` +
-            '<div class="spread-row-price">ของหมดชั่วคราวค่ะ</div></div></div>';
-        }
+      html += '<div class="spread-note" style="margin-top:6px;">📌 เลือกได้สูงสุด 2 อย่าง (ต่อเซ็ท)</div>';
+      SPREAD_OPTIONS.forEach(opt => {
+        if (!spreadOptAvailable(opt.id)) return;
+        const on = sel.includes(opt.id) ? 'active' : '';
+        const priceLabel = opt.price > 0 ? `+${opt.price} ฿` : '0 ฿';
+        html += `<div class="cc-check-row ${on}" data-triospread="${setIdx}:${opt.id}">` +
+          `<div class="cc-check-box">${sel.includes(opt.id) ? '✓' : ''}</div>` +
+          `<div class="cc-check-name">${opt.name}</div>` +
+          `<div class="cc-check-price">${priceLabel}</div></div>`;
       });
       html += '</div>';
 
@@ -1267,51 +1234,33 @@
     container.innerHTML = html;
     container.classList.remove('hidden');
 
-    container.querySelectorAll('select').forEach(sel => {
-      sel.addEventListener('change', () => {
-        const setIdx = parseInt(sel.dataset.set);
-        const slot = parseInt(sel.dataset.slot);
-        trioSelections[setIdx][slot] = sel.value;
+    container.querySelectorAll('select').forEach(selEl => {
+      selEl.addEventListener('change', () => {
+        const setIdx = parseInt(selEl.dataset.set);
+        const slot = parseInt(selEl.dataset.slot);
+        trioSelections[setIdx][slot] = selEl.value;
       });
     });
 
-    container.querySelectorAll('[data-triojam]').forEach(ctrl => {
-      const [sidx, jamId] = ctrl.dataset.triojam.split(':');
-      const setIdx = parseInt(sidx);
-      const minusBtn = ctrl.querySelector('[data-action="minus"]');
-      const plusBtn = ctrl.querySelector('[data-action="plus"]');
-      minusBtn.addEventListener('click', () => {
-        if (trioJam[setIdx][jamId] > 0) { trioJam[setIdx][jamId]--; refreshTrioJam(setIdx); }
-      });
-      plusBtn.addEventListener('click', () => {
-        if (trioJamTotal(setIdx) < 1) { trioJam[setIdx][jamId]++; refreshTrioJam(setIdx); }
-      });
-    });
-    container.querySelectorAll('[data-triocc]').forEach(row => {
+    container.querySelectorAll('[data-triospread]').forEach(row => {
       row.addEventListener('click', () => {
-        const [sidx, kind] = row.dataset.triocc.split(':');
-        const setIdx = parseInt(sidx);
-        trioCream[setIdx][kind] = !trioCream[setIdx][kind];
-        row.classList.toggle('active', trioCream[setIdx][kind]);
-        row.querySelector('.cc-check-box').innerText = trioCream[setIdx][kind] ? '✓' : '';
+        const parts = row.dataset.triospread.split(':');
+        const setIdx = parseInt(parts[0]);
+        const optId = parts[1];
+        const sel = trioSpread[setIdx];
+        const idx = sel.indexOf(optId);
+        if (idx >= 0) {
+          sel.splice(idx, 1);
+        } else {
+          if (sel.length >= 2) {
+            showAlert('เลือกได้สูงสุด 2 อย่างต่อเซ็ท');
+            return;
+          }
+          sel.push(optId);
+        }
+        renderTrioSelections();
         updateTotal();
       });
-    });
-    for (let i = 0; i < trioQty; i++) refreshTrioJam(i);
-  }
-
-  function trioJamTotal(setIdx) {
-    if (!trioJam[setIdx]) return 0;
-    return JAM_OPTIONS.reduce((sum, j) => sum + (trioJam[setIdx][j.id] || 0), 0);
-  }
-
-  function refreshTrioJam(setIdx) {
-    const container = document.getElementById('trioSelections');
-    container.querySelectorAll(`[data-triojam^="${setIdx}:"]`).forEach(ctrl => {
-      const jamId = ctrl.dataset.triojam.split(':')[1];
-      ctrl.querySelector('.qty-value').innerText = trioJam[setIdx][jamId];
-      ctrl.querySelector('[data-action="minus"]').disabled = trioJam[setIdx][jamId] <= 0;
-      ctrl.querySelector('[data-action="plus"]').disabled = trioJamTotal(setIdx) >= 1;
     });
   }
 
@@ -1334,11 +1283,6 @@
     return sourdoughCount() > 0;
   }
 
-  function itemJamTotal(sid) {
-    if (!sourdoughJam[sid]) return 0;
-    return JAM_OPTIONS.reduce((sum, j) => sum + (sourdoughJam[sid][j.id] || 0), 0);
-  }
-
   function updateExtraVisibility() {
     const card = document.getElementById('extraCard');
     if (hasSourdough()) {
@@ -1354,6 +1298,13 @@
     }
   }
 
+  function spreadOptAvailable(optId) {
+    if (!shopConfig || !shopConfig.extras) return true;
+    const opt = SPREAD_OPTIONS.find(o => o.id === optId);
+    if (!opt) return true;
+    return shopConfig.extras[opt.configId] !== false;
+  }
+
   function renderSpreadForItem(sid) {
     const container = document.querySelector(`[data-spread-for="${sid}"]`);
     if (!container) return;
@@ -1367,106 +1318,63 @@
     if (qty <= 0) {
       container.classList.add('hidden');
       container.innerHTML = '';
-      delete sourdoughJam[sid];
+      delete sourdoughSpread[sid];
       return;
     }
 
-    if (!sourdoughJam[sid]) sourdoughJam[sid] = { mixed_berry: 0, apricot: 0 };
-    if (!sourdoughCream[sid]) sourdoughCream[sid] = { plain: true, garlic: false };
-    const maxQty = qty;
-    const ccAvailable = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
-    const ccGarlicAvailable = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese_garlic !== false;
+    if (!sourdoughSpread[sid]) sourdoughSpread[sid] = [];
+    while (sourdoughSpread[sid].length < qty) sourdoughSpread[sid].push([]);
+    while (sourdoughSpread[sid].length > qty) sourdoughSpread[sid].pop();
 
-    if (!ccAvailable) sourdoughCream[sid].plain = false;
-    if (!ccGarlicAvailable) sourdoughCream[sid].garlic = false;
-
-    JAM_OPTIONS.forEach(j => {
-      const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
-      if (!avail) sourdoughJam[sid][j.id] = 0;
-    });
-    while (itemJamTotal(sid) > maxQty) {
-      for (const j of JAM_OPTIONS) {
-        if (sourdoughJam[sid][j.id] > 0) { sourdoughJam[sid][j.id]--; break; }
+    sourdoughSpread[sid].forEach(sel => {
+      for (let k = sel.length - 1; k >= 0; k--) {
+        if (!spreadOptAvailable(sel[k])) sel.splice(k, 1);
       }
-    }
+    });
 
     let html = '<div class="spread-inline-box">';
     html += '<div class="label" style="margin-top:0;">ครีมชีสและแยม (Cream Cheese and Jam)</div>';
-    html += '<div class="spread-sub" style="margin-top:0;">Cream Cheese</div>';
-    if (ccAvailable) {
-      const on = sourdoughCream[sid].plain ? 'active' : '';
-      html += `<div class="cc-check-row ${on}" data-cccheck="${sid}:plain">` +
-        `<div class="cc-check-box">${sourdoughCream[sid].plain ? '✓' : ''}</div>` +
-        '<div class="cc-check-name">Cream Cheese</div>' +
-        '<div class="cc-check-price">แถมฟรี</div></div>';
-    }
-    if (ccGarlicAvailable) {
-      const on = sourdoughCream[sid].garlic ? 'active' : '';
-      html += `<div class="cc-check-row ${on}" data-cccheck="${sid}:garlic">` +
-        `<div class="cc-check-box">${sourdoughCream[sid].garlic ? '✓' : ''}</div>` +
-        '<div class="cc-check-name">Cream Cheese Garlic & Chives</div>' +
-        '<div class="cc-check-price">+5 ฿</div></div>';
-    }
-    if (!ccAvailable && !ccGarlicAvailable) {
-      html += '<div class="spread-fixed" style="border-color:#ccc;background:#f5f5f5;opacity:0.5;"><span>Cream Cheese</span><span class="spread-fixed-badge">ของหมดชั่วคราวค่ะ</span></div>';
-    }
+    html += '<div class="spread-note" style="margin-top:6px;">📌 เลือกได้สูงสุด 2 อย่าง (ต่อชิ้น)</div>';
 
-    html += `<div class="spread-note" style="margin-top:14px;">📌 เลือกได้สูงสุด ${maxQty} อัน (ตามจำนวนซาวร์โดว์)</div>`;
-    html += '<div class="spread-sub" style="margin-top:0;">Jam (0 ฿)</div>';
-    JAM_OPTIONS.forEach(j => {
-      const avail = !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false;
-      if (avail) {
-        html += '<div class="spread-row"><div class="spread-row-info">' +
-          `<div class="spread-row-name">${j.name}</div>` +
-          '<div class="spread-row-price">0 ฿</div></div>' +
-          `<div class="qty-controls" data-itemjam="${sid}:${j.id}">` +
-            '<button class="qty-btn" data-action="minus"></button>' +
-            `<span class="qty-value">${sourdoughJam[sid][j.id]}</span>` +
-            '<button class="qty-btn plus" data-action="plus"></button>' +
-          '</div></div>';
-      } else {
-        html += '<div class="spread-row" style="opacity:0.4;"><div class="spread-row-info">' +
-          `<div class="spread-row-name">${j.name}</div>` +
-          '<div class="spread-row-price">ของหมดชั่วคราวค่ะ</div></div></div>';
-      }
-    });
+    for (let i = 0; i < qty; i++) {
+      const sel = sourdoughSpread[sid][i];
+      html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
+      SPREAD_OPTIONS.forEach(opt => {
+        if (!spreadOptAvailable(opt.id)) return;
+        const on = sel.includes(opt.id) ? 'active' : '';
+        const priceLabel = opt.price > 0 ? `+${opt.price} ฿` : '0 ฿';
+        html += `<div class="cc-check-row ${on}" data-spreadcheck="${sid}:${i}:${opt.id}">` +
+          `<div class="cc-check-box">${sel.includes(opt.id) ? '✓' : ''}</div>` +
+          `<div class="cc-check-name">${opt.name}</div>` +
+          `<div class="cc-check-price">${priceLabel}</div></div>`;
+      });
+      html += '</div>';
+    }
     html += '</div>';
 
     container.innerHTML = html;
     container.classList.remove('hidden');
 
-    container.querySelectorAll('[data-itemjam]').forEach(ctrl => {
-      const [csid, jamId] = ctrl.dataset.itemjam.split(':');
-      const minusBtn = ctrl.querySelector('[data-action="minus"]');
-      const plusBtn = ctrl.querySelector('[data-action="plus"]');
-      minusBtn.addEventListener('click', () => {
-        if (sourdoughJam[csid][jamId] > 0) { sourdoughJam[csid][jamId]--; refreshItemJam(csid); }
-      });
-      plusBtn.addEventListener('click', () => {
-        if (itemJamTotal(csid) < quantities['sourdough-' + csid]) { sourdoughJam[csid][jamId]++; refreshItemJam(csid); }
-      });
-    });
-    container.querySelectorAll('[data-cccheck]').forEach(row => {
+    container.querySelectorAll('[data-spreadcheck]').forEach(row => {
       row.addEventListener('click', () => {
-        const [csid, kind] = row.dataset.cccheck.split(':');
-        sourdoughCream[csid][kind] = !sourdoughCream[csid][kind];
-        row.classList.toggle('active', sourdoughCream[csid][kind]);
-        row.querySelector('.cc-check-box').innerText = sourdoughCream[csid][kind] ? '✓' : '';
+        const parts = row.dataset.spreadcheck.split(':');
+        const csid = parts[0];
+        const pieceIdx = parseInt(parts[1]);
+        const optId = parts[2];
+        const sel = sourdoughSpread[csid][pieceIdx];
+        const idx = sel.indexOf(optId);
+        if (idx >= 0) {
+          sel.splice(idx, 1);
+        } else {
+          if (sel.length >= 2) {
+            showAlert('เลือกได้สูงสุด 2 อย่างต่อชิ้น');
+            return;
+          }
+          sel.push(optId);
+        }
+        renderSpreadForItem(csid);
         updateTotal();
       });
-    });
-    refreshItemJam(sid);
-  }
-
-  function refreshItemJam(sid) {
-    const container = document.querySelector(`[data-spread-for="${sid}"]`);
-    if (!container) return;
-    const maxQty = quantities['sourdough-' + sid];
-    container.querySelectorAll('[data-itemjam]').forEach(ctrl => {
-      const jamId = ctrl.dataset.itemjam.split(':')[1];
-      ctrl.querySelector('.qty-value').innerText = sourdoughJam[sid][jamId];
-      ctrl.querySelector('[data-action="minus"]').disabled = sourdoughJam[sid][jamId] <= 0;
-      ctrl.querySelector('[data-action="plus"]').disabled = itemJamTotal(sid) >= maxQty;
     });
   }
 
@@ -1607,11 +1515,22 @@
     SOURDOUGHS.forEach(s => total += s.price * quantities['sourdough-' + s.id]);
     SOURDOUGHS.forEach(s => {
       if (s.id === 'trio') return;
-      if (quantities['sourdough-' + s.id] > 0 && sourdoughCream[s.id] && sourdoughCream[s.id].garlic) {
-        total += 5;
+      const pieces = sourdoughSpread[s.id];
+      if (pieces) {
+        pieces.forEach(sel => {
+          sel.forEach(optId => {
+            const opt = SPREAD_OPTIONS.find(o => o.id === optId);
+            if (opt) total += opt.price;
+          });
+        });
       }
     });
-    trioCream.forEach(c => { if (c && c.garlic) total += 5; });
+    trioSpread.forEach(sel => {
+      (sel || []).forEach(optId => {
+        const opt = SPREAD_OPTIONS.find(o => o.id === optId);
+        if (opt) total += opt.price;
+      });
+    });
     ALL_SANDWICHES.forEach(s => {
       const q = quantities['sandwich-' + s.id];
       total += s.price * q;
@@ -2020,31 +1939,38 @@
     const tiramisus = TIRAMISUS.filter(t => quantities['tiramisu-' + t.id] > 0)
       .map(t => ({ name: t.name, price: t.price, qty: quantities['tiramisu-' + t.id] }));
     const ccAvail = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
+    function spreadToPayload(selArr) {
+      const cc = [];
+      const jams = [];
+      (selArr || []).forEach(optId => {
+        const opt = SPREAD_OPTIONS.find(o => o.id === optId);
+        if (!opt) return;
+        if (opt.id === 'cream_cheese') cc.push('Cream Cheese');
+        else if (opt.id === 'cream_cheese_garlic') cc.push('Cream Cheese Garlic & Chives (+5฿)');
+        else jams.push(opt.name);
+      });
+      return { cc, jams };
+    }
+
     const sourdoughs = SOURDOUGHS.filter(s => quantities['sourdough-' + s.id] > 0)
       .map(s => {
         if (s.id === 'trio') {
           return {
             name: s.name, price: s.price, qty: quantities['sourdough-' + s.id],
-            jams: [],
             isTrio: true,
-            trioSets: trioSelections.map((set, i) => ({
-              breads: set,
-              creamCheese: trioCream[i] && trioCream[i].plain,
-              creamCheeseGarlic: trioCream[i] && trioCream[i].garlic,
-              jams: trioJam[i]
-                ? JAM_OPTIONS.filter(j => (trioJam[i][j.id] || 0) > 0).map(j => ({ name: j.name, qty: trioJam[i][j.id] }))
-                : []
-            }))
+            trioSets: trioSelections.map((set, i) => {
+              const p = spreadToPayload(trioSpread[i]);
+              return { breads: set, spreadCC: p.cc, spreadJams: p.jams };
+            })
           };
         }
-        const jams = sourdoughJam[s.id]
-          ? JAM_OPTIONS.filter(j => (sourdoughJam[s.id][j.id] || 0) > 0).map(j => ({ name: j.name, qty: sourdoughJam[s.id][j.id] }))
-          : [];
+        const pieces = (sourdoughSpread[s.id] || []).map(sel => {
+          const p = spreadToPayload(sel);
+          return { cc: p.cc, jams: p.jams };
+        });
         return {
           name: s.name, price: s.price, qty: quantities['sourdough-' + s.id],
-          creamCheese: sourdoughCream[s.id] && sourdoughCream[s.id].plain,
-          creamCheeseGarlic: sourdoughCream[s.id] && sourdoughCream[s.id].garlic,
-          jams
+          spreadPieces: pieces
         };
       });
     const sandwiches = ALL_SANDWICHES.filter(s => quantities['sandwich-' + s.id] > 0)
@@ -2088,9 +2014,8 @@
           showAlert(`กรุณาเลือก Sourdough ให้ครบ 3 อัน ในเซ็ท ${i + 1}`);
           return;
         }
-        const anyJamAvail = JAM_OPTIONS.some(j => !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false);
-        if (anyJamAvail && trioJamTotal(i) === 0) {
-          showAlert(`กรุณาเลือกแยมสำหรับเซ็ท ${i + 1} อย่างน้อย 1 อัน`);
+        if ((trioSpread[i] || []).length === 0) {
+          showAlert(`กรุณาเลือกครีมชีสหรือแยมสำหรับเซ็ท ${i + 1} อย่างน้อย 1 อย่าง`);
           return;
         }
       }
@@ -2098,10 +2023,10 @@
 
     for (const s of sourdoughs) {
       if (s.isTrio) continue;
-      if (s.jams.length === 0) {
-        const anyJamAvail = JAM_OPTIONS.some(j => !shopConfig || !shopConfig.extras || shopConfig.extras[j.configId] !== false);
-        if (anyJamAvail) {
-          showAlert(`กรุณาเลือกแยมสำหรับ ${s.name} อย่างน้อย 1 อัน`);
+      for (let i = 0; i < s.spreadPieces.length; i++) {
+        const p = s.spreadPieces[i];
+        if (p.cc.length === 0 && p.jams.length === 0) {
+          showAlert(`กรุณาเลือกครีมชีสหรือแยมสำหรับ ${s.name} ชิ้นที่ ${i + 1} อย่างน้อย 1 อย่าง`);
           return;
         }
       }
