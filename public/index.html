@@ -422,6 +422,9 @@
 
     <div class="label" style="font-size:14px;color:#4b3619;margin-top:16px;">ซาวร์โดว์แซนด์วิชเปิดหน้า (Sourdough Open Sandwich)</div>
     <div id="sandwichList"></div>
+
+    <div class="label" style="font-size:14px;color:#4b3619;margin-top:16px;">ซาวร์โดว์แซนวิช (Sourdough Sandwich)</div>
+    <div id="grilledList"></div>
   </div>
 
   <div class="card">
@@ -632,7 +635,7 @@
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
         tiramisus: { og: true, ferrero: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
-        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true },
+        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, tuna_melt: true, ham_cheese: true },
         extras: { cream_cheese: true, mixed_berry_jam: true, apricot_jam: true },
         options: { country: true, supper: true, cream_cheese: true, nutella: true },
         closedDates: { pickup: [], delivery: [] },
@@ -769,7 +772,7 @@
     }
 
     if (shopConfig.sandwiches) {
-      SANDWICHES.forEach(s => {
+      ALL_SANDWICHES.forEach(s => {
         const available = shopConfig.sandwiches[s.id] !== false;
         const el = document.querySelector(`[data-key="sandwich-${s.id}"]`);
         if (!el) return;
@@ -839,11 +842,35 @@
     { id: 'ferrero', name: 'Ferrero Tiramisu', label: 'Ferrero Tiramisu', price: 145, image: '/pic/ferrero_tiramisu.jpg' }
   ];
 
+  const OPEN_SANDWICH_ADDONS = [
+    { id: 'avocado', name: 'Avocado smashed', price: 25 },
+    { id: 'bacon', name: 'Smoked Bacon', price: 25 }
+  ];
+
+  const TUNA_ADDONS = [
+    { id: 'extra_tuna', name: 'Extra Tuna Spread', price: 30 },
+    { id: 'extra_cheddar', name: 'Extra Cheddar', price: 15 },
+    { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 },
+    { id: 'jalapenos', name: 'Pickled Jalapeños', price: 10 }
+  ];
+
+  const HAM_ADDONS = [
+    { id: 'extra_ham', name: 'Extra Ham', price: 20 },
+    { id: 'extra_cheddar', name: 'Extra Cheddar', price: 15 },
+    { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 },
+    { id: 'jalapenos', name: 'Pickled Jalapeños', price: 10 }
+  ];
+
   const SANDWICHES = [
-    { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', label: 'Avocado & Shrimp with Scrambled Egg', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg' },
-    { id: 'smoked_salmon', name: 'Smoked Salmon', label: 'Smoked Salmon', price: 170, image: '/pic/smoked_salmon_sourdough.jpg' },
-    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt', label: 'Sunny Side Up Chicken Melt', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg' },
+    { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', label: 'Avocado & Shrimp with Scrambled Egg', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
+    { id: 'smoked_salmon', name: 'Smoked Salmon', label: 'Smoked Salmon', price: 170, image: '/pic/smoked_salmon_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
+    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt', label: 'Sunny Side Up Chicken Melt', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
     { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry', label: 'Strawberry & Blueberry', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true }
+  ];
+
+  const GRILLED_SANDWICHES = [
+    { id: 'tuna_melt', name: 'Grilled Tuna Melt', label: 'Grilled Tuna Melt', price: 195, image: '/pic/tuna_melt.jpg', supperPrice: 10, addonList: TUNA_ADDONS },
+    { id: 'ham_cheese', name: 'Grilled Ham & Cheese', label: 'Grilled Ham & Cheese', price: 175, image: '/pic/ham_and_cheese.jpg', supperPrice: 10, addonList: HAM_ADDONS }
   ];
 
   let SUPPER_UPGRADE_PRICE = 5;
@@ -880,7 +907,7 @@
 
   const PRICE_GROUPS = {
     flavors: FLAVORS, croissants: CROISSANTS, tiramisus: TIRAMISUS,
-    sourdoughs: SOURDOUGHS, sandwiches: SANDWICHES, sauces: SAUCES, extras: EXTRAS
+    sourdoughs: SOURDOUGHS, sandwiches: SANDWICHES, grilled: GRILLED_SANDWICHES, sauces: SAUCES, extras: EXTRAS
   };
 
   function applyPrices() {
@@ -898,7 +925,7 @@
         SUPPER_UPGRADE_PRICE = Number(shopConfig.prices.supperUpgrade);
       }
     }
-    [FLAVORS, CROISSANTS, TIRAMISUS, SOURDOUGHS, SANDWICHES].forEach(arr => {
+    [FLAVORS, CROISSANTS, TIRAMISUS, SOURDOUGHS, SANDWICHES, GRILLED_SANDWICHES].forEach(arr => {
       arr.forEach(item => {
         if (item.label !== undefined) item.displayName = `(${item.price} ฿) ${item.label}`;
       });
@@ -916,20 +943,19 @@
   TIRAMISUS.forEach(t => quantities['tiramisu-' + t.id] = 0);
   SOURDOUGHS.forEach(s => quantities['sourdough-' + s.id] = 0);
   SANDWICHES.forEach(s => quantities['sandwich-' + s.id] = 0);
+  GRILLED_SANDWICHES.forEach(s => quantities['sandwich-' + s.id] = 0);
   EXTRAS.forEach(e => quantities['extra-' + e.id] = 0);
 
+  const ALL_SANDWICHES = SANDWICHES.concat(GRILLED_SANDWICHES);
+
   const sandwichBread = {};
-  SANDWICHES.forEach(s => sandwichBread[s.id] = []);
+  ALL_SANDWICHES.forEach(s => sandwichBread[s.id] = []);
 
   const sandwichBaseSauce = {};
-  SANDWICHES.forEach(s => sandwichBaseSauce[s.id] = []);
+  ALL_SANDWICHES.forEach(s => sandwichBaseSauce[s.id] = []);
 
-  const SANDWICH_ADDONS = [
-    { id: 'avocado', name: 'Avocado smashed', price: 25 },
-    { id: 'bacon', name: 'Smoked Bacon', price: 25 }
-  ];
   const sandwichAddons = {};
-  SANDWICHES.forEach(s => sandwichAddons[s.id] = []);
+  ALL_SANDWICHES.forEach(s => sandwichAddons[s.id] = []);
 
   async function initLiff() {
     try {
@@ -1054,6 +1080,24 @@
 
     const sandwichList = document.getElementById("sandwichList");
     sandwichList.innerHTML = SANDWICHES.map(s =>
+      '<div class="flavor-item">' +
+        '<div class="flavor-top">' +
+          '<img class="flavor-img" src="' + s.image + '" alt="' + s.name + '">' +
+          '<div class="qty-controls" data-key="sandwich-' + s.id + '">' +
+            '<button class="qty-btn" data-action="minus"></button>' +
+            '<span class="qty-value">0</span>' +
+            '<button class="qty-btn plus" data-action="plus"></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flavor-meta">' +
+          '<div class="flavor-name">' + s.displayName + '</div>' +
+        '</div>' +
+        '<div class="bread-choice hidden" data-bread-for="' + s.id + '"></div>' +
+      '</div>'
+    ).join('');
+
+    const grilledList = document.getElementById("grilledList");
+    grilledList.innerHTML = GRILLED_SANDWICHES.map(s =>
       '<div class="flavor-item">' +
         '<div class="flavor-top">' +
           '<img class="flavor-img" src="' + s.image + '" alt="' + s.name + '">' +
@@ -1355,10 +1399,11 @@
     const container = document.querySelector(`[data-bread-for="${sid}"]`);
     if (!container) return;
 
-    const sandwich = SANDWICHES.find(s => s.id === sid);
+    const sandwich = ALL_SANDWICHES.find(s => s.id === sid);
     const hasBase = sandwich && sandwich.hasBaseSauce;
-
-    const hasAddon = sandwich && !sandwich.hasBaseSauce;
+    const addonList = sandwich && sandwich.addonList ? sandwich.addonList : null;
+    const hasAddon = !!addonList;
+    const supperUp = sandwich && sandwich.supperPrice ? sandwich.supperPrice : SUPPER_UPGRADE_PRICE;
 
     if (qty <= 0) {
       container.classList.add('hidden');
@@ -1398,7 +1443,7 @@
         html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Country Bread (หมด)</button>`;
       }
       if (supperAvail) {
-        html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">Supper Multigrain (+5฿)</button>`;
+        html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">Supper Multigrain (+${supperUp}฿)</button>`;
       } else {
         html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Supper Multigrain (หมด)</button>`;
       }
@@ -1432,8 +1477,8 @@
       for (let i = 0; i < qty; i++) {
         const cur = sandwichAddons[sid][i] || [];
         html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
-        html += '<div class="bread-options">';
-        SANDWICH_ADDONS.forEach(a => {
+        html += '<div class="bread-options" style="flex-wrap:wrap;">';
+        addonList.forEach(a => {
           const on = cur.includes(a.id) ? 'active' : '';
           html += `<button type="button" class="addon-opt ${on}" data-sandwich="${sid}" data-piece="${i}" data-addon="${a.id}">${a.name} (+${a.price}฿)</button>`;
         });
@@ -1484,15 +1529,17 @@
     CROISSANTS.forEach(c => total += c.price * quantities['croissant-' + c.id]);
     TIRAMISUS.forEach(t => total += t.price * quantities['tiramisu-' + t.id]);
     SOURDOUGHS.forEach(s => total += s.price * quantities['sourdough-' + s.id]);
-    SANDWICHES.forEach(s => {
+    ALL_SANDWICHES.forEach(s => {
       const q = quantities['sandwich-' + s.id];
       total += s.price * q;
+      const supperUp = s.supperPrice ? s.supperPrice : SUPPER_UPGRADE_PRICE;
       const breads = sandwichBread[s.id] || [];
-      breads.forEach(b => { if (b === 'supper') total += SUPPER_UPGRADE_PRICE; });
+      breads.forEach(b => { if (b === 'supper') total += supperUp; });
+      const addonList = s.addonList || [];
       const addons = sandwichAddons[s.id] || [];
       addons.forEach(pieceAddons => {
         (pieceAddons || []).forEach(aid => {
-          const a = SANDWICH_ADDONS.find(x => x.id === aid);
+          const a = addonList.find(x => x.id === aid);
           if (a) total += a.price;
         });
       });
@@ -1916,24 +1963,25 @@
           jams
         };
       });
-    const sandwiches = SANDWICHES.filter(s => quantities['sandwich-' + s.id] > 0)
+    const sandwiches = ALL_SANDWICHES.filter(s => quantities['sandwich-' + s.id] > 0)
       .map(s => {
+        const supperUp = s.supperPrice ? s.supperPrice : SUPPER_UPGRADE_PRICE;
         const breads = sandwichBread[s.id] || [];
         const supperCount = breads.filter(b => b === 'supper').length;
         const result = {
           name: s.name, price: s.price, qty: quantities['sandwich-' + s.id],
           breads: breads.map(b => b === 'supper' ? 'Supper Multigrain' : 'Country Bread'),
-          breadUpgradeTotal: supperCount * SUPPER_UPGRADE_PRICE
+          breadUpgradeTotal: supperCount * supperUp
         };
         if (s.hasBaseSauce) {
           result.baseSauces = (sandwichBaseSauce[s.id] || []).map(b => b === 'nutella' ? 'Nutella' : 'Cream Cheese');
-        } else {
+        } else if (s.addonList) {
           const addonArr = sandwichAddons[s.id] || [];
           const names = [];
           let addonTotal = 0;
           addonArr.forEach(pieceAddons => {
             (pieceAddons || []).forEach(aid => {
-              const a = SANDWICH_ADDONS.find(x => x.id === aid);
+              const a = s.addonList.find(x => x.id === aid);
               if (a) { names.push(a.name); addonTotal += a.price; }
             });
           });
@@ -2144,10 +2192,12 @@
       avocado_shrimps: 'Avocado & Shrimp with Scrambled Egg',
       smoked_salmon: 'Smoked Salmon',
       sunny_side_up: 'Sunny Side Up Chicken Melt',
-      strawberry_blueberry: 'Strawberry & Blueberry'
+      strawberry_blueberry: 'Strawberry & Blueberry',
+      tuna_melt: 'Grilled Tuna Melt',
+      ham_cheese: 'Grilled Ham & Cheese'
     };
     if (!shopConfig.sandwiches) {
-      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true };
+      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, tuna_melt: true, ham_cheese: true };
     }
     let sandwichHtml = '';
     for (const [id, name] of Object.entries(sandwichNames)) {
@@ -2208,7 +2258,8 @@
       { key: 'croissants', title: '🥐 ครัวซองต์', arr: CROISSANTS },
       { key: 'tiramisus', title: '☕ ทีรามิสุ', arr: TIRAMISUS },
       { key: 'sourdoughs', title: '🍞 ซาวร์โดว์', arr: SOURDOUGHS },
-      { key: 'sandwiches', title: '🥪 แซนด์วิช', arr: SANDWICHES },
+      { key: 'sandwiches', title: '🥪 แซนด์วิชเปิดหน้า', arr: SANDWICHES },
+      { key: 'grilled', title: '🥪 ซาวร์โดว์แซนวิช', arr: GRILLED_SANDWICHES },
       { key: 'extras', title: '🧈 เพิ่มเติม', arr: EXTRAS }
     ];
 
