@@ -450,7 +450,7 @@
     <div class="toggle-group">
       <button type="button" class="toggle-btn" data-method="pickup">
         <span class="toggle-icon">🏬</span>
-        <span>1) นัดรับที่ Robinson (รับส่วนลด 10% ทุกออเดอร์)</span>
+        <span>1) นัดรับที่ Park Condo Dream (รับส่วนลด 10% ทุกออเดอร์)</span>
       </button>
       <button type="button" class="toggle-btn" data-method="delivery">
         <span class="toggle-icon">🛵</span>
@@ -497,7 +497,7 @@
       <div>📏 ระยะทาง: <span id="distanceText">-</span></div>
       <div>🛵 ค่าจัดส่ง: <span id="feeText">-</span></div>
     </div>
-    <div id="outOfRange" class="out-of-range hidden">⚠️ อยู่นอกเขตพื้นที่ให้บริการ กรุณาเลือกเป็นนัดรับที่โรบินสันแม่สอดแทนค่ะ</div>
+    <div id="outOfRange" class="out-of-range hidden">⚠️ อยู่นอกเขตพื้นที่ให้บริการ กรุณาเลือกเป็นนัดรับที่ Park Condo Dream แทนค่ะ</div>
   </div>
 
   <div class="card">
@@ -1906,7 +1906,7 @@
 
   function buildDeliveryDate() {
     if (!deliveryMethod || !selectedDateObj || !selectedTime) return '';
-    const methodText = deliveryMethod === 'pickup' ? 'นัดรับที่ Robinson' : 'จัดส่ง Delivery';
+    const methodText = deliveryMethod === 'pickup' ? 'นัดรับที่ Park Condo Dream' : 'จัดส่ง Delivery';
     return `${methodText}\n${formatThaiDate(selectedDateObj)}\n${selectedTime}`;
   }
 
@@ -2054,7 +2054,7 @@
     }
 
     if (isOutOfRange) {
-      showAlert("อยู่นอกเขตพื้นที่ให้บริการ กรุณาเลือกเป็นนัดรับที่โรบินสันแม่สอดแทนค่ะ");
+      showAlert("อยู่นอกเขตพื้นที่ให้บริการ กรุณาเลือกเป็นนัดรับที่ Park Condo Dream แทนค่ะ");
       return;
     }
 

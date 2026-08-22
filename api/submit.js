@@ -95,7 +95,7 @@ async function appendToSheet(data) {
         data.deliveryDate,
         data.name,
         data.phone,
-        data.address || 'นัดรับที่ Robinson',
+        data.address || 'นัดรับที่ Park Condo Dream',
         data.mapLink || '-',
         data.note || '-',
         data.total
