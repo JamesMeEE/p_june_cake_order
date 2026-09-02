@@ -402,7 +402,8 @@
   <h1>สั่ง Delivery ร้าน ปิ๊กบ้าน 🏡</h1>
   <div class="subtitle">ทางร้านจัดส่งทุกวันและส่งฟรี 5 กิโลเมตรแรกนะคะ (กิโลเมตรถัดไปคิดเพิ่ม 10 บาทต่อกิโลเมตร หรือ หากยอดเกิน 400 บาท ส่งฟรีทุกออเดอร์เฉพาะในพื้นที่ Grab)</div>
 
-  <div class="card">
+  <div id="menuSections">
+  <div class="card" id="flavorCard" data-section="flavors">
     <div class="label">ชีสเค้กหน้าไหม้ (Molten Basque Cheesecake) <span class="required">*</span></div>
     <div id="flavorList"></div>
   </div>
@@ -412,17 +413,17 @@
     <div id="sauceList"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="croissantCard" data-section="croissants">
     <div class="label">ครัวซองต์ (Croissant)</div>
     <div id="croissantList"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="tiramisuCard" data-section="tiramisus">
     <div class="label">ที-รา-มิ-สุ (Tiramisu)</div>
     <div id="tiramisuList"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="sourdoughCard" data-section="sourdough">
     <div class="label">ซาวร์โดว์ (Sourdough)</div>
     <div class="label" style="font-size:14px;color:#4b3619;">ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)</div>
     <div class="sourdough-header-imgs">
@@ -443,6 +444,7 @@
 
     <div class="label" style="font-size:14px;color:#4b3619;margin-top:16px;">ซาวร์โดว์แซนวิช (Sourdough Sandwich)</div>
     <div id="grilledList"></div>
+  </div>
   </div>
 
   <div class="card">
@@ -874,15 +876,13 @@
   const TUNA_ADDONS = [
     { id: 'extra_tuna', name: 'Extra Tuna Spread', price: 30 },
     { id: 'extra_cheddar', name: 'Extra Cheddar', price: 15 },
-    { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 },
-    { id: 'jalapenos', name: 'Pickled Jalapeños', price: 10 }
+    { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 }
   ];
 
   const HAM_ADDONS = [
     { id: 'extra_ham', name: 'Extra Ham', price: 20 },
     { id: 'extra_cheddar', name: 'Extra Cheddar', price: 15 },
-    { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 },
-    { id: 'jalapenos', name: 'Pickled Jalapeños', price: 10 }
+    { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 }
   ];
 
   const SANDWICHES = [
@@ -1004,12 +1004,40 @@
       applyPrices();
       renderMenu();
       applyConfig();
+      reorderSections();
       document.getElementById("loading").classList.add("hidden");
       document.getElementById("form").classList.remove("hidden");
       document.getElementById("submitBar").classList.remove("hidden");
     } catch (err) {
       document.querySelector(".loading-text").innerText = "เกิดข้อผิดพลาด: " + err.message;
     }
+  }
+
+  function isSectionSoldOut(section) {
+    if (!shopConfig) return false;
+    if (section === 'flavors') {
+      return FLAVORS.every(f => shopConfig.flavors && shopConfig.flavors[f.id] === false);
+    }
+    if (section === 'croissants') {
+      return CROISSANTS.every(c => shopConfig.croissants && shopConfig.croissants[c.id] === false);
+    }
+    if (section === 'tiramisus') {
+      return TIRAMISUS.every(t => shopConfig.tiramisus && shopConfig.tiramisus[t.id] === false);
+    }
+    if (section === 'sourdough') {
+      const allSd = SOURDOUGHS.every(s => shopConfig.sourdoughs && shopConfig.sourdoughs[s.id] === false);
+      const allSw = SANDWICHES.concat(GRILLED_SANDWICHES).every(s => shopConfig.sandwiches && shopConfig.sandwiches[s.id] === false);
+      return allSd && allSw;
+    }
+    return false;
+  }
+
+  function reorderSections() {
+    const container = document.getElementById('menuSections');
+    if (!container) return;
+    const cards = Array.from(container.querySelectorAll('[data-section]'));
+    const soldOut = cards.filter(c => isSectionSoldOut(c.dataset.section));
+    soldOut.forEach(c => container.appendChild(c));
   }
 
   function sortByAvail(arr, catKey) {
@@ -2494,6 +2522,7 @@
     applyPrices();
     renderMenu();
     applyConfig();
+    reorderSections();
     updateTotal();
   });
 
