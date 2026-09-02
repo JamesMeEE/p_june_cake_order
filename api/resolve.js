@@ -19,13 +19,20 @@ export default async function handler(req, res) {
       }
     }
 
-    if (coords) {
+    if (coords && isValidThaiCoord(coords)) {
       return res.status(200).json({ status: 'ok', lat: coords.lat, lng: coords.lng, resolvedUrl: finalUrl });
     }
-    return res.status(200).json({ status: 'notfound', resolvedUrl: finalUrl });
+    return res.status(200).json({ status: 'notfound', resolvedUrl: finalUrl, needsManualFee: true });
   } catch (err) {
     return res.status(500).json({ status: 'error', message: err.message });
   }
+}
+
+function isValidThaiCoord(c) {
+  if (!c) return false;
+  if (Math.abs(c.lat - 37.0625) < 0.0001 && Math.abs(c.lng - (-95.677068)) < 0.0001) return false;
+  if (Math.abs(c.lat) < 0.01 && Math.abs(c.lng) < 0.01) return false;
+  return c.lat >= 5.5 && c.lat <= 21 && c.lng >= 97 && c.lng <= 106;
 }
 
 function extractCoords(str) {

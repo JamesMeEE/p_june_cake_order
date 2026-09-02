@@ -659,7 +659,7 @@
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
         tiramisus: { og: true, ferrero: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
-        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, tuna_melt: true, ham_cheese: true },
+        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, tuna_melt: true, ham_cheese: true },
         extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
         options: { country: true, supper: true, cream_cheese: true, nutella: true },
         closedDates: { pickup: [], delivery: [] },
@@ -889,7 +889,8 @@
     { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', label: 'Avocado & Shrimp with Scrambled Egg', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
     { id: 'smoked_salmon', name: 'Smoked Salmon', label: 'Smoked Salmon', price: 170, image: '/pic/smoked_salmon_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
     { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt', label: 'Sunny Side Up Chicken Melt', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
-    { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry', label: 'Strawberry & Blueberry', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true }
+    { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry', label: 'Strawberry & Blueberry', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true },
+    { id: 'fig_berry_breeze', name: 'Fig & Berry Breeze', label: 'Fig & Berry Breeze', price: 220, image: '/pic/fig_berry_breeze.jpg' }
   ];
 
   const GRILLED_SANDWICHES = [
@@ -1657,7 +1658,7 @@
     const center = mapInstance.getCenter();
     const lat = center.lat.toFixed(6);
     const lng = center.lng.toFixed(6);
-    document.getElementById("mapLink").value = `https://www.google.com/maps?q=${lat},${lng}`;
+    document.getElementById("mapLink").value = "";
     resolvedMapLink = `https://www.google.com/maps?q=${lat},${lng}`;
     const status = document.getElementById("gpsStatus");
     status.className = "gps-status success";
@@ -1697,7 +1698,7 @@
     }
     if (/^https?:\/\//.test(val)) {
       status.className = "gps-status success";
-      status.innerText = "✓ ใช้ลิงก์ที่วาง (ทางร้านจะคำนวณค่าจัดส่งให้ภายหลัง)";
+      status.innerText = "✓ ใช้ลิงก์ที่วาง (อาจมีค่าใช้จ่ายเพิ่มเติม หากระยะทางเกิน 5 กม.)";
       customerLat = null;
       customerLng = null;
       deliveryFee = 0;
@@ -2084,6 +2085,7 @@
       trioSelections: quantities['sourdough-trio'] > 0 ? trioSelections : [],
       itemsTotal, deliveryFee: finalDeliveryFee,
       deliveryDistance, total, deliveryDate, deliveryMethod,
+      feeNotCalculated: deliveryMethod === 'delivery' && deliveryDistance === null,
       name, phone, address, mapLink, note
     };
 
@@ -2208,11 +2210,12 @@
       smoked_salmon: 'Smoked Salmon',
       sunny_side_up: 'Sunny Side Up Chicken Melt',
       strawberry_blueberry: 'Strawberry & Blueberry',
+      fig_berry_breeze: 'Fig & Berry Breeze',
       tuna_melt: 'Grilled Tuna Melt',
       ham_cheese: 'Grilled Ham & Cheese'
     };
     if (!shopConfig.sandwiches) {
-      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, tuna_melt: true, ham_cheese: true };
+      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, tuna_melt: true, ham_cheese: true };
     }
     let sandwichHtml = '';
     for (const [id, name] of Object.entries(sandwichNames)) {

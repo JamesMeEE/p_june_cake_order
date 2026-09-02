@@ -362,7 +362,16 @@ function buildFlexMessage(data) {
                   text: `🗺 แผนที่ (Map): ${data.mapLink || '-'}`,
                   size: 'sm',
                   wrap: true
-                }
+                },
+            ...(data.feeNotCalculated ? [{
+              type: 'text',
+              text: '⚠️ อาจมีค่าใช้จ่ายเพิ่มเติม หากระยะทางเกิน 5 กิโลเมตร',
+              size: 'xs',
+              wrap: true,
+              weight: 'bold',
+              color: '#D32F2F',
+              margin: 'sm'
+            }] : [])
           ] : []),
           {
             type: 'text',
