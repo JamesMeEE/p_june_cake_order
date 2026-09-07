@@ -456,8 +456,9 @@
   </div>
 
   <div class="card" id="duoCard" data-section="duo">
-    <div class="label">ดูโอเซ็ต (Duo Set)</div>
+    <div class="label">จับคู่เมนู (Duo Set)</div>
     <div style="font-size:12px;color:#8a623f;margin-bottom:10px;">The OG Tiramisu จับคู่กับเมนูแซนวิช 1 อย่าง (รับส่วนลด 20฿ ต่อคู่)</div>
+    <img class="flavor-img" src="/pic/duo_set.jpg" alt="Duo Set" style="width:100%;margin-bottom:12px;">
     <div id="duoList"></div>
   </div>
   </div>
@@ -915,6 +916,7 @@
 
   const BUTTER_OPTIONS = [
     { id: 'peanut', name: 'Peanut Butter', price: 0 },
+    { id: 'peanut_nosugar', name: 'Peanut Butter (no sugar)', price: 0 },
     { id: 'pistachio', name: 'Pistachio Butter', price: 15 }
   ];
 
@@ -1118,7 +1120,7 @@
     }
 
     let html = '<div class="sauce-item">' +
-      '<div class="sauce-info"><div class="sauce-name">The OG Tiramisu (ล็อกไว้ในเซ็ต)</div>' +
+      '<div class="sauce-info"><div class="sauce-name">The OG Tiramisu</div>' +
       `<div style="color:#06c755;font-weight:bold;font-size:13px;">${DUO_OG_PRICE} ฿</div></div>` +
       '<div class="qty-controls" data-duoqty="1">' +
         '<button class="qty-btn" data-action="minus"></button>' +
@@ -1162,7 +1164,20 @@
           } else {
             html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Supper Multigrain (หมด)</button>`;
           }
-          html += '</div></div>';
+          html += '</div>';
+
+          const sandObj = ALL_SANDWICHES.find(s => s.id === pair.menu);
+          if (sandObj && sandObj.addonList) {
+            if (!pair.addons) pair.addons = [];
+            html += '<div class="bread-choice-label" style="margin-top:12px;">Add-on (เพิ่ม)</div>';
+            html += '<div class="bread-options" style="flex-wrap:wrap;">';
+            sandObj.addonList.forEach(a => {
+              const on = pair.addons.includes(a.id) ? 'active' : '';
+              html += `<button type="button" class="addon-opt ${on}" data-duoaddon="${i}" data-addon="${a.id}">${a.name} (+${a.price}฿)</button>`;
+            });
+            html += '</div>';
+          }
+          html += '</div>';
         }
         html += '</div>';
       }
@@ -1184,6 +1199,7 @@
         const i = parseInt(sel.dataset.duomenu);
         duoPairs[i].menu = sel.value;
         duoPairs[i].bread = 'normal';
+        duoPairs[i].addons = [];
         renderDuo();
         updateTotal();
       });
@@ -1192,6 +1208,19 @@
       btn.addEventListener('click', () => {
         const i = parseInt(btn.dataset.duobread);
         duoPairs[i].bread = btn.dataset.bread;
+        renderDuo();
+        updateTotal();
+      });
+    });
+    container.querySelectorAll('[data-duoaddon]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.duoaddon);
+        const addonId = btn.dataset.addon;
+        if (!duoPairs[i].addons) duoPairs[i].addons = [];
+        const arr = duoPairs[i].addons;
+        const idx = arr.indexOf(addonId);
+        if (idx >= 0) arr.splice(idx, 1);
+        else arr.push(addonId);
         renderDuo();
         updateTotal();
       });
@@ -1207,6 +1236,15 @@
       if (opt) {
         t += opt.price;
         if (pair.bread === 'supper') t += opt.supperPrice;
+      }
+      if (pair.addons && pair.menu) {
+        const sandObj = ALL_SANDWICHES.find(s => s.id === pair.menu);
+        if (sandObj && sandObj.addonList) {
+          pair.addons.forEach(aid => {
+            const a = sandObj.addonList.find(x => x.id === aid);
+            if (a) t += a.price;
+          });
+        }
       }
       t -= DUO_DISCOUNT;
     });
@@ -1674,7 +1712,7 @@
     }
 
     if (hasButter) {
-      html += '<div class="bread-choice-label" style="margin-top:12px;">เลือกเนยถั่ว</div>';
+      html += '<div class="bread-choice-label" style="margin-top:12px;">เลือก Base Sauce</div>';
       for (let i = 0; i < qty; i++) {
         const cur = sandwichButter[sid][i];
         html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
@@ -2347,10 +2385,19 @@
 
     const duoSets = duoQty > 0 ? duoPairs.map(pair => {
       const opt = DUO_OPTIONS.find(o => o.id === pair.menu);
+      const sandObj = ALL_SANDWICHES.find(s => s.id === pair.menu);
+      let addonNames = [];
+      if (pair.addons && sandObj && sandObj.addonList) {
+        addonNames = pair.addons.map(aid => {
+          const a = sandObj.addonList.find(x => x.id === aid);
+          return a ? a.name : aid;
+        });
+      }
       return {
         og: 'The OG Tiramisu',
         menu: opt ? opt.name : '',
-        bread: pair.bread === 'supper' ? 'Supper Multigrain' : 'Country Bread'
+        bread: pair.bread === 'supper' ? 'Supper Multigrain' : 'Country Bread',
+        addons: addonNames
       };
     }) : [];
 

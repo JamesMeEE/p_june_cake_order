@@ -69,7 +69,7 @@ async function appendToSheet(data) {
     : '-';
 
   if (data.duoSets && data.duoSets.length > 0) {
-    const duoLines = data.duoSets.map((d, i) => `Duo คู่ ${i + 1}: ${d.og} + ${d.menu} (${d.bread})`);
+    const duoLines = data.duoSets.map((d, i) => `Duo คู่ ${i + 1}: ${d.og} + ${d.menu} (${d.bread})${d.addons && d.addons.length > 0 ? ' [Add-on: ' + d.addons.join(', ') + ']' : ''}`);
     extrasText = (extrasText === '-' ? '' : extrasText + '\n') + duoLines.join('\n');
   }
 
@@ -78,7 +78,7 @@ async function appendToSheet(data) {
         let t = `${s.name} x ${s.qty} ชิ้น (${summarizeBreads(s.breads)})`;
         if (s.baseSauces && s.baseSauces.length > 0) t += ` [Base: ${summarizeBreads(s.baseSauces)}]`;
         if (s.addons && s.addons.length > 0) t += ` [Add-on: ${summarizeBreads(s.addons)}]`;
-        if (s.butters && s.butters.length > 0) t += ` [เนยถั่ว: ${summarizeBreads(s.butters)}]`;
+        if (s.butters && s.butters.length > 0) t += ` [Base Sauce: ${summarizeBreads(s.butters)}]`;
         return t;
       }).join('\n')
     : '-';
@@ -271,7 +271,7 @@ function buildFlexMessage(data) {
         txt += ` [Add-on: ${summarizeBreads(s.addons)}]`;
       }
       if (s.butters && s.butters.length > 0) {
-        txt += ` [เนยถั่ว: ${summarizeBreads(s.butters)}]`;
+        txt += ` [Base Sauce: ${summarizeBreads(s.butters)}]`;
       }
       orderLines.push({
         type: 'text',
@@ -303,7 +303,7 @@ function buildFlexMessage(data) {
       });
       orderLines.push({
         type: 'text',
-        text: `  └ ${d.og} + ${d.menu} (${d.bread})`,
+        text: `  └ ${d.og} + ${d.menu} (${d.bread})${d.addons && d.addons.length > 0 ? ' [Add-on: ' + d.addons.join(', ') + ']' : ''}`,
         size: 'xs',
         wrap: true,
         color: '#888888'
