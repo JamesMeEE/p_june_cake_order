@@ -1066,6 +1066,9 @@
       const allSw = SANDWICHES.concat(GRILLED_SANDWICHES).every(s => shopConfig.sandwiches && shopConfig.sandwiches[s.id] === false);
       return allSd && allSw;
     }
+    if (section === 'duo') {
+      return shopConfig.tiramisus && shopConfig.tiramisus.og === false;
+    }
     return false;
   }
 
@@ -1095,9 +1098,24 @@
     return avail.concat(soldOut);
   }
 
+  function duoMenuAvail(id) {
+    return !shopConfig || !shopConfig.sandwiches || shopConfig.sandwiches[id] !== false;
+  }
+
   function renderDuo() {
     const container = document.getElementById('duoList');
     if (!container) return;
+
+    const ogAvail = !shopConfig || !shopConfig.tiramisus || shopConfig.tiramisus.og !== false;
+
+    if (!ogAvail) {
+      duoQty = 0;
+      duoPairs = [];
+      container.innerHTML = '<div class="sauce-item" style="opacity:0.5;">' +
+        '<div class="sauce-info"><div class="sauce-name">The OG Tiramisu</div>' +
+        '<div style="color:#e02424;font-weight:bold;font-size:13px;">ของหมดชั่วคราวค่ะ</div></div></div>';
+      return;
+    }
 
     let html = '<div class="sauce-item">' +
       '<div class="sauce-info"><div class="sauce-name">The OG Tiramisu (ล็อกไว้ในเซ็ต)</div>' +
@@ -1121,9 +1139,14 @@
         html += `<select data-duomenu="${i}"><option value="">-- เลือกเมนู --</option>`;
         DUO_OPTIONS.forEach(o => {
           const sel = pair.menu === o.id ? 'selected' : '';
-          html += `<option value="${o.id}" ${sel}>${o.name} (${o.price}฿)</option>`;
+          const soldTag = duoMenuAvail(o.id) ? '' : ' (ของหมด)';
+          html += `<option value="${o.id}" ${sel}>${o.name} (${o.price}฿)${soldTag}</option>`;
         });
         html += '</select>';
+
+        if (pair.menu && !duoMenuAvail(pair.menu)) {
+          html += '<div style="color:#e02424;font-weight:bold;font-size:12px;margin-top:6px;">⚠️ เมนูนี้ของหมดชั่วคราวค่ะ กรุณาเลือกเมนูอื่น</div>';
+        }
 
         if (pair.menu) {
           const opt = DUO_OPTIONS.find(o => o.id === pair.menu);
@@ -2250,6 +2273,10 @@
       for (let i = 0; i < duoPairs.length; i++) {
         if (!duoPairs[i].menu) {
           showAlert(`กรุณาเลือกเมนูแซนวิชสำหรับ Duo Set คู่ที่ ${i + 1}`);
+          return;
+        }
+        if (!duoMenuAvail(duoPairs[i].menu)) {
+          showAlert(`เมนูใน Duo Set คู่ที่ ${i + 1} ของหมดชั่วคราว กรุณาเลือกเมนูอื่น`);
           return;
         }
       }
