@@ -64,15 +64,21 @@ async function appendToSheet(data) {
     sourdoughsText = lines.join('\n');
   }
 
-  const extrasText = (data.extras && data.extras.length > 0)
+  let extrasText = (data.extras && data.extras.length > 0)
     ? data.extras.map(e => `${e.name} x ${e.qty} ชิ้น`).join('\n')
     : '-';
+
+  if (data.duoSets && data.duoSets.length > 0) {
+    const duoLines = data.duoSets.map((d, i) => `Duo คู่ ${i + 1}: ${d.og} + ${d.menu} (${d.bread})`);
+    extrasText = (extrasText === '-' ? '' : extrasText + '\n') + duoLines.join('\n');
+  }
 
   const sandwichesText = (data.sandwiches && data.sandwiches.length > 0)
     ? data.sandwiches.map(s => {
         let t = `${s.name} x ${s.qty} ชิ้น (${summarizeBreads(s.breads)})`;
         if (s.baseSauces && s.baseSauces.length > 0) t += ` [Base: ${summarizeBreads(s.baseSauces)}]`;
         if (s.addons && s.addons.length > 0) t += ` [Add-on: ${summarizeBreads(s.addons)}]`;
+        if (s.butters && s.butters.length > 0) t += ` [เนยถั่ว: ${summarizeBreads(s.butters)}]`;
         return t;
       }).join('\n')
     : '-';
@@ -264,6 +270,9 @@ function buildFlexMessage(data) {
       if (s.addons && s.addons.length > 0) {
         txt += ` [Add-on: ${summarizeBreads(s.addons)}]`;
       }
+      if (s.butters && s.butters.length > 0) {
+        txt += ` [เนยถั่ว: ${summarizeBreads(s.butters)}]`;
+      }
       orderLines.push({
         type: 'text',
         text: txt,
@@ -280,6 +289,24 @@ function buildFlexMessage(data) {
         text: `เพิ่มเติม (Extra): ${e.name} x ${e.qty} ชิ้น`,
         size: 'sm',
         wrap: true
+      });
+    });
+  }
+
+  if (data.duoSets && data.duoSets.length > 0) {
+    data.duoSets.forEach((d, i) => {
+      orderLines.push({
+        type: 'text',
+        text: `ดูโอเซ็ต (Duo Set) คู่ที่ ${i + 1}:`,
+        size: 'sm',
+        wrap: true
+      });
+      orderLines.push({
+        type: 'text',
+        text: `  └ ${d.og} + ${d.menu} (${d.bread})`,
+        size: 'xs',
+        wrap: true,
+        color: '#888888'
       });
     });
   }

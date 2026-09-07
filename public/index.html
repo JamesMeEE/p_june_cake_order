@@ -263,6 +263,15 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
   .admin-row-label { font-size: 14px; }
+  .admin-row2 {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); gap: 10px;
+  }
+  .admin-row2 .admin-row-label { flex: 1; font-size: 14px; }
+  .admin-toggles { display: flex; gap: 14px; }
+  .admin-toggle-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .admin-toggle-cap { font-size: 11px; color: #888; font-weight: 600; }
   .toggle-switch {
     position: relative; width: 48px; height: 26px; cursor: pointer;
   }
@@ -444,6 +453,12 @@
 
     <div class="label" style="font-size:14px;color:#4b3619;margin-top:16px;">ซาวร์โดว์แซนวิช (Sourdough Sandwich)</div>
     <div id="grilledList"></div>
+  </div>
+
+  <div class="card" id="duoCard" data-section="duo">
+    <div class="label">ดูโอเซ็ต (Duo Set)</div>
+    <div style="font-size:12px;color:#8a623f;margin-bottom:10px;">The OG Tiramisu จับคู่กับเมนูแซนวิช 1 อย่าง (รับส่วนลด 20฿ ต่อคู่)</div>
+    <div id="duoList"></div>
   </div>
   </div>
 
@@ -661,13 +676,14 @@
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
         tiramisus: { og: true, ferrero: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
-        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, tuna_melt: true, ham_cheese: true },
+        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true },
         extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
         options: { country: true, supper: true, cream_cheese: true, nutella: true },
         closedDates: { pickup: [], delivery: [] },
         sameDayClosedPickup: '',
         sameDayClosedDelivery: '',
-        prices: {}
+        prices: {},
+        visible: {}
       };
     }
   }
@@ -885,12 +901,30 @@
     { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 }
   ];
 
+  const DUO_OPTIONS = [
+    { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', price: 170, supperPrice: 5 },
+    { id: 'smoked_salmon', name: 'Smoked Salmon', price: 170, supperPrice: 5 },
+    { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt', price: 160, supperPrice: 5 },
+    { id: 'ham_cheese', name: 'Grilled Ham & Cheese', price: 175, supperPrice: 10 },
+    { id: 'tuna_melt', name: 'Grilled Tuna Melt', price: 195, supperPrice: 10 }
+  ];
+  const DUO_OG_PRICE = 115;
+  const DUO_DISCOUNT = 20;
+  let duoQty = 0;
+  let duoPairs = [];
+
+  const BUTTER_OPTIONS = [
+    { id: 'peanut', name: 'Peanut Butter', price: 0 },
+    { id: 'pistachio', name: 'Pistachio Butter', price: 15 }
+  ];
+
   const SANDWICHES = [
     { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', label: 'Avocado & Shrimp with Scrambled Egg', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
     { id: 'smoked_salmon', name: 'Smoked Salmon', label: 'Smoked Salmon', price: 170, image: '/pic/smoked_salmon_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
     { id: 'sunny_side_up', name: 'Sunny Side Up Chicken Melt', label: 'Sunny Side Up Chicken Melt', price: 160, image: '/pic/sunny_side_up_chicken_melt_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
     { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry', label: 'Strawberry & Blueberry', price: 155, image: '/pic/strawberry_blueberry_sourdough.jpg', hasBaseSauce: true },
-    { id: 'fig_berry_breeze', name: 'Fig & Berry Breeze', label: 'Fig & Berry Breeze', price: 220, image: '/pic/fig_berry_breeze.jpg' }
+    { id: 'fig_berry_breeze', name: 'Fig & Berry Breeze', label: 'Fig & Berry Breeze', price: 220, image: '/pic/fig_berry_breeze.jpg' },
+    { id: 'banana_berry', name: 'Banana Berry Peanut Butter', label: 'Banana Berry Peanut Butter', price: 155, image: '/pic/banana_berry_peanut.jpg', butterChoice: true }
   ];
 
   const GRILLED_SANDWICHES = [
@@ -991,6 +1025,9 @@
   const sandwichAddons = {};
   ALL_SANDWICHES.forEach(s => sandwichAddons[s.id] = []);
 
+  const sandwichButter = {};
+  ALL_SANDWICHES.forEach(s => sandwichButter[s.id] = []);
+
   async function initLiff() {
     try {
       await liff.init({ liffId: LIFF_ID });
@@ -1041,16 +1078,116 @@
   }
 
   function sortByAvail(arr, catKey) {
-    if (!shopConfig || !shopConfig[catKey]) return arr.slice();
+    var visCat = (shopConfig && shopConfig.visible) ? shopConfig.visible[catKey] : null;
+    var shown = arr.filter(function(item) {
+      var key = catKey === 'extras' ? item.configId : item.id;
+      return !visCat || visCat[key] !== false;
+    });
+    if (!shopConfig || !shopConfig[catKey]) return shown;
     const cfg = shopConfig[catKey];
     const avail = [];
     const soldOut = [];
-    arr.forEach(item => {
+    shown.forEach(item => {
       const key = catKey === 'extras' ? item.configId : item.id;
       if (cfg[key] === false) soldOut.push(item);
       else avail.push(item);
     });
     return avail.concat(soldOut);
+  }
+
+  function renderDuo() {
+    const container = document.getElementById('duoList');
+    if (!container) return;
+
+    let html = '<div class="sauce-item">' +
+      '<div class="sauce-info"><div class="sauce-name">The OG Tiramisu (ล็อกไว้ในเซ็ต)</div>' +
+      `<div style="color:#06c755;font-weight:bold;font-size:13px;">${DUO_OG_PRICE} ฿</div></div>` +
+      '<div class="qty-controls" data-duoqty="1">' +
+        '<button class="qty-btn" data-action="minus"></button>' +
+        `<span class="qty-value">${duoQty}</span>` +
+        '<button class="qty-btn plus" data-action="plus"></button>' +
+      '</div></div>';
+
+    if (duoQty > 0) {
+      while (duoPairs.length < duoQty) duoPairs.push({ menu: '', bread: 'normal' });
+      while (duoPairs.length > duoQty) duoPairs.pop();
+
+      const supperAvail = !shopConfig || !shopConfig.options || shopConfig.options.supper !== false;
+      const countryAvail = !shopConfig || !shopConfig.options || shopConfig.options.country !== false;
+
+      for (let i = 0; i < duoQty; i++) {
+        const pair = duoPairs[i];
+        html += `<div class="trio-group"><div class="trio-group-title">🍽️ คู่ที่ ${i + 1} — เลือกเมนูแซนวิช</div>`;
+        html += `<select data-duomenu="${i}"><option value="">-- เลือกเมนู --</option>`;
+        DUO_OPTIONS.forEach(o => {
+          const sel = pair.menu === o.id ? 'selected' : '';
+          html += `<option value="${o.id}" ${sel}>${o.name} (${o.price}฿)</option>`;
+        });
+        html += '</select>';
+
+        if (pair.menu) {
+          const opt = DUO_OPTIONS.find(o => o.id === pair.menu);
+          html += '<div class="bread-choice" style="margin-top:10px;"><div class="bread-choice-label">เลือกแป้งขนมปัง</div>';
+          html += '<div class="bread-options">';
+          if (countryAvail) {
+            html += `<button type="button" class="bread-opt ${pair.bread === 'normal' ? 'active' : ''}" data-duobread="${i}" data-bread="normal">Country Bread</button>`;
+          } else {
+            html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Country Bread (หมด)</button>`;
+          }
+          if (supperAvail) {
+            html += `<button type="button" class="bread-opt ${pair.bread === 'supper' ? 'active' : ''}" data-duobread="${i}" data-bread="supper">Supper Multigrain (+${opt.supperPrice}฿)</button>`;
+          } else {
+            html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Supper Multigrain (หมด)</button>`;
+          }
+          html += '</div></div>';
+        }
+        html += '</div>';
+      }
+      html += `<div class="spread-note" style="margin-top:10px;">💰 ส่วนลด Duo Set: -${DUO_DISCOUNT * duoQty} ฿ (${duoQty} คู่)</div>`;
+    }
+
+    container.innerHTML = html;
+
+    const qc = container.querySelector('[data-duoqty]');
+    qc.querySelector('[data-action="minus"]').addEventListener('click', () => {
+      if (duoQty > 0) { duoQty--; renderDuo(); updateTotal(); }
+    });
+    qc.querySelector('[data-action="plus"]').addEventListener('click', () => {
+      duoQty++; renderDuo(); updateTotal();
+    });
+
+    container.querySelectorAll('[data-duomenu]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const i = parseInt(sel.dataset.duomenu);
+        duoPairs[i].menu = sel.value;
+        duoPairs[i].bread = 'normal';
+        renderDuo();
+        updateTotal();
+      });
+    });
+    container.querySelectorAll('[data-duobread]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.duobread);
+        duoPairs[i].bread = btn.dataset.bread;
+        renderDuo();
+        updateTotal();
+      });
+    });
+  }
+
+  function duoTotal() {
+    if (duoQty <= 0) return 0;
+    let t = 0;
+    duoPairs.forEach(pair => {
+      t += DUO_OG_PRICE;
+      const opt = DUO_OPTIONS.find(o => o.id === pair.menu);
+      if (opt) {
+        t += opt.price;
+        if (pair.bread === 'supper') t += opt.supperPrice;
+      }
+      t -= DUO_DISCOUNT;
+    });
+    return t;
   }
 
   function renderMenu() {
@@ -1191,6 +1328,7 @@
 
     document.querySelectorAll('.qty-controls').forEach(ctrl => {
       const key = ctrl.dataset.key;
+      if (!key) return;
       const minusBtn = ctrl.querySelector('[data-action="minus"]');
       const plusBtn = ctrl.querySelector('[data-action="plus"]');
       const valueEl = ctrl.querySelector('.qty-value');
@@ -1224,6 +1362,8 @@
       });
       update();
     });
+
+    renderDuo();
   }
 
   function renderTrioSelections() {
@@ -1435,6 +1575,7 @@
     const hasBase = sandwich && sandwich.hasBaseSauce;
     const addonList = sandwich && sandwich.addonList ? sandwich.addonList : null;
     const hasAddon = !!addonList;
+    const hasButter = sandwich && sandwich.butterChoice;
     const supperUp = sandwich && sandwich.supperPrice ? sandwich.supperPrice : SUPPER_UPGRADE_PRICE;
 
     if (qty <= 0) {
@@ -1443,6 +1584,7 @@
       sandwichBread[sid] = [];
       sandwichBaseSauce[sid] = [];
       sandwichAddons[sid] = [];
+      sandwichButter[sid] = [];
       return;
     }
 
@@ -1455,6 +1597,10 @@
     if (hasAddon) {
       while (sandwichAddons[sid].length < qty) sandwichAddons[sid].push([]);
       while (sandwichAddons[sid].length > qty) sandwichAddons[sid].pop();
+    }
+    if (hasButter) {
+      while (sandwichButter[sid].length < qty) sandwichButter[sid].push('peanut');
+      while (sandwichButter[sid].length > qty) sandwichButter[sid].pop();
     }
 
     const countryAvail = !shopConfig || !shopConfig.options || shopConfig.options.country !== false;
@@ -1504,6 +1650,21 @@
       }
     }
 
+    if (hasButter) {
+      html += '<div class="bread-choice-label" style="margin-top:12px;">เลือกเนยถั่ว</div>';
+      for (let i = 0; i < qty; i++) {
+        const cur = sandwichButter[sid][i];
+        html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
+        html += '<div class="bread-options">';
+        BUTTER_OPTIONS.forEach(b => {
+          const on = cur === b.id ? 'active' : '';
+          const priceLabel = b.price > 0 ? ` (+${b.price}฿)` : '';
+          html += `<button type="button" class="bread-opt ${on}" data-sandwich="${sid}" data-piece="${i}" data-butter="${b.id}">${b.name}${priceLabel}</button>`;
+        });
+        html += '</div></div>';
+      }
+    }
+
     if (hasAddon) {
       html += '<div class="bread-choice-label" style="margin-top:12px;">Add-on (เพิ่ม)</div>';
       for (let i = 0; i < qty; i++) {
@@ -1523,9 +1684,10 @@
 
     container.querySelectorAll('.bread-opt').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (btn.dataset.butter) return;
         const piece = parseInt(btn.dataset.piece);
         sandwichBread[sid][piece] = btn.dataset.bread;
-        container.querySelectorAll(`.bread-opt[data-piece="${piece}"]`).forEach(b => b.classList.remove('active'));
+        container.querySelectorAll(`.bread-opt[data-piece="${piece}"]:not([data-butter])`).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         updateTotal();
       });
@@ -1549,6 +1711,16 @@
         const idx = arr.indexOf(addonId);
         if (idx >= 0) { arr.splice(idx, 1); btn.classList.remove('active'); }
         else { arr.push(addonId); btn.classList.add('active'); }
+        updateTotal();
+      });
+    });
+
+    container.querySelectorAll('[data-butter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const piece = parseInt(btn.dataset.piece);
+        sandwichButter[sid][piece] = btn.dataset.butter;
+        container.querySelectorAll(`[data-butter][data-piece="${piece}"]`).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         updateTotal();
       });
     });
@@ -1593,8 +1765,15 @@
           if (a) total += a.price;
         });
       });
+      if (s.butterChoice) {
+        (sandwichButter[s.id] || []).forEach(bid => {
+          const b = BUTTER_OPTIONS.find(x => x.id === bid);
+          if (b) total += b.price;
+        });
+      }
     });
     EXTRAS.forEach(e => total += e.price * quantities['extra-' + e.id]);
+    total += duoTotal();
     if (deliveryMethod === 'delivery' && deliveryFee > 0) {
       total += deliveryFee;
     }
@@ -2046,14 +2225,34 @@
           result.addons = names;
           result.addonTotal = addonTotal;
         }
+        if (s.butterChoice) {
+          const butters = sandwichButter[s.id] || [];
+          result.butters = butters.map(bid => {
+            const b = BUTTER_OPTIONS.find(x => x.id === bid);
+            return b ? b.name : bid;
+          });
+          result.butterTotal = butters.reduce((sum, bid) => {
+            const b = BUTTER_OPTIONS.find(x => x.id === bid);
+            return sum + (b ? b.price : 0);
+          }, 0);
+        }
         return result;
       });
     const extras = EXTRAS.filter(e => quantities['extra-' + e.id] > 0)
       .map(e => ({ name: e.name, price: e.price, qty: quantities['extra-' + e.id] }));
 
-    if (flavors.length === 0 && croissants.length === 0 && sourdoughs.length === 0 && sandwiches.length === 0 && tiramisus.length === 0) {
+    if (flavors.length === 0 && croissants.length === 0 && sourdoughs.length === 0 && sandwiches.length === 0 && tiramisus.length === 0 && duoQty === 0) {
       showAlert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
       return;
+    }
+
+    if (duoQty > 0) {
+      for (let i = 0; i < duoPairs.length; i++) {
+        if (!duoPairs[i].menu) {
+          showAlert(`กรุณาเลือกเมนูแซนวิชสำหรับ Duo Set คู่ที่ ${i + 1}`);
+          return;
+        }
+      }
     }
 
     if (quantities['sourdough-trio'] > 0) {
@@ -2115,14 +2314,24 @@
     croissants.forEach(c => itemsTotal += c.price * c.qty);
     tiramisus.forEach(t => itemsTotal += t.price * t.qty);
     sourdoughs.forEach(s => itemsTotal += s.price * s.qty);
-    sandwiches.forEach(s => itemsTotal += (s.price * s.qty) + s.breadUpgradeTotal + (s.addonTotal || 0));
+    sandwiches.forEach(s => itemsTotal += (s.price * s.qty) + s.breadUpgradeTotal + (s.addonTotal || 0) + (s.butterTotal || 0));
     extras.forEach(e => itemsTotal += e.price * e.qty);
+    itemsTotal += duoTotal();
+
+    const duoSets = duoQty > 0 ? duoPairs.map(pair => {
+      const opt = DUO_OPTIONS.find(o => o.id === pair.menu);
+      return {
+        og: 'The OG Tiramisu',
+        menu: opt ? opt.name : '',
+        bread: pair.bread === 'supper' ? 'Supper Multigrain' : 'Country Bread'
+      };
+    }) : [];
 
     const finalDeliveryFee = (deliveryMethod === 'delivery' && deliveryFee > 0) ? deliveryFee : 0;
     const total = itemsTotal + finalDeliveryFee;
 
     const data = {
-      userId, flavors, sauces, croissants, tiramisus, sourdoughs, sandwiches, extras,
+      userId, flavors, sauces, croissants, tiramisus, sourdoughs, sandwiches, extras, duoSets,
       trioSelections: quantities['sourdough-trio'] > 0 ? trioSelections : [],
       itemsTotal, deliveryFee: finalDeliveryFee,
       deliveryDistance, total, deliveryDate, deliveryMethod,
@@ -2166,6 +2375,29 @@
     document.getElementById('submitBar').classList.remove('hidden');
   }
 
+  function isVisible(catKey, id) {
+    if (!shopConfig || !shopConfig.visible || !shopConfig.visible[catKey]) return true;
+    return shopConfig.visible[catKey][id] !== false;
+  }
+
+  function adminRow(catKey, id, name) {
+    var availChecked = (shopConfig[catKey] && shopConfig[catKey][id] === false) ? '' : 'checked';
+    var visChecked = isVisible(catKey, id) ? 'checked' : '';
+    return '<div class="admin-row2">' +
+      '<span class="admin-row-label">' + name + '</span>' +
+      '<div class="admin-toggles">' +
+        '<div class="admin-toggle-cell">' +
+          '<span class="admin-toggle-cap">มีของ</span>' +
+          '<label class="toggle-switch"><input type="checkbox" data-avail="' + catKey + '" data-id="' + id + '" ' + availChecked + '><span class="toggle-slider"></span></label>' +
+        '</div>' +
+        '<div class="admin-toggle-cell">' +
+          '<span class="admin-toggle-cap">แสดง</span>' +
+          '<label class="toggle-switch"><input type="checkbox" data-vis="' + catKey + '" data-id="' + id + '" ' + visChecked + '><span class="toggle-slider"></span></label>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
   function renderAdminPanel() {
     if (!shopConfig) return;
 
@@ -2185,19 +2417,13 @@
 
     let flavorHtml = '';
     for (const [id, name] of Object.entries(flavorNames)) {
-      const checked = shopConfig.flavors[id] !== false ? 'checked' : '';
-      flavorHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
-        `<label class="toggle-switch"><input type="checkbox" data-type="flavor" data-id="${id}" ${checked}>` +
-        `<span class="toggle-slider"></span></label></div>`;
+      flavorHtml += adminRow('flavors', id, name);
     }
     document.getElementById('adminFlavors').innerHTML = flavorHtml;
 
     let sauceHtml = '';
     for (const [id, name] of Object.entries(sauceNames)) {
-      const checked = shopConfig.sauces[id] !== false ? 'checked' : '';
-      sauceHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
-        `<label class="toggle-switch"><input type="checkbox" data-type="sauce" data-id="${id}" ${checked}>` +
-        `<span class="toggle-slider"></span></label></div>`;
+      sauceHtml += adminRow('sauces', id, name);
     }
     document.getElementById('adminSauces').innerHTML = sauceHtml;
 
@@ -2206,10 +2432,7 @@
     }
     let croissantHtml = '';
     for (const [id, name] of Object.entries(croissantNames)) {
-      const checked = shopConfig.croissants[id] !== false ? 'checked' : '';
-      croissantHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
-        `<label class="toggle-switch"><input type="checkbox" data-type="croissant" data-id="${id}" ${checked}>` +
-        `<span class="toggle-slider"></span></label></div>`;
+      croissantHtml += adminRow('croissants', id, name);
     }
     document.getElementById('adminCroissants').innerHTML = croissantHtml;
 
@@ -2219,10 +2442,7 @@
     }
     let tiramisuHtml = '';
     for (const [id, name] of Object.entries(tiramisuNames)) {
-      const checked = shopConfig.tiramisus[id] !== false ? 'checked' : '';
-      tiramisuHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
-        `<label class="toggle-switch"><input type="checkbox" data-type="tiramisu" data-id="${id}" ${checked}>` +
-        `<span class="toggle-slider"></span></label></div>`;
+      tiramisuHtml += adminRow('tiramisus', id, name);
     }
     document.getElementById('adminTiramisus').innerHTML = tiramisuHtml;
 
@@ -2239,10 +2459,7 @@
     }
     let sourdoughHtml = '';
     for (const [id, name] of Object.entries(sourdoughNames)) {
-      const checked = shopConfig.sourdoughs[id] !== false ? 'checked' : '';
-      sourdoughHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
-        `<label class="toggle-switch"><input type="checkbox" data-type="sourdough" data-id="${id}" ${checked}>` +
-        `<span class="toggle-slider"></span></label></div>`;
+      sourdoughHtml += adminRow('sourdoughs', id, name);
     }
     document.getElementById('adminSourdoughs').innerHTML = sourdoughHtml;
 
@@ -2252,18 +2469,16 @@
       sunny_side_up: 'Sunny Side Up Chicken Melt',
       strawberry_blueberry: 'Strawberry & Blueberry',
       fig_berry_breeze: 'Fig & Berry Breeze',
+      banana_berry: 'Banana Berry Peanut Butter',
       tuna_melt: 'Grilled Tuna Melt',
       ham_cheese: 'Grilled Ham & Cheese'
     };
     if (!shopConfig.sandwiches) {
-      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, tuna_melt: true, ham_cheese: true };
+      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true };
     }
     let sandwichHtml = '';
     for (const [id, name] of Object.entries(sandwichNames)) {
-      const checked = shopConfig.sandwiches[id] !== false ? 'checked' : '';
-      sandwichHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
-        `<label class="toggle-switch"><input type="checkbox" data-type="sandwich" data-id="${id}" ${checked}>` +
-        `<span class="toggle-slider"></span></label></div>`;
+      sandwichHtml += adminRow('sandwiches', id, name);
     }
     document.getElementById('adminSandwiches').innerHTML = sandwichHtml;
 
@@ -2297,10 +2512,7 @@
     }
     let extraHtml = '';
     for (const [id, name] of Object.entries(extraNames)) {
-      const checked = shopConfig.extras[id] !== false ? 'checked' : '';
-      extraHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
-        `<label class="toggle-switch"><input type="checkbox" data-type="extra" data-id="${id}" ${checked}>` +
-        `<span class="toggle-slider"></span></label></div>`;
+      extraHtml += adminRow('extras', id, name);
     }
     document.getElementById('adminExtras').innerHTML = extraHtml;
 
@@ -2445,31 +2657,16 @@
     btn.disabled = true;
     btn.innerText = '💾 กำลังบันทึก...';
 
-    document.querySelectorAll('[data-type="flavor"]').forEach(cb => {
-      shopConfig.flavors[cb.dataset.id] = cb.checked;
+    document.querySelectorAll('[data-avail]').forEach(cb => {
+      const cat = cb.dataset.avail;
+      if (!shopConfig[cat]) shopConfig[cat] = {};
+      shopConfig[cat][cb.dataset.id] = cb.checked;
     });
-    document.querySelectorAll('[data-type="sauce"]').forEach(cb => {
-      shopConfig.sauces[cb.dataset.id] = cb.checked;
-    });
-    if (!shopConfig.croissants) shopConfig.croissants = {};
-    document.querySelectorAll('[data-type="croissant"]').forEach(cb => {
-      shopConfig.croissants[cb.dataset.id] = cb.checked;
-    });
-    if (!shopConfig.sourdoughs) shopConfig.sourdoughs = {};
-    document.querySelectorAll('[data-type="sourdough"]').forEach(cb => {
-      shopConfig.sourdoughs[cb.dataset.id] = cb.checked;
-    });
-    if (!shopConfig.extras) shopConfig.extras = {};
-    document.querySelectorAll('[data-type="extra"]').forEach(cb => {
-      shopConfig.extras[cb.dataset.id] = cb.checked;
-    });
-    if (!shopConfig.sandwiches) shopConfig.sandwiches = {};
-    document.querySelectorAll('[data-type="sandwich"]').forEach(cb => {
-      shopConfig.sandwiches[cb.dataset.id] = cb.checked;
-    });
-    if (!shopConfig.tiramisus) shopConfig.tiramisus = {};
-    document.querySelectorAll('[data-type="tiramisu"]').forEach(cb => {
-      shopConfig.tiramisus[cb.dataset.id] = cb.checked;
+    if (!shopConfig.visible) shopConfig.visible = {};
+    document.querySelectorAll('[data-vis]').forEach(cb => {
+      const cat = cb.dataset.vis;
+      if (!shopConfig.visible[cat]) shopConfig.visible[cat] = {};
+      shopConfig.visible[cat][cb.dataset.id] = cb.checked;
     });
     if (!shopConfig.options) shopConfig.options = {};
     document.querySelectorAll('[data-type="option"]').forEach(cb => {
