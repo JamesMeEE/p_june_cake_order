@@ -458,7 +458,7 @@
   <div class="card" id="duoCard" data-section="duo">
     <div class="label">จับคู่เมนู (Duo Set)</div>
     <div style="font-size:12px;color:#8a623f;margin-bottom:10px;">The OG Tiramisu จับคู่กับเมนูแซนวิช 1 อย่าง (รับส่วนลด 20฿ ต่อคู่)</div>
-    <img src="/pic/duo_set.jpg" alt="Duo Set" style="width:100%;height:auto;display:block;border-radius:16px;margin-bottom:12px;cursor:zoom-in;" onclick="document.getElementById('imgLightboxImg').src=this.src;document.getElementById('imgLightbox').classList.remove('hidden');">
+    <img src="/pic/duo_set.jpg" alt="Duo Set" style="width:100%;height:140px;object-fit:contain;display:block;border-radius:16px;margin-bottom:12px;cursor:zoom-in;" onclick="document.getElementById('imgLightboxImg').src=this.src;document.getElementById('imgLightbox').classList.remove('hidden');">
     <div id="duoList"></div>
   </div>
   </div>
@@ -677,7 +677,7 @@
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
         tiramisus: { og: true, ferrero: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
-        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true },
+        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true },
         extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
         options: { country: true, supper: true, cream_cheese: true, nutella: true },
         closedDates: { pickup: [], delivery: [] },
@@ -902,6 +902,12 @@
     { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 }
   ];
 
+  const KIMCHI_ADDONS = [
+    { id: 'extra_bacon', name: 'Extra Crispy Bacon', price: 10 },
+    { id: 'extra_cheddar', name: 'Extra Cheddar', price: 15 },
+    { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 }
+  ];
+
   const DUO_OPTIONS = [
     { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', price: 170, supperPrice: 5 },
     { id: 'smoked_salmon', name: 'Smoked Salmon', price: 170, supperPrice: 5 },
@@ -931,7 +937,8 @@
 
   const GRILLED_SANDWICHES = [
     { id: 'tuna_melt', name: 'Grilled Tuna Melt', label: 'Grilled Tuna Melt', price: 195, image: '/pic/tuna_melt.jpg', supperPrice: 10, addonList: TUNA_ADDONS },
-    { id: 'ham_cheese', name: 'Grilled Ham & Cheese', label: 'Grilled Ham & Cheese', price: 175, image: '/pic/ham_and_cheese.jpg', supperPrice: 10, addonList: HAM_ADDONS }
+    { id: 'ham_cheese', name: 'Grilled Ham & Cheese', label: 'Grilled Ham & Cheese', price: 175, image: '/pic/ham_and_cheese.jpg', supperPrice: 10, addonList: HAM_ADDONS },
+    { id: 'kimchi_tuna', name: 'Kimchi Tuna Melt', label: 'Kimchi Tuna Melt', price: 195, image: '/pic/kimchi_tuna_melt.jpg', supperPrice: 10, addonList: KIMCHI_ADDONS }
   ];
 
   let SUPPER_UPGRADE_PRICE = 5;
@@ -2566,10 +2573,11 @@
       fig_berry_breeze: 'Fig & Berry Breeze',
       banana_berry: 'Banana Berry Peanut Butter',
       tuna_melt: 'Grilled Tuna Melt',
-      ham_cheese: 'Grilled Ham & Cheese'
+      ham_cheese: 'Grilled Ham & Cheese',
+      kimchi_tuna: 'Kimchi Tuna Melt'
     };
     if (!shopConfig.sandwiches) {
-      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true };
+      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true };
     }
     let sandwichHtml = '';
     for (const [id, name] of Object.entries(sandwichNames)) {
