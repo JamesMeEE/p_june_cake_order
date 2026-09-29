@@ -432,6 +432,11 @@
     <div id="tiramisuList"></div>
   </div>
 
+  <div class="card" id="signatureCard" data-section="signatures">
+    <div class="label">Signature Cake</div>
+    <div id="signatureList"></div>
+  </div>
+
   <div class="card" id="sourdoughCard" data-section="sourdough">
     <div class="label">ซาวร์โดว์ (Sourdough)</div>
     <div class="label" style="font-size:14px;color:#4b3619;">ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)</div>
@@ -589,6 +594,11 @@
     </div>
 
     <div class="card">
+      <div class="admin-section">🍰 Signature Cake</div>
+      <div id="adminSignatures"></div>
+    </div>
+
+    <div class="card">
       <div class="admin-section">🍞 ซาวร์โดว์ (Sourdough)</div>
       <div id="adminSourdoughs"></div>
     </div>
@@ -676,6 +686,7 @@
         sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
         croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
         tiramisus: { og: true, ferrero: true },
+        signatures: { oreo_nama: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
         sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true, truffle_ham: true },
         extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
@@ -767,6 +778,27 @@
             item.appendChild(badge);
           }
           quantities['tiramisu-' + t.id] = 0;
+          el.querySelector('.qty-value').innerText = '0';
+        }
+      });
+    }
+
+    if (shopConfig.signatures) {
+      SIGNATURES.forEach(s => {
+        const available = shopConfig.signatures[s.id] !== false;
+        const el = document.querySelector(`[data-key="signature-${s.id}"]`);
+        if (!el) return;
+        const item = el.closest('.flavor-item');
+        if (!available) {
+          item.classList.add('sold-out');
+          if (!item.querySelector('.sold-out-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'sold-out-badge';
+            badge.innerText = 'ของหมดชั่วคราวค่ะ';
+            item.style.position = 'relative';
+            item.appendChild(badge);
+          }
+          quantities['signature-' + s.id] = 0;
           el.querySelector('.qty-value').innerText = '0';
         }
       });
@@ -885,6 +917,15 @@
     { id: 'ferrero', name: 'Ferrero Tiramisu', label: 'Ferrero Tiramisu', price: 145, image: '/pic/ferrero_tiramisu.jpg' }
   ];
 
+  const SIGNATURE_ADDONS = [
+    { id: 'banana', name: 'Banana (Banoffee)', price: 10 },
+    { id: 'strawberry', name: 'Strawberry (Strawoffee)', price: 40 }
+  ];
+
+  const SIGNATURES = [
+    { id: 'oreo_nama', name: 'Oreo Nama Chocolate', label: 'Oreo Nama Chocolate', price: 170, image: '/pic/oreo_nama_chocolate.png', addonList: SIGNATURE_ADDONS }
+  ];
+
   const OPEN_SANDWICH_ADDONS = [
     { id: 'avocado', name: 'Avocado smashed', price: 25 },
     { id: 'bacon', name: 'Smoked Bacon', price: 25 }
@@ -992,7 +1033,7 @@
 
   const PRICE_GROUPS = {
     flavors: FLAVORS, croissants: CROISSANTS, tiramisus: TIRAMISUS,
-    sourdoughs: SOURDOUGHS, sandwiches: SANDWICHES, grilled: GRILLED_SANDWICHES, sauces: SAUCES, extras: EXTRAS
+    sourdoughs: SOURDOUGHS, sandwiches: SANDWICHES, grilled: GRILLED_SANDWICHES, signatures: SIGNATURES, sauces: SAUCES, extras: EXTRAS
   };
 
   function applyPrices() {
@@ -1010,7 +1051,7 @@
         SUPPER_UPGRADE_PRICE = Number(shopConfig.prices.supperUpgrade);
       }
     }
-    [FLAVORS, CROISSANTS, TIRAMISUS, SOURDOUGHS, SANDWICHES, GRILLED_SANDWICHES].forEach(arr => {
+    [FLAVORS, CROISSANTS, TIRAMISUS, SOURDOUGHS, SANDWICHES, GRILLED_SANDWICHES, SIGNATURES].forEach(arr => {
       arr.forEach(item => {
         if (item.label !== undefined) item.displayName = `(${item.price} ฿) ${item.label}`;
       });
@@ -1026,6 +1067,7 @@
   SAUCES.forEach(s => quantities['sauce-' + s.id] = 0);
   CROISSANTS.forEach(c => quantities['croissant-' + c.id] = 0);
   TIRAMISUS.forEach(t => quantities['tiramisu-' + t.id] = 0);
+  SIGNATURES.forEach(s => quantities['signature-' + s.id] = 0);
   SOURDOUGHS.forEach(s => quantities['sourdough-' + s.id] = 0);
   SANDWICHES.forEach(s => quantities['sandwich-' + s.id] = 0);
   GRILLED_SANDWICHES.forEach(s => quantities['sandwich-' + s.id] = 0);
@@ -1038,6 +1080,9 @@
 
   const sandwichBaseSauce = {};
   ALL_SANDWICHES.forEach(s => sandwichBaseSauce[s.id] = []);
+
+  const signatureAddons = {};
+  SIGNATURES.forEach(s => signatureAddons[s.id] = []);
 
   const sandwichAddons = {};
   ALL_SANDWICHES.forEach(s => sandwichAddons[s.id] = []);
@@ -1077,6 +1122,9 @@
     }
     if (section === 'tiramisus') {
       return TIRAMISUS.every(t => shopConfig.tiramisus && shopConfig.tiramisus[t.id] === false);
+    }
+    if (section === 'signatures') {
+      return SIGNATURES.every(s => shopConfig.signatures && shopConfig.signatures[s.id] === false);
     }
     if (section === 'sourdough') {
       const allSd = SOURDOUGHS.every(s => shopConfig.sourdoughs && shopConfig.sourdoughs[s.id] === false);
@@ -1387,6 +1435,24 @@
       '</div>'
     ).join('');
 
+    const signatureList = document.getElementById("signatureList");
+    signatureList.innerHTML = sortByAvail(SIGNATURES, 'signatures').map(s =>
+      '<div class="flavor-item">' +
+        '<div class="flavor-top">' +
+          '<img class="flavor-img" src="' + s.image + '" alt="' + s.name + '">' +
+          '<div class="qty-controls" data-key="signature-' + s.id + '">' +
+            '<button class="qty-btn" data-action="minus"></button>' +
+            '<span class="qty-value">0</span>' +
+            '<button class="qty-btn plus" data-action="plus"></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flavor-meta">' +
+          '<div class="flavor-name">' + s.displayName + '</div>' +
+        '</div>' +
+        '<div class="bread-choice hidden" data-sigaddon-for="' + s.id + '"></div>' +
+      '</div>'
+    ).join('');
+
     const sandwichList = document.getElementById("sandwichList");
     sandwichList.innerHTML = sortByAvail(SANDWICHES, 'sandwiches').map(s =>
       '<div class="flavor-item">' +
@@ -1448,6 +1514,10 @@
         if (key.startsWith('sandwich-')) {
           const sid = key.replace('sandwich-', '');
           renderBreadChoice(sid);
+        }
+        if (key.startsWith('signature-')) {
+          const sid = key.replace('signature-', '');
+          renderSignatureAddon(sid);
         }
       };
 
@@ -1588,6 +1658,52 @@
     const opt = SPREAD_OPTIONS.find(o => o.id === optId);
     if (!opt) return true;
     return shopConfig.extras[opt.configId] !== false;
+  }
+
+  function renderSignatureAddon(sid) {
+    const qty = quantities['signature-' + sid];
+    const container = document.querySelector(`[data-sigaddon-for="${sid}"]`);
+    if (!container) return;
+    const sig = SIGNATURES.find(s => s.id === sid);
+    const addonList = sig && sig.addonList ? sig.addonList : null;
+
+    if (qty <= 0 || !addonList) {
+      container.classList.add('hidden');
+      container.innerHTML = '';
+      signatureAddons[sid] = [];
+      return;
+    }
+
+    while (signatureAddons[sid].length < qty) signatureAddons[sid].push([]);
+    while (signatureAddons[sid].length > qty) signatureAddons[sid].pop();
+
+    let html = '<div class="bread-choice-label">Add-on (เพิ่ม)</div>';
+    for (let i = 0; i < qty; i++) {
+      const cur = signatureAddons[sid][i] || [];
+      html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
+      html += '<div class="bread-options" style="flex-wrap:wrap;">';
+      addonList.forEach(a => {
+        const on = cur.includes(a.id) ? 'active' : '';
+        html += `<button type="button" class="addon-opt ${on}" data-sigadd="${sid}" data-piece="${i}" data-addon="${a.id}">${a.name} (+${a.price}฿)</button>`;
+      });
+      html += '</div></div>';
+    }
+
+    container.innerHTML = html;
+    container.classList.remove('hidden');
+
+    container.querySelectorAll('[data-sigadd]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const piece = parseInt(btn.dataset.piece);
+        const addonId = btn.dataset.addon;
+        if (!signatureAddons[sid][piece]) signatureAddons[sid][piece] = [];
+        const arr = signatureAddons[sid][piece];
+        const idx = arr.indexOf(addonId);
+        if (idx >= 0) { arr.splice(idx, 1); btn.classList.remove('active'); }
+        else { arr.push(addonId); btn.classList.add('active'); }
+        updateTotal();
+      });
+    });
   }
 
   function renderSpreadForItem(sid) {
@@ -1868,6 +1984,17 @@
           if (b) total += b.price;
         });
       }
+    });
+    SIGNATURES.forEach(s => {
+      const q = quantities['signature-' + s.id];
+      total += s.price * q;
+      const addonList = s.addonList || [];
+      (signatureAddons[s.id] || []).forEach(pieceAddons => {
+        (pieceAddons || []).forEach(aid => {
+          const a = addonList.find(x => x.id === aid);
+          if (a) total += a.price;
+        });
+      });
     });
     EXTRAS.forEach(e => total += e.price * quantities['extra-' + e.id]);
     total += duoTotal();
@@ -2262,6 +2389,19 @@
       .map(c => ({ name: c.name, price: c.price, qty: quantities['croissant-' + c.id] }));
     const tiramisus = TIRAMISUS.filter(t => quantities['tiramisu-' + t.id] > 0)
       .map(t => ({ name: t.name, price: t.price, qty: quantities['tiramisu-' + t.id] }));
+    const signatures = SIGNATURES.filter(s => quantities['signature-' + s.id] > 0)
+      .map(s => {
+        const addonList = s.addonList || [];
+        const names = [];
+        let addonTotal = 0;
+        (signatureAddons[s.id] || []).forEach(pieceAddons => {
+          (pieceAddons || []).forEach(aid => {
+            const a = addonList.find(x => x.id === aid);
+            if (a) { names.push(a.name); addonTotal += a.price; }
+          });
+        });
+        return { name: s.name, price: s.price, qty: quantities['signature-' + s.id], addons: names, addonTotal };
+      });
     const ccAvail = !shopConfig || !shopConfig.extras || shopConfig.extras.cream_cheese !== false;
     function spreadToPayload(selArr) {
       const cc = [];
@@ -2338,7 +2478,7 @@
     const extras = EXTRAS.filter(e => quantities['extra-' + e.id] > 0)
       .map(e => ({ name: e.name, price: e.price, qty: quantities['extra-' + e.id] }));
 
-    if (flavors.length === 0 && croissants.length === 0 && sourdoughs.length === 0 && sandwiches.length === 0 && tiramisus.length === 0 && duoQty === 0) {
+    if (flavors.length === 0 && croissants.length === 0 && sourdoughs.length === 0 && sandwiches.length === 0 && tiramisus.length === 0 && signatures.length === 0 && duoQty === 0) {
       showAlert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
       return;
     }
@@ -2414,6 +2554,7 @@
     sauces.forEach(s => itemsTotal += s.price * s.qty);
     croissants.forEach(c => itemsTotal += c.price * c.qty);
     tiramisus.forEach(t => itemsTotal += t.price * t.qty);
+    signatures.forEach(s => itemsTotal += (s.price * s.qty) + (s.addonTotal || 0));
     sourdoughs.forEach(s => itemsTotal += s.price * s.qty);
     sandwiches.forEach(s => itemsTotal += (s.price * s.qty) + s.breadUpgradeTotal + (s.addonTotal || 0) + (s.butterTotal || 0));
     extras.forEach(e => itemsTotal += e.price * e.qty);
@@ -2441,7 +2582,7 @@
     const total = itemsTotal + finalDeliveryFee;
 
     const data = {
-      userId, flavors, sauces, croissants, tiramisus, sourdoughs, sandwiches, extras, duoSets,
+      userId, flavors, sauces, croissants, tiramisus, signatures, sourdoughs, sandwiches, extras, duoSets,
       trioSelections: quantities['sourdough-trio'] > 0 ? trioSelections : [],
       itemsTotal, deliveryFee: finalDeliveryFee,
       deliveryDistance, total, deliveryDate, deliveryMethod,
@@ -2556,6 +2697,16 @@
     }
     document.getElementById('adminTiramisus').innerHTML = tiramisuHtml;
 
+    const signatureNames = { oreo_nama: 'Oreo Nama Chocolate' };
+    if (!shopConfig.signatures) {
+      shopConfig.signatures = { oreo_nama: true };
+    }
+    let signatureHtml = '';
+    for (const [id, name] of Object.entries(signatureNames)) {
+      signatureHtml += adminRow('signatures', id, name);
+    }
+    document.getElementById('adminSignatures').innerHTML = signatureHtml;
+
     renderAdminPrices();
 
     const sourdoughNames = {
@@ -2642,6 +2793,7 @@
       { key: 'sauces', title: '🍫 ซอส', arr: SAUCES },
       { key: 'croissants', title: '🥐 ครัวซองต์', arr: CROISSANTS },
       { key: 'tiramisus', title: '☕ ทีรามิสุ', arr: TIRAMISUS },
+      { key: 'signatures', title: '🍰 Signature Cake', arr: SIGNATURES },
       { key: 'sourdoughs', title: '🍞 ซาวร์โดว์', arr: SOURDOUGHS },
       { key: 'sandwiches', title: '🥪 แซนด์วิชเปิดหน้า', arr: SANDWICHES },
       { key: 'grilled', title: '🥪 ซาวร์โดว์แซนวิช', arr: GRILLED_SANDWICHES },

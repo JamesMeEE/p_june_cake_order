@@ -68,6 +68,11 @@ async function appendToSheet(data) {
     ? data.extras.map(e => `${e.name} x ${e.qty} ชิ้น`).join('\n')
     : '-';
 
+  if (data.signatures && data.signatures.length > 0) {
+    const sigLines = data.signatures.map(s => `${s.name} x ${s.qty} ชิ้น${s.addons && s.addons.length > 0 ? ' [Add-on: ' + s.addons.join(', ') + ']' : ''}`);
+    extrasText = (extrasText === '-' ? '' : extrasText + '\n') + sigLines.join('\n');
+  }
+
   if (data.duoSets && data.duoSets.length > 0) {
     const duoLines = data.duoSets.map((d, i) => `Duo คู่ ${i + 1}: ${d.og} + ${d.menu} (${d.bread})${d.addons && d.addons.length > 0 ? ' [Add-on: ' + d.addons.join(', ') + ']' : ''}`);
     extrasText = (extrasText === '-' ? '' : extrasText + '\n') + duoLines.join('\n');
@@ -211,6 +216,19 @@ function buildFlexMessage(data) {
       orderLines.push({
         type: 'text',
         text: `ทีรามิสุ (Tiramisu): ${t.name} x ${t.qty} ชิ้น`,
+        size: 'sm',
+        wrap: true
+      });
+    });
+  }
+
+  if (data.signatures && data.signatures.length > 0) {
+    data.signatures.forEach(s => {
+      let txt = `Signature Cake: ${s.name} x ${s.qty} ชิ้น`;
+      if (s.addons && s.addons.length > 0) txt += ` [Add-on: ${s.addons.join(', ')}]`;
+      orderLines.push({
+        type: 'text',
+        text: txt,
         size: 'sm',
         wrap: true
       });

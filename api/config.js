@@ -18,6 +18,7 @@ const DEFAULT_CONFIG = {
   sauces: { darkchoco: true, matcha: true, strawberry: true, nutella: true, biscoff: true },
   croissants: { croissant: true, mixed_berry: true, pain_au_chocolat: true, biscoff: true, strawberry_nutella: true },
   tiramisus: { og: true, ferrero: true },
+  signatures: { oreo_nama: true },
   sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
   sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true, truffle_ham: true },
   extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
