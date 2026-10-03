@@ -23,6 +23,7 @@ const DEFAULT_CONFIG = {
   sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true, truffle_ham: true },
   extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
   options: { country: true, supper: true, cream_cheese: true, nutella: true },
+  breakfast: {},
   prices: {},
   visible: {},
   closedDates: { pickup: [], delivery: [] },

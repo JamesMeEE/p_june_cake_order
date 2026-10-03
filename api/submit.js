@@ -78,6 +78,19 @@ async function appendToSheet(data) {
     extrasText = (extrasText === '-' ? '' : extrasText + '\n') + duoLines.join('\n');
   }
 
+  if (data.breakfastSets && data.breakfastSets.length > 0) {
+    const bfLines = [];
+    data.breakfastSets.forEach((b, i) => {
+      bfLines.push(`The Breakfast Club ชิ้นที่ ${i + 1} (${b.price} ฿)`);
+      bfLines.push(`  ขนมปัง: ${b.bread}`);
+      if (b.eggmeat && b.eggmeat.length > 0) bfLines.push(`  ไข่/เนื้อสัตว์: ${b.eggmeat.join(', ')}`);
+      bfLines.push(`  ผัก: ${b.veggie}`);
+      bfLines.push(`  ซอส: ${b.sauce}`);
+      if (b.addons && b.addons.length > 0) bfLines.push(`  Add-on: ${b.addons.join(', ')}`);
+    });
+    extrasText = (extrasText === '-' ? '' : extrasText + '\n') + bfLines.join('\n');
+  }
+
   const sandwichesText = (data.sandwiches && data.sandwiches.length > 0)
     ? data.sandwiches.map(s => {
         let t = `${s.name} x ${s.qty} ชิ้น (${summarizeBreads(s.breads)})`;
@@ -326,6 +339,49 @@ function buildFlexMessage(data) {
         wrap: true,
         color: '#888888'
       });
+    });
+  }
+
+  if (data.breakfastSets && data.breakfastSets.length > 0) {
+    data.breakfastSets.forEach((b, i) => {
+      orderLines.push({
+        type: 'text',
+        text: `The Breakfast Club ชิ้นที่ ${i + 1} (${b.price} ฿):`,
+        size: 'sm',
+        wrap: true
+      });
+      orderLines.push({
+        type: 'text',
+        text: `  └ ขนมปัง: ${b.bread}`,
+        size: 'xs',
+        wrap: true,
+        color: '#888888'
+      });
+      if (b.eggmeat && b.eggmeat.length > 0) {
+        orderLines.push({
+          type: 'text',
+          text: `  └ ไข่/เนื้อสัตว์: ${b.eggmeat.join(', ')}`,
+          size: 'xs',
+          wrap: true,
+          color: '#888888'
+        });
+      }
+      orderLines.push({
+        type: 'text',
+        text: `  └ ผัก: ${b.veggie} | ซอส: ${b.sauce}`,
+        size: 'xs',
+        wrap: true,
+        color: '#888888'
+      });
+      if (b.addons && b.addons.length > 0) {
+        orderLines.push({
+          type: 'text',
+          text: `  └ Add-on: ${b.addons.join(', ')}`,
+          size: 'xs',
+          wrap: true,
+          color: '#aaaaaa'
+        });
+      }
     });
   }
 
