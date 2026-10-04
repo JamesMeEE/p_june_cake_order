@@ -540,6 +540,7 @@
 
   <div class="card" id="breakfastCard" data-section="breakfast">
     <div class="label">The Breakfast Club</div>
+    <img src="/pic/breakfast_club.jpg" alt="The Breakfast Club" style="width:100%;height:200px;object-fit:cover;display:block;margin:0 0 12px 0;border-radius:16px;cursor:zoom-in;" onclick="document.getElementById('imgLightboxImg').src=this.src;document.getElementById('imgLightbox').classList.remove('hidden');">
     <div style="font-size:12px;color:#8a623f;margin-bottom:10px;">จัดชุดอาหารเช้าของคุณเอง เลือกแป้ง ไข่/เนื้อ ผัก ซอส และท็อปปิ้งเพิ่มเติม</div>
     <div id="breakfastList"></div>
     <button type="button" id="addBreakfastBtn" class="pick-btn" style="width:100%;margin-top:8px;">+ เพิ่ม The Breakfast Club</button>
@@ -1081,7 +1082,8 @@
     { id: 'extra_cream_cheese', name: 'Extra Cream Cheese', price: 25 },
     { id: 'extra_cc_garlic', name: 'Extra Cream Cheese Garlic & Chives', price: 25 },
     { id: 'extra_whipped_brown_butter', name: 'Extra Whipped Brown Butter', price: 30 },
-    { id: 'extra_sriracha_mayo', name: 'Extra Sriracha Mayo', price: 15 }
+    { id: 'extra_sriracha_mayo', name: 'Extra Sriracha Mayo', price: 15 },
+    { id: 'strawberry_blueberry', name: 'Strawberry & Blueberry', price: 45 }
   ];
   let breakfastPieces = [];
   let bfastDraft = null;
@@ -1328,12 +1330,13 @@
     soldOut.forEach(c => container.appendChild(c));
   }
 
-  function sortByAvail(arr, catKey) {
+  function sortByAvail(arr, catKey, sortPrice) {
     var visCat = (shopConfig && shopConfig.visible) ? shopConfig.visible[catKey] : null;
     var shown = arr.filter(function(item) {
       var key = catKey === 'extras' ? item.configId : item.id;
       return !visCat || visCat[key] !== false;
     });
+    if (sortPrice) shown = shown.slice().sort((a, b) => a.price - b.price);
     if (!shopConfig || !shopConfig[catKey]) return shown;
     const cfg = shopConfig[catKey];
     const avail = [];
@@ -1738,7 +1741,7 @@
 
   function renderMenu() {
     const flavorList = document.getElementById("flavorList");
-    flavorList.innerHTML = sortByAvail(FLAVORS, 'flavors').map(f =>
+    flavorList.innerHTML = sortByAvail(FLAVORS, 'flavors', true).map(f =>
       '<div class="flavor-item">' +
         '<div class="flavor-top">' +
           '<img class="flavor-img" src="' + f.image + '" alt="' + f.name + '">' +
@@ -1755,7 +1758,7 @@
     ).join('');
 
     const sauceList = document.getElementById("sauceList");
-    sauceList.innerHTML = sortByAvail(SAUCES, 'sauces').map(s =>
+    sauceList.innerHTML = sortByAvail(SAUCES, 'sauces', true).map(s =>
       '<div class="sauce-item">' +
         '<div class="sauce-info">' +
           '<div class="sauce-name">' + s.name + '</div>' +
@@ -1770,7 +1773,7 @@
     ).join('');
 
     const croissantList = document.getElementById("croissantList");
-    croissantList.innerHTML = sortByAvail(CROISSANTS, 'croissants').map(c => {
+    croissantList.innerHTML = sortByAvail(CROISSANTS, 'croissants', true).map(c => {
       const imgHtml = c.image
         ? '<img class="flavor-img" src="' + c.image + '" alt="' + c.name + '">'
         : '<div class="flavor-img" style="display:flex;align-items:center;justify-content:center;font-size:48px;background:#f5f0e8;">🥐</div>';
@@ -1790,8 +1793,7 @@
     }).join('');
 
     const sourdoughList = document.getElementById("sourdoughList");
-    const sourdoughsByPrice = SOURDOUGHS.slice().sort((a, b) => a.price - b.price);
-    sourdoughList.innerHTML = sortByAvail(sourdoughsByPrice, 'sourdoughs').map(s =>
+    sourdoughList.innerHTML = sortByAvail(SOURDOUGHS, 'sourdoughs', true).map(s =>
       '<div class="sauce-item">' +
         '<div class="sauce-info">' +
           '<div class="sauce-name">' + s.displayName + '</div>' +
@@ -1821,7 +1823,7 @@
     ).join('');
 
     const tiramisuList = document.getElementById("tiramisuList");
-    tiramisuList.innerHTML = sortByAvail(TIRAMISUS, 'tiramisus').map(t =>
+    tiramisuList.innerHTML = sortByAvail(TIRAMISUS, 'tiramisus', true).map(t =>
       '<div class="flavor-item">' +
         '<div class="flavor-top">' +
           '<img class="flavor-img" src="' + t.image + '" alt="' + t.name + '">' +
@@ -1838,7 +1840,7 @@
     ).join('');
 
     const signatureList = document.getElementById("signatureList");
-    signatureList.innerHTML = sortByAvail(SIGNATURES, 'signatures').map(s =>
+    signatureList.innerHTML = sortByAvail(SIGNATURES, 'signatures', true).map(s =>
       '<div class="flavor-item">' +
         '<div class="flavor-top">' +
           '<img class="flavor-img" src="' + s.image + '" alt="' + s.name + '">' +
@@ -1856,7 +1858,7 @@
     ).join('');
 
     const sandwichList = document.getElementById("sandwichList");
-    sandwichList.innerHTML = sortByAvail(SANDWICHES, 'sandwiches').map(s =>
+    sandwichList.innerHTML = sortByAvail(SANDWICHES, 'sandwiches', true).map(s =>
       '<div class="flavor-item">' +
         '<div class="flavor-top">' +
           '<img class="flavor-img" src="' + s.image + '" alt="' + s.name + '">' +
@@ -1874,7 +1876,7 @@
     ).join('');
 
     const grilledList = document.getElementById("grilledList");
-    grilledList.innerHTML = sortByAvail(GRILLED_SANDWICHES, 'sandwiches').map(s =>
+    grilledList.innerHTML = sortByAvail(GRILLED_SANDWICHES, 'sandwiches', true).map(s =>
       '<div class="flavor-item">' +
         '<div class="flavor-top">' +
           '<img class="flavor-img" src="' + s.image + '" alt="' + s.name + '">' +
