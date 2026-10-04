@@ -950,6 +950,18 @@
         }
       });
     }
+
+    const bfCard = document.getElementById('breakfastCard');
+    if (bfCard) {
+      const bfVisible = !(shopConfig.visible && shopConfig.visible.breakfastSection === false);
+      if (bfVisible) {
+        bfCard.classList.remove('hidden');
+      } else {
+        bfCard.classList.add('hidden');
+        breakfastPieces = [];
+        renderBreakfastSummary();
+      }
+    }
   }
 
   function isDateClosed(date) {
@@ -3152,7 +3164,10 @@
     document.getElementById('adminExtras').innerHTML = extraHtml;
 
     if (!shopConfig.breakfast) shopConfig.breakfast = {};
+    const bfSectionShown = !(shopConfig.visible && shopConfig.visible.breakfastSection === false);
     let bfHtml = '';
+    bfHtml += '<div class="admin-row"><span class="admin-row-label">แสดง section นี้ในหน้าสั่งซื้อ</span>' +
+      '<label class="toggle-switch"><input type="checkbox" id="bfSectionShowToggle" ' + (bfSectionShown ? 'checked' : '') + '><span class="toggle-slider"></span></label></div>';
     const bfAvailRow = (key, label) => {
       const checked = shopConfig.breakfast[key] === false ? '' : 'checked';
       return '<div class="admin-row"><span class="admin-row-label">' + label + '</span>' +
@@ -3376,6 +3391,12 @@
     document.querySelectorAll('[data-bfprice]').forEach(inp => {
       if (inp.value !== '') shopConfig.prices.breakfast[inp.dataset.bfprice] = Number(inp.value);
     });
+
+    const bfShowToggle = document.getElementById('bfSectionShowToggle');
+    if (bfShowToggle) {
+      if (!shopConfig.visible) shopConfig.visible = {};
+      shopConfig.visible.breakfastSection = bfShowToggle.checked;
+    }
 
     applyPrices();
 
