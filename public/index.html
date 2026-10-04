@@ -388,6 +388,18 @@
     border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
     margin-top: 8px;
   }
+  .admin-float-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: white;
+    padding: 10px 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.12); z-index: 200;
+    display: flex; gap: 10px; transform: translateY(120%); transition: transform 0.28s ease;
+  }
+  .admin-float-bar.show { transform: translateY(0); }
+  .admin-float-bar button {
+    flex: 1; padding: 13px; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: bold; cursor: pointer; font-family: inherit;
+  }
+  .admin-float-save { background: #06c755; color: white; }
+  .admin-float-back { background: #999; color: white; flex: 0 0 38%; }
 
   .submit-bar {
     position: fixed; bottom: 0; left: 0; right: 0; background: white;
@@ -727,6 +739,10 @@
 
     <button type="button" class="admin-save" id="adminSaveBtn">💾 บันทึกการตั้งค่า</button>
     <button type="button" class="admin-back" id="adminBackBtn">← กลับหน้าสั่งซื้อ</button>
+  </div>
+  <div id="adminFloatBar" class="admin-float-bar">
+    <button type="button" class="admin-float-back" id="adminFloatBack">← กลับ</button>
+    <button type="button" class="admin-float-save" id="adminFloatSave">💾 บันทึก</button>
   </div>
 </div>
 
@@ -3033,12 +3049,15 @@
     document.getElementById('adminPanel').classList.remove('hidden');
     document.getElementById('address').value = '';
     renderAdminPanel();
+    lastAdminScrollY = window.scrollY || 0;
+    document.getElementById('adminFloatBar').classList.remove('show');
   }
 
   function closeAdminPanel() {
     document.getElementById('adminPanel').classList.add('hidden');
     document.getElementById('form').classList.remove('hidden');
     document.getElementById('submitBar').classList.remove('hidden');
+    document.getElementById('adminFloatBar').classList.remove('show');
   }
 
   function isVisible(catKey, id) {
@@ -3493,6 +3512,24 @@
     renderBreakfastSummary();
     updateTotal();
   });
+
+  document.getElementById('adminFloatSave').addEventListener('click', () => document.getElementById('adminSaveBtn').click());
+  document.getElementById('adminFloatBack').addEventListener('click', () => document.getElementById('adminBackBtn').click());
+
+  let lastAdminScrollY = 0;
+  function handleAdminScroll() {
+    const panel = document.getElementById('adminPanel');
+    const bar = document.getElementById('adminFloatBar');
+    if (!panel || !bar || panel.classList.contains('hidden')) {
+      if (bar) bar.classList.remove('show');
+      return;
+    }
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
+    if (y > lastAdminScrollY && y > 160) bar.classList.add('show');
+    else if (y < lastAdminScrollY) bar.classList.remove('show');
+    lastAdminScrollY = y <= 0 ? 0 : y;
+  }
+  window.addEventListener('scroll', handleAdminScroll, { passive: true });
 
   initLiff();
 </script>
