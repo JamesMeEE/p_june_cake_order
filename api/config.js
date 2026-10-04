@@ -24,6 +24,7 @@ const DEFAULT_CONFIG = {
   extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
   options: { country: true, supper: true, cream_cheese: true, nutella: true },
   breakfast: {},
+  addons: {},
   prices: {},
   visible: {},
   closedDates: { pickup: [], delivery: [] },
