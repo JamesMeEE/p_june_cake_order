@@ -793,7 +793,7 @@
         tiramisus: { og: true, ferrero: true },
         signatures: { oreo_nama: true },
         sourdoughs: { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true },
-        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true, truffle_ham: true },
+        sandwiches: { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true, truffle_ham: true, wasabi_salmon: true, spicy_cheeky_bacon: true },
         extras: { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true },
         options: { country: true, supper: true, cream_cheese: true, nutella: true },
         breakfast: {},
@@ -1119,6 +1119,19 @@
     { id: 'extra_truffle', name: 'Extra Truffle Paste', price: 15 }
   ];
 
+  const WASABI_ADDONS = [
+    { id: 'extra_salmon', name: 'Extra Smoked Salmon', price: 60 },
+    { id: 'extra_avocado', name: 'Extra Avocado', price: 15 },
+    { id: 'extra_cucumber', name: 'Extra Cucumber', price: 5 }
+  ];
+
+  const SPICY_BACON_ADDONS = [
+    { id: 'extra_chicken', name: 'Extra Chicken', price: 20 },
+    { id: 'extra_bacon', name: 'Extra Bacon', price: 20 },
+    { id: 'extra_cheddar', name: 'Extra Cheddar', price: 15 },
+    { id: 'extra_mozzarella', name: 'Extra Mozzarella', price: 15 }
+  ];
+
   const DUO_OPTIONS = [
     { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', price: 170, supperPrice: 5 },
     { id: 'smoked_salmon', name: 'Smoked Salmon', price: 170, supperPrice: 5 },
@@ -1152,7 +1165,9 @@
     { id: 'tuna_melt', name: 'Tuna Melt', label: 'Tuna Melt', price: 195, image: '/pic/tuna_melt.jpg', supperPrice: 10, addonList: TUNA_ADDONS },
     { id: 'ham_cheese', name: 'Ham & Cheese', label: 'Ham & Cheese', price: 175, image: '/pic/ham_and_cheese.jpg', supperPrice: 10, addonList: HAM_ADDONS },
     { id: 'kimchi_tuna', name: 'Kimchi Tuna Melt', label: 'Kimchi Tuna Melt', price: 195, image: '/pic/kimchi_tuna_melt.jpg', supperPrice: 10, addonList: KIMCHI_ADDONS },
-    { id: 'truffle_ham', name: 'Truffle Ham Cheese', label: 'Truffle Ham Cheese', price: 205, image: '/pic/truffle_ham_cheese.png', supperPrice: 10, addonList: TRUFFLE_ADDONS }
+    { id: 'truffle_ham', name: 'Truffle Ham Cheese', label: 'Truffle Ham Cheese', price: 205, image: '/pic/truffle_ham_cheese.png', supperPrice: 10, addonList: TRUFFLE_ADDONS },
+    { id: 'wasabi_salmon', name: 'Wasabi Salmon', label: 'Wasabi Salmon', price: 250, image: '/pic/wasabi_salmon.jpg', supperPrice: 10, addonList: WASABI_ADDONS },
+    { id: 'spicy_cheeky_bacon', name: 'Spicy Cheeky Bacon', label: 'Spicy Cheeky Bacon', price: 210, image: '/pic/spicy_cheeky_bacon.jpg', supperPrice: 10, addonList: SPICY_BACON_ADDONS }
   ];
 
   let SUPPER_UPGRADE_PRICE = 5;
@@ -1542,7 +1557,11 @@
     { id: 'extra_ham', name: 'Extra Ham' },
     { id: 'extra_bacon', name: 'Extra Crispy Bacon' },
     { id: 'extra_paris_ham', name: 'Extra Paris Ham' },
-    { id: 'extra_truffle', name: 'Extra Truffle Paste' }
+    { id: 'extra_truffle', name: 'Extra Truffle Paste' },
+    { id: 'extra_salmon', name: 'Extra Smoked Salmon' },
+    { id: 'extra_avocado', name: 'Extra Avocado' },
+    { id: 'extra_cucumber', name: 'Extra Cucumber' },
+    { id: 'extra_chicken', name: 'Extra Chicken' }
   ];
 
   function newBfastDraft() {
@@ -3170,10 +3189,12 @@
       tuna_melt: 'Tuna Melt',
       ham_cheese: 'Ham & Cheese',
       kimchi_tuna: 'Kimchi Tuna Melt',
-      truffle_ham: 'Truffle Ham Cheese'
+      truffle_ham: 'Truffle Ham Cheese',
+      wasabi_salmon: 'Wasabi Salmon',
+      spicy_cheeky_bacon: 'Spicy Cheeky Bacon'
     };
     if (!shopConfig.sandwiches) {
-      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true, truffle_ham: true };
+      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true, truffle_ham: true, wasabi_salmon: true, spicy_cheeky_bacon: true };
     }
     let sandwichHtml = '';
     for (const [id, name] of Object.entries(sandwichNames)) {
