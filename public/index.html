@@ -378,6 +378,21 @@
     width: 90px; padding: 8px; border: 1px solid #ddd; border-radius: 8px;
     font-size: 14px; font-family: inherit; text-align: right;
   }
+  .am-item { background: #faf7f2; border: 1px solid #ece3d6; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+  .am-row { display: flex; gap: 8px; align-items: center; margin-bottom: 7px; }
+  .am-row:last-child { margin-bottom: 0; }
+  .am-lab { font-size: 11px; color: #8a7a66; width: 44px; flex: 0 0 44px; font-weight: 600; }
+  .am-input { flex: 1; min-width: 0; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: inherit; }
+  .am-input.num { max-width: 90px; text-align: right; }
+  .am-tog { display: flex; gap: 12px; align-items: center; }
+  .am-tog .admin-toggle-cell { flex-direction: row; gap: 6px; }
+  .am-del { background: #fdecec; color: #c0392b; border: none; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .am-addbtn { width: 100%; padding: 10px; background: #efe7db; color: #6b4a26; border: 1px dashed #c9b495; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 2px; }
+  .am-sub { font-size: 12px; font-weight: 700; color: #8a623f; margin: 12px 0 6px; }
+  .am-pool-item { display: flex; gap: 6px; align-items: center; margin-bottom: 7px; }
+  .am-chip { display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 1px solid #e0d5c4; border-radius: 16px; padding: 5px 10px; font-size: 12px; margin: 0 6px 6px 0; cursor: pointer; }
+  .am-chip input { margin: 0; }
+  .am-chips { display: flex; flex-wrap: wrap; margin-top: 2px; }
   .admin-save {
     width: 100%; padding: 14px; background: #06c755; color: white; border: none;
     border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
@@ -652,40 +667,7 @@
     <div class="admin-title">🔧 ตั้งค่าร้าน ปิ๊กบ้าน</div>
     <div class="admin-subtitle">จัดการสินค้า, ซอส, และวันหยุด</div>
 
-    <div class="card">
-      <div class="admin-section">🧀 เค้ก (Flavor)</div>
-      <div id="adminFlavors"></div>
-    </div>
-
-    <div class="card">
-      <div class="admin-section">🍫 ซอส (Extra Sauce)</div>
-      <div id="adminSauces"></div>
-    </div>
-
-    <div class="card">
-      <div class="admin-section">🥐 ครัวซองต์ (Croissant)</div>
-      <div id="adminCroissants"></div>
-    </div>
-
-    <div class="card">
-      <div class="admin-section">☕ ที-รา-มิ-สุ (Tiramisu)</div>
-      <div id="adminTiramisus"></div>
-    </div>
-
-    <div class="card">
-      <div class="admin-section">🍰 Signature Cake</div>
-      <div id="adminSignatures"></div>
-    </div>
-
-    <div class="card">
-      <div class="admin-section">🍞 ซาวร์โดว์ (Sourdough)</div>
-      <div id="adminSourdoughs"></div>
-    </div>
-
-    <div class="card">
-      <div class="admin-section">🥪 ซาวร์โดว์แซนด์วิช (Open Sandwich)</div>
-      <div id="adminSandwiches"></div>
-    </div>
+    <div id="adminMenu"></div>
 
     <div class="card">
       <div class="admin-section">🥖 ตัวเลือกแป้ง &amp; Base Sauce</div>
@@ -693,18 +675,8 @@
     </div>
 
     <div class="card">
-      <div class="admin-section">🧈 ครีมชีสและแยม (Cream Cheese &amp; Jam)</div>
-      <div id="adminExtras"></div>
-    </div>
-
-    <div class="card">
       <div class="admin-section">🍳 The Breakfast Club</div>
       <div id="adminBreakfast"></div>
-    </div>
-
-    <div class="card">
-      <div class="admin-section">➕ Add-on ทั้งหมด (ปิดทีเดียวหมดทุกเมนู)</div>
-      <div id="adminAddons"></div>
     </div>
 
     <div class="card">
@@ -731,11 +703,6 @@
       <div class="admin-subtitle" style="margin-top:0;">กดที่วันในปฏิทินเพื่อเพิ่ม/ลบวันหยุด (สีแดง = วันหยุด)</div>
       <div id="adminDeliveryCalendar" class="calendar"></div>
       <div id="adminDeliveryDates" style="margin-top:8px;"></div>
-    </div>
-
-    <div class="card">
-      <div class="admin-section">💰 แก้ไขราคา (Prices)</div>
-      <div id="adminPrices"></div>
     </div>
 
     <button type="button" class="admin-save" id="adminSaveBtn">💾 บันทึกการตั้งค่า</button>
@@ -1268,6 +1235,164 @@
     });
   }
 
+  const PLACEHOLDER_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#f0e9df"/><text x="100" y="108" font-size="56" text-anchor="middle" fill="#c9b8a3">🍞</text></svg>');
+
+  const ADMIN_CATS = [
+    { cfg: 'flavors', group: 'flavors', title: '🧀 ชีสเค้กหน้าไหม้ (Molten Basque Cheesecake)', arr: () => FLAVORS, hasImg: true, dispName: true },
+    { cfg: 'sauces', group: 'sauces', title: '🍫 ซอส (Extra Sauce)', arr: () => SAUCES },
+    { cfg: 'croissants', group: 'croissants', title: '🥐 ครัวซองต์ (Croissant)', arr: () => CROISSANTS, hasImg: true, dispName: true },
+    { cfg: 'tiramisus', group: 'tiramisus', title: '☕ ที-รา-มิ-สุ (Tiramisu)', arr: () => TIRAMISUS, hasImg: true, dispName: true },
+    { cfg: 'signatures', group: 'signatures', title: '🍰 Signature Cake', arr: () => SIGNATURES, hasImg: true, dispName: true, pool: 'signatures' },
+    { cfg: 'sourdoughs', group: 'sourdoughs', title: '🍞 ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)', arr: () => SOURDOUGHS, dispName: true },
+    { cfg: 'sandwiches', group: 'sandwiches', title: '🥪 ซาวร์โดว์แซนด์วิชเปิดหน้า (Sourdough Open Sandwich)', arr: () => SANDWICHES, hasImg: true, dispName: true, pool: 'sandwiches' },
+    { cfg: 'sandwiches', group: 'grilled', title: '🥪 ซาวร์โดว์แซนวิช (Sourdough Sandwich)', arr: () => GRILLED_SANDWICHES, hasImg: true, dispName: true, pool: 'sandwiches', newSandwich: 'grilled' },
+    { cfg: 'extras', group: 'extras', title: '🧈 ครีมชีสและแยม (Cream Cheese and Jam) — เพิ่มเติม', arr: () => EXTRAS, idField: 'configId' }
+  ];
+
+  function catByGroup(g) { return ADMIN_CATS.find(c => c.group === g); }
+
+  function driveImg(v) {
+    if (!v) return '';
+    v = String(v).trim();
+    if (!v) return '';
+    if (v.startsWith('/') || v.startsWith('data:')) return v;
+    let id = '';
+    let m = v.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || v.match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+    if (m) id = m[1];
+    else if (/^[a-zA-Z0-9_-]{20,}$/.test(v)) id = v;
+    if (id) return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1000';
+    return v;
+  }
+
+  let SNAP = null;
+  function snapshotOnce() {
+    if (SNAP) return;
+    SNAP = {};
+    ADMIN_CATS.forEach(c => { SNAP[c.group] = c.arr().map(it => Object.assign({}, it)); });
+  }
+
+  function slug(s) {
+    return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'x';
+  }
+  function genId(prefix) {
+    return (prefix || 'c') + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
+  }
+
+  function poolGroupsFor(poolKey) {
+    return ADMIN_CATS.filter(c => c.pool === poolKey).map(c => c.group);
+  }
+
+  function ensureMenuConfig() {
+    if (!shopConfig.itemMeta) shopConfig.itemMeta = {};
+    if (!shopConfig.customItems) shopConfig.customItems = {};
+    if (!shopConfig.deletedItems) shopConfig.deletedItems = {};
+    if (!shopConfig.itemAddons) shopConfig.itemAddons = {};
+    if (!shopConfig.addonPools) shopConfig.addonPools = {};
+
+    ['signatures', 'sandwiches'].forEach(poolKey => {
+      if (shopConfig.addonPools[poolKey]) return;
+      const pool = [];
+      const byKey = {};
+      poolGroupsFor(poolKey).forEach(grp => {
+        (SNAP[grp] || []).forEach(it => {
+          (it.addonList || []).forEach(a => {
+            const k = a.name + '|' + a.price;
+            if (byKey[k]) return;
+            let pid = slug(a.name);
+            if (pool.some(p => p.id === pid)) pid = pid + '_' + a.price;
+            const sold = (shopConfig.addons && shopConfig.addons[a.id] === false) ? true : false;
+            const entry = { id: pid, name: a.name, price: Number(a.price), sold: sold };
+            byKey[k] = entry;
+            pool.push(entry);
+          });
+        });
+      });
+      shopConfig.addonPools[poolKey] = pool;
+    });
+
+    ADMIN_CATS.forEach(c => {
+      if (!c.pool) return;
+      if (!shopConfig.itemAddons[c.group]) shopConfig.itemAddons[c.group] = {};
+      const pool = shopConfig.addonPools[c.pool] || [];
+      (SNAP[c.group] || []).forEach(it => {
+        if (shopConfig.itemAddons[c.group][it.id]) return;
+        const sel = [];
+        (it.addonList || []).forEach(a => {
+          const e = pool.find(p => p.name === a.name && Number(p.price) === Number(a.price));
+          if (e) sel.push(e.id);
+        });
+        shopConfig.itemAddons[c.group][it.id] = sel;
+      });
+    });
+  }
+
+  function makeCustomItem(ci, ent) {
+    const base = { id: ci.id, name: ci.name, price: Number(ci.price) || 0 };
+    if (ent.dispName) base.label = ci.name;
+    if (ent.hasImg) base.image = ci.image ? driveImg(ci.image) : PLACEHOLDER_IMG;
+    if (ent.idField === 'configId') base.configId = ci.id;
+    if (ent.newSandwich === 'grilled') base.supperPrice = 10;
+    if (ent.pool) base.addonList = [];
+    return base;
+  }
+
+  function assembleMenu() {
+    snapshotOnce();
+    ensureMenuConfig();
+    ADMIN_CATS.forEach(ent => {
+      const arr = ent.arr();
+      const grp = ent.group;
+      const deleted = shopConfig.deletedItems[grp] || [];
+      let items = (SNAP[grp] || []).filter(it => deleted.indexOf(it.id) < 0).map(it => Object.assign({}, it));
+      (shopConfig.customItems[grp] || []).forEach(ci => items.push(makeCustomItem(ci, ent)));
+      items.forEach(it => {
+        const meta = (shopConfig.itemMeta[grp] || {})[it.id];
+        if (meta) {
+          if (meta.name) { it.name = meta.name; if (ent.dispName) it.label = meta.name; }
+          if (meta.image) it.image = driveImg(meta.image);
+        }
+        if (ent.hasImg && !it.image) it.image = PLACEHOLDER_IMG;
+        if (ent.pool) {
+          const sel = (shopConfig.itemAddons[grp] || {})[it.id] || [];
+          const pool = shopConfig.addonPools[ent.pool] || [];
+          it.addonList = sel.map(pid => pool.find(p => p.id === pid)).filter(Boolean).map(p => ({ id: p.id, name: p.name, price: Number(p.price) }));
+        }
+      });
+      arr.length = 0;
+      items.forEach(x => arr.push(x));
+    });
+    ALL_SANDWICHES.length = 0;
+    SANDWICHES.concat(GRILLED_SANDWICHES).forEach(s => ALL_SANDWICHES.push(s));
+  }
+
+  function initItemState() {
+    const addQ = (key) => { if (quantities[key] === undefined) quantities[key] = 0; };
+    FLAVORS.forEach(f => addQ('flavor-' + f.id));
+    SAUCES.forEach(s => addQ('sauce-' + s.id));
+    CROISSANTS.forEach(c => addQ('croissant-' + c.id));
+    TIRAMISUS.forEach(t => addQ('tiramisu-' + t.id));
+    SIGNATURES.forEach(s => { addQ('signature-' + s.id); if (!signatureAddons[s.id]) signatureAddons[s.id] = []; });
+    SOURDOUGHS.forEach(s => addQ('sourdough-' + s.id));
+    EXTRAS.forEach(e => addQ('extra-' + e.id));
+    ALL_SANDWICHES.forEach(s => {
+      addQ('sandwich-' + s.id);
+      if (!sandwichBread[s.id]) sandwichBread[s.id] = [];
+      if (!sandwichBaseSauce[s.id]) sandwichBaseSauce[s.id] = [];
+      if (!sandwichAddons[s.id]) sandwichAddons[s.id] = [];
+      if (!sandwichButter[s.id]) sandwichButter[s.id] = [];
+    });
+  }
+
+  function refreshMenu() {
+    assembleMenu();
+    initItemState();
+    applyPrices();
+    renderMenu();
+    applyConfig();
+    reorderSections();
+    updateTotal();
+  }
+
   let trioSelections = [];
   const sourdoughSpread = {};
   const trioSpread = [];
@@ -1310,10 +1435,7 @@
       const profile = await liff.getProfile();
       userId = profile.userId;
       await fetchConfig();
-      applyPrices();
-      renderMenu();
-      applyConfig();
-      reorderSections();
+      refreshMenu();
       document.getElementById("loading").classList.add("hidden");
       document.getElementById("form").classList.remove("hidden");
       document.getElementById("submitBar").classList.remove("hidden");
@@ -1556,7 +1678,12 @@
   }
 
   function addonSoldOut(id) {
-    return shopConfig && shopConfig.addons && shopConfig.addons[id] === false;
+    if (!shopConfig || !shopConfig.addonPools) return false;
+    for (const cat in shopConfig.addonPools) {
+      const e = (shopConfig.addonPools[cat] || []).find(x => x.id === id);
+      if (e) return e.sold === true;
+    }
+    return false;
   }
 
   const GLOBAL_ADDONS = [
@@ -3118,235 +3245,267 @@
     '</div>';
   }
 
-  function renderAdminPanel() {
-    if (!shopConfig) return;
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
 
-    document.getElementById('sameDayTogglePickup').checked = isSameDayOpen('pickup');
-    document.getElementById('sameDayToggleDelivery').checked = isSameDayOpen('delivery');
+  let adminMenuWired = false;
 
-    const flavorNames = { original: '🧀 Original', valrhona: '🍫 Valrhona Chocolate' };
-    const sauceNames = {
-      darkchoco: '🍫 ดาร์กช็อกโกแลต', matcha: '🍵 มัทฉะ',
-      strawberry: '🍓 สตรอว์เบอร์รี่', nutella: '🥜 นูเทลล่า', biscoff: '🍪 บิสคอฟ'
-    };
-    const croissantNames = {
-      croissant: '🥐 Croissant', mixed_berry: '🍒 Mixed Berry Croissant',
-      pain_au_chocolat: '🍫 Pain au Chocolat', biscoff: '🍪 Biscoff Croissant',
-      strawberry_nutella: '🍓 Strawberry Nutella Croissant'
-    };
+  function itemRowHtml(ent, it) {
+    const grp = ent.group;
+    const availId = ent.idField ? it.configId : it.id;
+    const availChecked = (shopConfig[ent.cfg] && shopConfig[ent.cfg][availId] === false) ? '' : 'checked';
+    const visChecked = isVisible(ent.cfg, availId) ? 'checked' : '';
+    const metaImg = ((shopConfig.itemMeta[grp] || {})[it.id] || {}).image || '';
+    const ciImg = (shopConfig.customItems[grp] || []).find(x => x.id === it.id);
+    const imgVal = ciImg ? (ciImg.image || '') : metaImg;
+    let h = '<div class="am-item">';
+    h += '<div class="am-row"><span class="am-lab">ชื่อ</span><input class="am-input" data-iname="' + grp + '" data-id="' + it.id + '" value="' + esc(it.name) + '"></div>';
+    if (ent.hasImg) {
+      h += '<div class="am-row"><span class="am-lab">รูป</span><input class="am-input" data-iimg="' + grp + '" data-id="' + it.id + '" placeholder="ลิงก์/รหัส Google Drive (ว่าง=รูปเดิม)" value="' + esc(imgVal) + '"></div>';
+    }
+    h += '<div class="am-row"><span class="am-lab">ราคา</span>' +
+      '<input type="number" class="am-input num" data-price-group="' + grp + '" data-price-id="' + it.id + '" value="' + it.price + '">' +
+      '<div class="am-tog">' +
+        '<div class="admin-toggle-cell"><span class="admin-toggle-cap">มีของ</span><label class="toggle-switch"><input type="checkbox" data-avail="' + ent.cfg + '" data-id="' + availId + '" ' + availChecked + '><span class="toggle-slider"></span></label></div>' +
+        '<div class="admin-toggle-cell"><span class="admin-toggle-cap">แสดง</span><label class="toggle-switch"><input type="checkbox" data-vis="' + ent.cfg + '" data-id="' + availId + '" ' + visChecked + '><span class="toggle-slider"></span></label></div>' +
+      '</div></div>';
+    if (ent.pool) {
+      const pool = shopConfig.addonPools[ent.pool] || [];
+      const sel = (shopConfig.itemAddons[grp] || {})[it.id] || [];
+      let chips = '';
+      pool.forEach(p => {
+        const ch = sel.indexOf(p.id) >= 0 ? 'checked' : '';
+        chips += '<label class="am-chip"><input type="checkbox" data-iaddon="' + ent.pool + '" data-grp="' + grp + '" data-item="' + it.id + '" data-pid="' + p.id + '" ' + ch + '> ' + esc(p.name) + ' (+' + p.price + '฿)</label>';
+      });
+      if (!chips) chips = '<span style="font-size:12px;color:#aaa;">ยังไม่มี Add-on ในหมวดนี้</span>';
+      h += '<div class="am-row" style="align-items:flex-start"><span class="am-lab">Add-on</span><div class="am-chips">' + chips + '</div></div>';
+    }
+    h += '<div class="am-row"><button class="am-del" data-delitem="' + grp + '" data-id="' + it.id + '">🗑 ลบรายการนี้</button></div>';
+    h += '</div>';
+    return h;
+  }
 
-    let flavorHtml = '';
-    for (const [id, name] of Object.entries(flavorNames)) {
-      flavorHtml += adminRow('flavors', id, name);
-    }
-    document.getElementById('adminFlavors').innerHTML = flavorHtml;
+  function poolEditorHtml(poolKey) {
+    const pool = shopConfig.addonPools[poolKey] || [];
+    let h = '<div class="am-sub">➕ คลัง Add-on ของหมวดนี้ (ติ๊กใส่แต่ละเมนูด้านบน)</div>';
+    pool.forEach(p => {
+      const avail = p.sold === true ? '' : 'checked';
+      h += '<div class="am-pool-item">' +
+        '<input class="am-input" data-pname="' + poolKey + '" data-pid="' + p.id + '" value="' + esc(p.name) + '">' +
+        '<input type="number" class="am-input num" data-pprice="' + poolKey + '" data-pid="' + p.id + '" value="' + p.price + '">' +
+        '<div class="admin-toggle-cell"><span class="admin-toggle-cap">มีของ</span><label class="toggle-switch"><input type="checkbox" data-psold="' + poolKey + '" data-pid="' + p.id + '" ' + avail + '><span class="toggle-slider"></span></label></div>' +
+        '<button class="am-del" data-delpool="' + poolKey + '" data-pid="' + p.id + '">🗑</button>' +
+      '</div>';
+    });
+    h += '<button class="am-addbtn" data-addpool="' + poolKey + '">+ เพิ่ม Add-on ในหมวดนี้</button>';
+    return h;
+  }
 
-    let sauceHtml = '';
-    for (const [id, name] of Object.entries(sauceNames)) {
-      sauceHtml += adminRow('sauces', id, name);
-    }
-    document.getElementById('adminSauces').innerHTML = sauceHtml;
+  function renderMenuAdmin() {
+    snapshotOnce();
+    ensureMenuConfig();
+    let html = '';
+    ADMIN_CATS.forEach(ent => {
+      const arr = ent.arr();
+      html += '<div class="card"><div class="admin-section">' + ent.title + '</div>';
+      arr.forEach(it => { html += itemRowHtml(ent, it); });
+      if (ent.pool) {
+        const groups = poolGroupsFor(ent.pool);
+        if (groups[groups.length - 1] === ent.group) html += poolEditorHtml(ent.pool);
+      }
+      html += '<button class="am-addbtn" data-additem="' + ent.group + '">+ เพิ่มรายการในหมวดนี้</button>';
+      html += '</div>';
+    });
+    document.getElementById('adminMenu').innerHTML = html;
+    wireAdminMenu();
+  }
 
-    if (!shopConfig.croissants) {
-      shopConfig.croissants = { croissant: true, mixed_berry: true, pain_au_chocolat: true, croissant_box_set: true };
+  function collectMenuAdmin() {
+    if (!shopConfig.prices) shopConfig.prices = {};
+    document.querySelectorAll('[data-iname]').forEach(inp => {
+      const grp = inp.dataset.iname, id = inp.dataset.id, v = inp.value.trim();
+      if (!v) return;
+      const ci = (shopConfig.customItems[grp] || []).find(x => x.id === id);
+      if (ci) { ci.name = v; return; }
+      if (!shopConfig.itemMeta[grp]) shopConfig.itemMeta[grp] = {};
+      if (!shopConfig.itemMeta[grp][id]) shopConfig.itemMeta[grp][id] = {};
+      shopConfig.itemMeta[grp][id].name = v;
+    });
+    document.querySelectorAll('[data-iimg]').forEach(inp => {
+      const grp = inp.dataset.iimg, id = inp.dataset.id, v = inp.value.trim();
+      const ci = (shopConfig.customItems[grp] || []).find(x => x.id === id);
+      if (ci) { ci.image = v; return; }
+      if (!shopConfig.itemMeta[grp]) shopConfig.itemMeta[grp] = {};
+      if (!shopConfig.itemMeta[grp][id]) shopConfig.itemMeta[grp][id] = {};
+      shopConfig.itemMeta[grp][id].image = v;
+    });
+    document.querySelectorAll('#adminMenu [data-price-group]').forEach(inp => {
+      const g = inp.dataset.priceGroup, id = inp.dataset.priceId;
+      if (!shopConfig.prices[g]) shopConfig.prices[g] = {};
+      if (inp.value !== '') shopConfig.prices[g][id] = Number(inp.value);
+      const ci = (shopConfig.customItems[g] || []).find(x => x.id === id);
+      if (ci && inp.value !== '') ci.price = Number(inp.value);
+    });
+    const sel = {};
+    document.querySelectorAll('[data-iaddon]').forEach(cb => {
+      const grp = cb.dataset.grp, id = cb.dataset.item, pid = cb.dataset.pid;
+      if (!sel[grp]) sel[grp] = {};
+      if (!sel[grp][id]) sel[grp][id] = [];
+      if (cb.checked) sel[grp][id].push(pid);
+    });
+    for (const grp in sel) {
+      if (!shopConfig.itemAddons[grp]) shopConfig.itemAddons[grp] = {};
+      for (const id in sel[grp]) shopConfig.itemAddons[grp][id] = sel[grp][id];
     }
-    let croissantHtml = '';
-    for (const [id, name] of Object.entries(croissantNames)) {
-      croissantHtml += adminRow('croissants', id, name);
-    }
-    document.getElementById('adminCroissants').innerHTML = croissantHtml;
+    document.querySelectorAll('[data-pname]').forEach(inp => {
+      const pk = inp.dataset.pname, pid = inp.dataset.pid;
+      const e = (shopConfig.addonPools[pk] || []).find(x => x.id === pid);
+      if (e && inp.value.trim()) e.name = inp.value.trim();
+    });
+    document.querySelectorAll('[data-pprice]').forEach(inp => {
+      const pk = inp.dataset.pprice, pid = inp.dataset.pid;
+      const e = (shopConfig.addonPools[pk] || []).find(x => x.id === pid);
+      if (e && inp.value !== '') e.price = Number(inp.value);
+    });
+    document.querySelectorAll('[data-psold]').forEach(cb => {
+      const pk = cb.dataset.psold, pid = cb.dataset.pid;
+      const e = (shopConfig.addonPools[pk] || []).find(x => x.id === pid);
+      if (e) e.sold = !cb.checked;
+    });
+    document.querySelectorAll('#adminMenu [data-avail]').forEach(cb => {
+      const cat = cb.dataset.avail;
+      if (!shopConfig[cat]) shopConfig[cat] = {};
+      shopConfig[cat][cb.dataset.id] = cb.checked;
+    });
+    document.querySelectorAll('#adminMenu [data-vis]').forEach(cb => {
+      if (!shopConfig.visible) shopConfig.visible = {};
+      const cat = cb.dataset.vis;
+      if (!shopConfig.visible[cat]) shopConfig.visible[cat] = {};
+      shopConfig.visible[cat][cb.dataset.id] = cb.checked;
+    });
+  }
 
-    const tiramisuNames = { og: 'The OG Tiramisu', ferrero: 'Ferrero Tiramisu' };
-    if (!shopConfig.tiramisus) {
-      shopConfig.tiramisus = { og: true, ferrero: true };
-    }
-    let tiramisuHtml = '';
-    for (const [id, name] of Object.entries(tiramisuNames)) {
-      tiramisuHtml += adminRow('tiramisus', id, name);
-    }
-    document.getElementById('adminTiramisus').innerHTML = tiramisuHtml;
+  function rebuildAdminMenu() {
+    assembleMenu();
+    initItemState();
+    applyPrices();
+    renderMenuAdmin();
+  }
 
-    const signatureNames = { oreo_nama: 'Oreo Nama Chocolate' };
-    if (!shopConfig.signatures) {
-      shopConfig.signatures = { oreo_nama: true };
-    }
-    let signatureHtml = '';
-    for (const [id, name] of Object.entries(signatureNames)) {
-      signatureHtml += adminRow('signatures', id, name);
-    }
-    document.getElementById('adminSignatures').innerHTML = signatureHtml;
+  function wireAdminMenu() {
+    if (adminMenuWired) return;
+    adminMenuWired = true;
+    document.getElementById('adminMenu').addEventListener('click', (e) => {
+      const add = e.target.closest('[data-additem]');
+      const del = e.target.closest('[data-delitem]');
+      const ap = e.target.closest('[data-addpool]');
+      const dp = e.target.closest('[data-delpool]');
+      if (add) {
+        collectMenuAdmin();
+        const grp = add.dataset.additem;
+        if (!shopConfig.customItems[grp]) shopConfig.customItems[grp] = [];
+        shopConfig.customItems[grp].push({ id: genId(), name: 'เมนูใหม่', price: 0, image: '' });
+        rebuildAdminMenu();
+        return;
+      }
+      if (del) {
+        collectMenuAdmin();
+        const grp = del.dataset.delitem, id = del.dataset.id;
+        const ci = shopConfig.customItems[grp] || [];
+        const idx = ci.findIndex(x => x.id === id);
+        if (idx >= 0) { ci.splice(idx, 1); }
+        else {
+          if (!shopConfig.deletedItems[grp]) shopConfig.deletedItems[grp] = [];
+          if (shopConfig.deletedItems[grp].indexOf(id) < 0) shopConfig.deletedItems[grp].push(id);
+        }
+        rebuildAdminMenu();
+        return;
+      }
+      if (ap) {
+        collectMenuAdmin();
+        const pk = ap.dataset.addpool;
+        if (!shopConfig.addonPools[pk]) shopConfig.addonPools[pk] = [];
+        shopConfig.addonPools[pk].push({ id: genId('a'), name: 'Add-on ใหม่', price: 0, sold: false });
+        rebuildAdminMenu();
+        return;
+      }
+      if (dp) {
+        collectMenuAdmin();
+        const pk = dp.dataset.delpool, pid = dp.dataset.pid;
+        const arr = shopConfig.addonPools[pk] || [];
+        const i = arr.findIndex(x => x.id === pid);
+        if (i >= 0) arr.splice(i, 1);
+        for (const g in shopConfig.itemAddons) {
+          for (const id in shopConfig.itemAddons[g]) {
+            shopConfig.itemAddons[g][id] = (shopConfig.itemAddons[g][id] || []).filter(x => x !== pid);
+          }
+        }
+        rebuildAdminMenu();
+        return;
+      }
+    });
+  }
 
-    renderAdminPrices();
-
-    const sourdoughNames = {
-      country: 'Country Bread', cranberry: 'Cranberry & Walnut',
-      multigrain: 'Supper Multigrain', darkrye: 'Dark Rye',
-      fig_walnut: 'Fig Walnut', olive_lemon: 'Black Olive',
-      trio: 'Sourdough Trio Set'
-    };
-    if (!shopConfig.sourdoughs) {
-      shopConfig.sourdoughs = { country: true, cranberry: true, multigrain: true, darkrye: true, fig_walnut: true, olive_lemon: true, trio: true };
-    }
-    let sourdoughHtml = '';
-    for (const [id, name] of Object.entries(sourdoughNames)) {
-      sourdoughHtml += adminRow('sourdoughs', id, name);
-    }
-    document.getElementById('adminSourdoughs').innerHTML = sourdoughHtml;
-
-    const sandwichNames = {
-      avocado_shrimps: 'Avocado & Shrimp with Scrambled Egg',
-      smoked_salmon: 'Smoked Salmon',
-      sunny_side_up: 'Sunny Side Up Chicken Melt',
-      strawberry_blueberry: 'Strawberry & Blueberry',
-      fig_berry_breeze: 'Fig & Berry Breeze',
-      banana_berry: 'Banana Berry Peanut Butter',
-      tuna_melt: 'Tuna Melt',
-      ham_cheese: 'Ham & Cheese',
-      kimchi_tuna: 'Kimchi Tuna Melt',
-      truffle_ham: 'Truffle Ham Cheese',
-      wasabi_salmon: 'Wasabi Salmon',
-      spicy_cheeky_bacon: 'Spicy Cheeky Bacon',
-      bacon_mentaiko: 'Bacon Mentaiko',
-      hot_honey_halloumi: 'Hot Honey Halloumi'
-    };
-    if (!shopConfig.sandwiches) {
-      shopConfig.sandwiches = { avocado_shrimps: true, smoked_salmon: true, sunny_side_up: true, strawberry_blueberry: true, fig_berry_breeze: true, banana_berry: true, tuna_melt: true, ham_cheese: true, kimchi_tuna: true, truffle_ham: true, wasabi_salmon: true, spicy_cheeky_bacon: true, bacon_mentaiko: true, hot_honey_halloumi: true };
-    }
-    let sandwichHtml = '';
-    for (const [id, name] of Object.entries(sandwichNames)) {
-      sandwichHtml += adminRow('sandwiches', id, name);
-    }
-    document.getElementById('adminSandwiches').innerHTML = sandwichHtml;
-
+  function renderOptionsAdmin() {
     const optionNames = {
       country: 'Country Bread (แป้ง)',
       supper: 'Supper Multigrain (แป้ง)',
       cream_cheese: 'Cream Cheese (Base Sauce)',
       nutella: 'Nutella (Base Sauce)'
     };
-    if (!shopConfig.options) {
-      shopConfig.options = { country: true, supper: true, cream_cheese: true, nutella: true };
-    }
-    let optionHtml = '';
+    if (!shopConfig.options) shopConfig.options = { country: true, supper: true, cream_cheese: true, nutella: true };
+    let html = '';
     for (const [id, name] of Object.entries(optionNames)) {
       const checked = shopConfig.options[id] !== false ? 'checked' : '';
-      optionHtml += `<div class="admin-row"><span class="admin-row-label">${name}</span>` +
-        `<label class="toggle-switch"><input type="checkbox" data-type="option" data-id="${id}" ${checked}>` +
-        `<span class="toggle-slider"></span></label></div>`;
+      html += '<div class="admin-row"><span class="admin-row-label">' + name + '</span>' +
+        '<label class="toggle-switch"><input type="checkbox" data-type="option" data-id="' + id + '" ' + checked + '><span class="toggle-slider"></span></label></div>';
     }
-    document.getElementById('adminOptions').innerHTML = optionHtml;
+    html += '<div class="am-sub">ค่าอัพเกรดแป้ง Supper Multigrain</div>';
+    html += '<div class="admin-price-row"><span class="admin-price-label">+฿ / ชิ้น</span><input type="number" class="admin-price-input" id="supperUpgradeInput" value="' + SUPPER_UPGRADE_PRICE + '"> ฿</div>';
+    document.getElementById('adminOptions').innerHTML = html;
+  }
 
-    const extraNames = {
-      cream_cheese: 'Cream Cheese',
-      cream_cheese_garlic: 'Cream Cheese Garlic & Chives',
-      tuna_spread: 'Tuna Spread',
-      mixed_berry_jam: 'Mixed Berry Jam',
-      apricot_jam: 'Apricot Jam'
-    };
-    if (!shopConfig.extras) {
-      shopConfig.extras = { cream_cheese: true, cream_cheese_garlic: true, tuna_spread: true, mixed_berry_jam: true, apricot_jam: true };
-    }
-    let extraHtml = '';
-    for (const [id, name] of Object.entries(extraNames)) {
-      extraHtml += adminRow('extras', id, name);
-    }
-    document.getElementById('adminExtras').innerHTML = extraHtml;
-
+  function renderBreakfastAdmin() {
     if (!shopConfig.breakfast) shopConfig.breakfast = {};
     const bfSectionShown = !(shopConfig.visible && shopConfig.visible.breakfastSection === false);
-    let bfHtml = '';
-    bfHtml += '<div class="admin-row"><span class="admin-row-label">แสดง section นี้ในหน้าสั่งซื้อ</span>' +
-      '<label class="toggle-switch"><input type="checkbox" id="bfSectionShowToggle" ' + (bfSectionShown ? 'checked' : '') + '><span class="toggle-slider"></span></label></div>';
-    const bfAvailRow = (key, label) => {
+    let h = '';
+    h += '<div class="admin-row"><span class="admin-row-label">แสดง section นี้ในหน้าสั่งซื้อ</span><label class="toggle-switch"><input type="checkbox" id="bfSectionShowToggle" ' + (bfSectionShown ? 'checked' : '') + '><span class="toggle-slider"></span></label></div>';
+    h += '<div class="admin-row"><span class="admin-row-label">ราคาเริ่มต้น (Base)</span><input type="number" class="admin-price-input" id="breakfastBaseInput" value="' + BREAKFAST_BASE_PRICE + '"> ฿</div>';
+    const row = (key, label, priceVal, priceKey) => {
       const checked = shopConfig.breakfast[key] === false ? '' : 'checked';
-      return '<div class="admin-row"><span class="admin-row-label">' + label + '</span>' +
-        '<label class="toggle-switch"><input type="checkbox" data-avail="breakfast" data-id="' + key + '" ' + checked + '><span class="toggle-slider"></span></label></div>';
+      let r = '<div class="am-item">';
+      r += '<div class="am-row"><span class="am-lab" style="width:auto;flex:1">' + label + '</span>' +
+        '<div class="admin-toggle-cell"><span class="admin-toggle-cap">มีของ</span><label class="toggle-switch"><input type="checkbox" data-avail="breakfast" data-id="' + key + '" ' + checked + '><span class="toggle-slider"></span></label></div></div>';
+      if (priceKey !== null) r += '<div class="am-row"><span class="am-lab">+฿</span><input type="number" class="am-input num" data-bfprice="' + priceKey + '" value="' + priceVal + '"></div>';
+      r += '</div>';
+      return r;
     };
-    bfHtml += '<div class="admin-subtitle" style="margin-top:0;">ขนมปัง (Bread)</div>';
-    BFAST_BREAD.forEach(b => { bfHtml += bfAvailRow('bread_' + b.id, b.name); });
-    bfHtml += '<div class="admin-subtitle">ไข่ &amp; เนื้อสัตว์ (Egg &amp; Meat)</div>';
-    BFAST_EGGMEAT.forEach(e => { bfHtml += bfAvailRow('eggmeat_' + e.id, e.name); });
-    bfHtml += '<div class="admin-subtitle">ซอส (Sauce)</div>';
-    BFAST_SAUCE.forEach(s => { bfHtml += bfAvailRow('sauce_' + s.id, s.name); });
-    bfHtml += '<div class="admin-subtitle">Add-on</div>';
-    BFAST_ADDONS.forEach(a => { bfHtml += bfAvailRow('addon_' + a.id, a.name); });
-    document.getElementById('adminBreakfast').innerHTML = bfHtml;
+    h += '<div class="am-sub">ขนมปัง (Bread)</div>';
+    BFAST_BREAD.forEach(b => { h += row('bread_' + b.id, b.name, b.price, 'bread_' + b.id); });
+    h += '<div class="am-sub">ไข่ & เนื้อสัตว์ (Egg & Meat)</div>';
+    BFAST_EGGMEAT.forEach(e => { h += row('eggmeat_' + e.id, e.name, e.price, 'eggmeat_' + e.id); });
+    h += '<div class="am-sub">ซอส (Sauce)</div>';
+    BFAST_SAUCE.forEach(s => { h += row('sauce_' + s.id, s.name, null, null); });
+    h += '<div class="am-sub">Add-on</div>';
+    BFAST_ADDONS.forEach(a => { h += row('addon_' + a.id, a.name, a.price, 'addon_' + a.id); });
+    document.getElementById('adminBreakfast').innerHTML = h;
+  }
 
-    if (!shopConfig.addons) shopConfig.addons = {};
-    let addonHtml = '';
-    GLOBAL_ADDONS.forEach(a => {
-      const checked = shopConfig.addons[a.id] === false ? '' : 'checked';
-      addonHtml += '<div class="admin-row"><span class="admin-row-label">' + a.name + '</span>' +
-        '<label class="toggle-switch"><input type="checkbox" data-avail="addons" data-id="' + a.id + '" ' + checked + '><span class="toggle-slider"></span></label></div>';
-    });
-    document.getElementById('adminAddons').innerHTML = addonHtml;
-
+  function renderAdminPanel() {
+    if (!shopConfig) return;
+    document.getElementById('sameDayTogglePickup').checked = isSameDayOpen('pickup');
+    document.getElementById('sameDayToggleDelivery').checked = isSameDayOpen('delivery');
+    if (!shopConfig.prices) shopConfig.prices = {};
+    renderMenuAdmin();
+    renderOptionsAdmin();
+    renderBreakfastAdmin();
     renderAdminDates('pickup');
     renderAdminDates('delivery');
     initAdminCalendarMonth('pickup');
     initAdminCalendarMonth('delivery');
     renderAdminCalendar('pickup');
     renderAdminCalendar('delivery');
-  }
-
-  function renderAdminPrices() {
-    const groups = [
-      { key: 'flavors', title: '🧀 เค้ก', arr: FLAVORS },
-      { key: 'sauces', title: '🍫 ซอส', arr: SAUCES },
-      { key: 'croissants', title: '🥐 ครัวซองต์', arr: CROISSANTS },
-      { key: 'tiramisus', title: '☕ ทีรามิสุ', arr: TIRAMISUS },
-      { key: 'signatures', title: '🍰 Signature Cake', arr: SIGNATURES },
-      { key: 'sourdoughs', title: '🍞 ซาวร์โดว์', arr: SOURDOUGHS },
-      { key: 'sandwiches', title: '🥪 แซนด์วิชเปิดหน้า', arr: SANDWICHES },
-      { key: 'grilled', title: '🥪 ซาวร์โดว์แซนวิช', arr: GRILLED_SANDWICHES },
-      { key: 'extras', title: '🧈 เพิ่มเติม', arr: EXTRAS }
-    ];
-
-    if (!shopConfig.prices) shopConfig.prices = {};
-
-    let html = '';
-    groups.forEach(g => {
-      html += `<div class="admin-price-group">${g.title}</div>`;
-      g.arr.forEach(item => {
-        const label = item.label || item.name;
-        html += '<div class="admin-price-row">' +
-          `<span class="admin-price-label">${label}</span>` +
-          `<input type="number" class="admin-price-input" data-price-group="${g.key}" data-price-id="${item.id}" value="${item.price}"> ฿` +
-          '</div>';
-      });
-    });
-
-    html += '<div class="admin-price-group">🥖 อัพเกรดแป้ง Supper Multigrain</div>';
-    html += '<div class="admin-price-row">' +
-      '<span class="admin-price-label">ค่าอัพเกรด (+฿/ชิ้น)</span>' +
-      `<input type="number" class="admin-price-input" id="supperUpgradeInput" value="${SUPPER_UPGRADE_PRICE}"> ฿` +
-      '</div>';
-
-    html += '<div class="admin-price-group">🍳 The Breakfast Club</div>';
-    html += '<div class="admin-price-row">' +
-      '<span class="admin-price-label">ราคาเริ่มต้น (Base)</span>' +
-      `<input type="number" class="admin-price-input" id="breakfastBaseInput" value="${BREAKFAST_BASE_PRICE}"> ฿` +
-      '</div>';
-    BFAST_BREAD.forEach(b => {
-      html += '<div class="admin-price-row">' +
-        `<span class="admin-price-label">ขนมปัง: ${b.name} (+฿)</span>` +
-        `<input type="number" class="admin-price-input" data-bfprice="bread_${b.id}" value="${b.price}"> ฿` +
-        '</div>';
-    });
-    BFAST_EGGMEAT.forEach(e => {
-      html += '<div class="admin-price-row">' +
-        `<span class="admin-price-label">${e.name} (+฿)</span>` +
-        `<input type="number" class="admin-price-input" data-bfprice="eggmeat_${e.id}" value="${e.price}"> ฿` +
-        '</div>';
-    });
-    BFAST_ADDONS.forEach(a => {
-      html += '<div class="admin-price-row">' +
-        `<span class="admin-price-label">Add-on: ${a.name} (+฿)</span>` +
-        `<input type="number" class="admin-price-input" data-bfprice="addon_${a.id}" value="${a.price}"> ฿` +
-        '</div>';
-    });
-
-    document.getElementById('adminPrices').innerHTML = html;
   }
 
   function renderAdminDates(type) {
@@ -3447,6 +3606,8 @@
     btn.disabled = true;
     btn.innerText = '💾 กำลังบันทึก...';
 
+    collectMenuAdmin();
+
     document.querySelectorAll('[data-avail]').forEach(cb => {
       const cat = cb.dataset.avail;
       if (!shopConfig[cat]) shopConfig[cat] = {};
@@ -3496,6 +3657,8 @@
       shopConfig.visible.breakfastSection = bfShowToggle.checked;
     }
 
+    assembleMenu();
+    initItemState();
     applyPrices();
 
     try {
@@ -3519,11 +3682,7 @@
 
   document.getElementById('adminBackBtn').addEventListener('click', () => {
     closeAdminPanel();
-    applyPrices();
-    renderMenu();
-    applyConfig();
-    reorderSections();
-    updateTotal();
+    refreshMenu();
   });
 
   const imgLightbox = document.getElementById('imgLightbox');
