@@ -388,6 +388,11 @@
   .am-tog .admin-toggle-cell { flex-direction: row; gap: 6px; }
   .am-del { background: #fdecec; color: #c0392b; border: none; border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
   .am-addbtn { width: 100%; padding: 10px; background: #efe7db; color: #6b4a26; border: 1px dashed #c9b495; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 2px; }
+  .am-upbtn { display: inline-block; background: #e8f3ec; color: #1f7a43; border: 1px solid #bfe0cc; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .am-upstat { font-size: 12px; color: #8a7a66; margin-left: 8px; }
+  .am-thumb { width: 54px; height: 54px; object-fit: cover; border-radius: 8px; float: right; margin: 0 0 6px 8px; border: 1px solid #e0d5c4; background: #f0e9df; }
+  .am-hdrimg { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .am-hdrimg img { width: 54px; height: 54px; object-fit: cover; border-radius: 8px; border: 1px solid #e0d5c4; background: #f0e9df; flex: 0 0 54px; }
   .am-sub { font-size: 12px; font-weight: 700; color: #8a623f; margin: 12px 0 6px; }
   .am-pool-item { display: flex; gap: 6px; align-items: center; margin-bottom: 7px; }
   .am-chip { display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 1px solid #e0d5c4; border-radius: 16px; padding: 5px 10px; font-size: 12px; margin: 0 6px 6px 0; cursor: pointer; }
@@ -526,11 +531,7 @@
   <div class="card" id="sourdoughCard" data-section="sourdough">
     <div class="label">ซาวร์โดว์ (Sourdough)</div>
     <div class="label" style="font-size:14px;color:#4b3619;">ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)</div>
-    <div class="sourdough-header-imgs">
-      <img src="/pic/sourdough_cream_cheese_1.png" alt="Sourdough 1">
-      <img src="/pic/sourdough_cream_cheese_2.jpg" alt="Sourdough 2">
-      <img src="/pic/sourdough_cream_cheese_3.jpg" alt="Sourdough 3">
-    </div>
+    <div class="sourdough-header-imgs" id="sourdoughHeaderImgs"></div>
     <div id="sourdoughList"></div>
     <div id="trioSelections" class="hidden"></div>
 
@@ -668,6 +669,11 @@
     <div class="admin-subtitle">จัดการสินค้า, ซอส, และวันหยุด</div>
 
     <div id="adminMenu"></div>
+
+    <div class="card">
+      <div class="admin-section">🖼️ รูปหัว section ซาวร์โดว์ (ครีมชีสและแยม)</div>
+      <div id="adminSourdoughHeader"></div>
+    </div>
 
     <div class="card">
       <div class="admin-section">🥖 ตัวเลือกแป้ง &amp; Base Sauce</div>
@@ -1130,6 +1136,19 @@
     { id: 'pistachio', name: 'Pistachio Butter', price: 15 }
   ];
 
+  const BASE_SAUCES = [
+    { id: 'cream_cheese', name: 'Cream Cheese' },
+    { id: 'nutella', name: 'Nutella' }
+  ];
+  const BASE_SAUCE_SEED = BASE_SAUCES.map(x => ({ id: x.id, name: x.name }));
+
+  function optLabel(id, def) {
+    return (shopConfig && shopConfig.optionLabels && shopConfig.optionLabels[id]) || def;
+  }
+  function optionAvail(id) {
+    return !shopConfig || !shopConfig.options || shopConfig.options[id] !== false;
+  }
+
   const SANDWICHES = [
     { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', label: 'Avocado & Shrimp with Scrambled Egg', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
     { id: 'smoked_salmon', name: 'Smoked Salmon', label: 'Smoked Salmon', price: 170, image: '/pic/smoked_salmon_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
@@ -1215,18 +1234,6 @@
       if (shopConfig.prices.breakfastBase !== undefined && shopConfig.prices.breakfastBase !== null && shopConfig.prices.breakfastBase !== '') {
         BREAKFAST_BASE_PRICE = Number(shopConfig.prices.breakfastBase);
       }
-      const bfPrices = shopConfig.prices.breakfast;
-      if (bfPrices) {
-        const applyBf = (arr, prefix) => arr.forEach(item => {
-          const k = prefix + item.id;
-          if (bfPrices[k] !== undefined && bfPrices[k] !== null && bfPrices[k] !== '') {
-            item.price = Number(bfPrices[k]);
-          }
-        });
-        applyBf(BFAST_BREAD, 'bread_');
-        applyBf(BFAST_EGGMEAT, 'eggmeat_');
-        applyBf(BFAST_ADDONS, 'addon_');
-      }
     }
     [FLAVORS, CROISSANTS, TIRAMISUS, SOURDOUGHS, SANDWICHES, GRILLED_SANDWICHES, SIGNATURES].forEach(arr => {
       arr.forEach(item => {
@@ -1265,10 +1272,49 @@
   }
 
   let SNAP = null;
+  let SNAP_BF = null;
+  let SNAP_BASE = null;
   function snapshotOnce() {
     if (SNAP) return;
     SNAP = {};
     ADMIN_CATS.forEach(c => { SNAP[c.group] = c.arr().map(it => Object.assign({}, it)); });
+    SNAP_BF = {
+      bread: BFAST_BREAD.map(x => Object.assign({}, x)),
+      eggmeat: BFAST_EGGMEAT.map(x => Object.assign({}, x)),
+      sauce: BFAST_SAUCE.map(x => Object.assign({}, x)),
+      addon: BFAST_ADDONS.map(x => Object.assign({}, x))
+    };
+    SNAP_BASE = BASE_SAUCES.map(x => Object.assign({}, x));
+  }
+
+  function bfSeedPrice(key, def) {
+    if (shopConfig.prices && shopConfig.prices.breakfast && shopConfig.prices.breakfast[key] !== undefined && shopConfig.prices.breakfast[key] !== null && shopConfig.prices.breakfast[key] !== '') {
+      return Number(shopConfig.prices.breakfast[key]);
+    }
+    return def;
+  }
+
+  function assembleExtras() {
+    if (!shopConfig.baseSauces) shopConfig.baseSauces = SNAP_BASE.map(x => ({ id: x.id, name: x.name }));
+    BASE_SAUCES.length = 0;
+    shopConfig.baseSauces.forEach(x => BASE_SAUCES.push({ id: x.id, name: x.name }));
+
+    if (!shopConfig.bfGroups) {
+      shopConfig.bfGroups = {
+        bread: SNAP_BF.bread.map(x => ({ id: x.id, name: x.name, price: bfSeedPrice('bread_' + x.id, x.price) })),
+        eggmeat: SNAP_BF.eggmeat.map(x => ({ id: x.id, name: x.name, price: bfSeedPrice('eggmeat_' + x.id, x.price) })),
+        sauce: SNAP_BF.sauce.map(x => ({ id: x.id, name: x.name })),
+        addon: SNAP_BF.addon.map(x => ({ id: x.id, name: x.name, price: bfSeedPrice('addon_' + x.id, x.price) }))
+      };
+    }
+    const rebuildBf = (arr, list, hasPrice) => {
+      arr.length = 0;
+      (list || []).forEach(x => arr.push(hasPrice ? { id: x.id, name: x.name, price: Number(x.price) || 0 } : { id: x.id, name: x.name }));
+    };
+    rebuildBf(BFAST_BREAD, shopConfig.bfGroups.bread, true);
+    rebuildBf(BFAST_EGGMEAT, shopConfig.bfGroups.eggmeat, true);
+    rebuildBf(BFAST_SAUCE, shopConfig.bfGroups.sauce, false);
+    rebuildBf(BFAST_ADDONS, shopConfig.bfGroups.addon, true);
   }
 
   function slug(s) {
@@ -1288,6 +1334,8 @@
     if (!shopConfig.deletedItems) shopConfig.deletedItems = {};
     if (!shopConfig.itemAddons) shopConfig.itemAddons = {};
     if (!shopConfig.addonPools) shopConfig.addonPools = {};
+    if (!shopConfig.optionLabels) shopConfig.optionLabels = {};
+    if (!shopConfig.sourdoughHeader) shopConfig.sourdoughHeader = ['/pic/sourdough_cream_cheese_1.png', '/pic/sourdough_cream_cheese_2.jpg', '/pic/sourdough_cream_cheese_3.jpg'];
 
     ['signatures', 'sandwiches'].forEach(poolKey => {
       if (shopConfig.addonPools[poolKey]) return;
@@ -1363,6 +1411,7 @@
     });
     ALL_SANDWICHES.length = 0;
     SANDWICHES.concat(GRILLED_SANDWICHES).forEach(s => ALL_SANDWICHES.push(s));
+    assembleExtras();
   }
 
   function initItemState() {
@@ -1899,7 +1948,15 @@
     }));
   }
 
+  function renderSourdoughHeader() {
+    const box = document.getElementById('sourdoughHeaderImgs');
+    if (!box) return;
+    const list = (shopConfig && shopConfig.sourdoughHeader) || [];
+    box.innerHTML = list.filter(Boolean).map(src => '<img src="' + driveImg(src) + '" alt="Sourdough">').join('');
+  }
+
   function renderMenu() {
+    renderSourdoughHeader();
     const flavorList = document.getElementById("flavorList");
     flavorList.innerHTML = sortByAvail(FLAVORS, 'flavors', true).map(f =>
       '<div class="flavor-item">' +
@@ -2370,8 +2427,10 @@
 
     while (sandwichBread[sid].length < qty) sandwichBread[sid].push('normal');
     while (sandwichBread[sid].length > qty) sandwichBread[sid].pop();
+    const baseAvailList = BASE_SAUCES.filter(b => optionAvail(b.id));
+    const baseDefault = baseAvailList.length ? baseAvailList[0].id : (BASE_SAUCES[0] ? BASE_SAUCES[0].id : '');
     if (hasBase) {
-      while (sandwichBaseSauce[sid].length < qty) sandwichBaseSauce[sid].push('cream_cheese');
+      while (sandwichBaseSauce[sid].length < qty) sandwichBaseSauce[sid].push(baseDefault);
       while (sandwichBaseSauce[sid].length > qty) sandwichBaseSauce[sid].pop();
     }
     if (hasAddon) {
@@ -2396,14 +2455,14 @@
       html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
       html += '<div class="bread-options">';
       if (countryAvail) {
-        html += `<button type="button" class="bread-opt ${cur === 'normal' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="normal">Country Bread</button>`;
+        html += `<button type="button" class="bread-opt ${cur === 'normal' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="normal">${optLabel('country', 'Country Bread')}</button>`;
       } else {
-        html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Country Bread (หมด)</button>`;
+        html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">${optLabel('country', 'Country Bread')} (หมด)</button>`;
       }
       if (supperAvail) {
-        html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">Supper Multigrain (+${supperUp}฿)</button>`;
+        html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">${optLabel('supper', 'Supper Multigrain')} (+${supperUp}฿)</button>`;
       } else {
-        html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">Supper Multigrain (หมด)</button>`;
+        html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">${optLabel('supper', 'Supper Multigrain')} (หมด)</button>`;
       }
       html += '</div></div>';
     }
@@ -2412,20 +2471,16 @@
       html += '<div class="bread-choice-label" style="margin-top:12px;">เลือก Base Sauce</div>';
       for (let i = 0; i < qty; i++) {
         let cur = sandwichBaseSauce[sid][i];
-        if (cur === 'cream_cheese' && !ccAvail) { cur = nutellaAvail ? 'nutella' : ''; sandwichBaseSauce[sid][i] = cur; }
-        if (cur === 'nutella' && !nutellaAvail) { cur = ccAvail ? 'cream_cheese' : ''; sandwichBaseSauce[sid][i] = cur; }
+        if (!baseAvailList.some(b => b.id === cur)) { cur = baseDefault; sandwichBaseSauce[sid][i] = cur; }
         html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
         html += '<div class="bread-options">';
-        if (ccAvail) {
-          html += `<button type="button" class="base-opt ${cur === 'cream_cheese' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="cream_cheese">Cream Cheese</button>`;
-        } else {
-          html += `<button type="button" class="base-opt" disabled style="opacity:0.4;">Cream Cheese (หมด)</button>`;
-        }
-        if (nutellaAvail) {
-          html += `<button type="button" class="base-opt ${cur === 'nutella' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="nutella">Nutella</button>`;
-        } else {
-          html += `<button type="button" class="base-opt" disabled style="opacity:0.4;">Nutella (หมด)</button>`;
-        }
+        BASE_SAUCES.forEach(b => {
+          if (optionAvail(b.id)) {
+            html += `<button type="button" class="base-opt ${cur === b.id ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-base="${b.id}">${b.name}</button>`;
+          } else {
+            html += `<button type="button" class="base-opt" disabled style="opacity:0.4;">${b.name} (หมด)</button>`;
+          }
+        });
         html += '</div></div>';
       }
     }
@@ -3018,7 +3073,7 @@
           breadUpgradeTotal: supperCount * supperUp
         };
         if (s.hasBaseSauce) {
-          result.baseSauces = (sandwichBaseSauce[s.id] || []).map(b => b === 'nutella' ? 'Nutella' : 'Cream Cheese');
+          result.baseSauces = (sandwichBaseSauce[s.id] || []).map(b => { const o = BASE_SAUCES.find(x => x.id === b); return o ? o.name : b; });
         } else if (s.addonList) {
           const addonArr = sandwichAddons[s.id] || [];
           const names = [];
@@ -3260,9 +3315,13 @@
     const ciImg = (shopConfig.customItems[grp] || []).find(x => x.id === it.id);
     const imgVal = ciImg ? (ciImg.image || '') : metaImg;
     let h = '<div class="am-item">';
+    if (ent.hasImg) {
+      h += '<img class="am-thumb" src="' + esc(it.image || PLACEHOLDER_IMG) + '" onerror="this.src=\'' + PLACEHOLDER_IMG + '\'">';
+    }
     h += '<div class="am-row"><span class="am-lab">ชื่อ</span><input class="am-input" data-iname="' + grp + '" data-id="' + it.id + '" value="' + esc(it.name) + '"></div>';
     if (ent.hasImg) {
       h += '<div class="am-row"><span class="am-lab">รูป</span><input class="am-input" data-iimg="' + grp + '" data-id="' + it.id + '" placeholder="ลิงก์/รหัส Google Drive (ว่าง=รูปเดิม)" value="' + esc(imgVal) + '"></div>';
+      h += '<div class="am-row"><span class="am-lab"></span><label class="am-upbtn">📷 อัพโหลด/ถ่ายรูป<input type="file" accept="image/*" data-upimg="' + grp + '" data-id="' + it.id + '" style="display:none"></label><span class="am-upstat" data-upstat="' + grp + '_' + it.id + '"></span></div>';
     }
     h += '<div class="am-row"><span class="am-lab">ราคา</span>' +
       '<input type="number" class="am-input num" data-price-group="' + grp + '" data-price-id="' + it.id + '" value="' + it.price + '">' +
@@ -3393,9 +3452,63 @@
     renderMenuAdmin();
   }
 
+  function resizeImageFile(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, hgt = img.height;
+          if (w > hgt && w > maxDim) { hgt = Math.round(hgt * maxDim / w); w = maxDim; }
+          else if (hgt >= w && hgt > maxDim) { w = Math.round(w * maxDim / hgt); hgt = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = hgt;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, hgt);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleImageUpload(fileInput) {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    const grp = fileInput.dataset.upimg, id = fileInput.dataset.id;
+    const stat = document.querySelector('[data-upstat="' + grp + '_' + id + '"]');
+    if (stat) stat.textContent = 'กำลังอัพโหลด...';
+    try {
+      const dataUrl = await resizeImageFile(file, 1200, 0.85);
+      const b64 = dataUrl.split(',')[1];
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: grp + '_' + id + '.jpg', mime: 'image/jpeg', data: b64 })
+      });
+      const j = await res.json();
+      if (j.status === 'ok' && j.id) {
+        const inp = document.querySelector('[data-iimg="' + grp + '"][data-id="' + id + '"]');
+        if (inp) inp.value = j.id;
+        if (stat) stat.textContent = '✅ อัพแล้ว (กดบันทึกเพื่อใช้งาน)';
+      } else {
+        if (stat) stat.textContent = '❌ ' + (j.message || 'อัพไม่สำเร็จ');
+      }
+    } catch (err) {
+      if (stat) stat.textContent = '❌ ' + err.message;
+    }
+    fileInput.value = '';
+  }
+
   function wireAdminMenu() {
     if (adminMenuWired) return;
     adminMenuWired = true;
+    document.getElementById('adminMenu').addEventListener('change', (e) => {
+      const f = e.target.closest('input[type=file][data-upimg]');
+      if (f) handleImageUpload(f);
+    });
     document.getElementById('adminMenu').addEventListener('click', (e) => {
       const add = e.target.closest('[data-additem]');
       const del = e.target.closest('[data-delitem]');
@@ -3447,49 +3560,157 @@
     });
   }
 
+  let adminExtrasWired = false;
+
+  function renderSourdoughHeaderAdmin() {
+    if (!shopConfig.sourdoughHeader) shopConfig.sourdoughHeader = [];
+    const list = shopConfig.sourdoughHeader;
+    let h = '';
+    list.forEach((src, i) => {
+      h += '<div class="am-item">';
+      h += '<div class="am-hdrimg"><img src="' + esc(driveImg(src)) + '" onerror="this.style.visibility=\'hidden\'">' +
+        '<input class="am-input" data-shimg="' + i + '" placeholder="ลิงก์/รหัส Drive หรือ /pic/..." value="' + esc(src) + '"></div>';
+      h += '<div class="am-row"><span class="am-lab"></span><label class="am-upbtn">📷 อัพโหลด/ถ่ายรูป<input type="file" accept="image/*" data-shup="' + i + '" style="display:none"></label><span class="am-upstat" data-upstat="sh_' + i + '"></span>' +
+        '<button class="am-del" data-shdel="' + i + '">🗑 ลบรูป</button></div>';
+      h += '</div>';
+    });
+    h += '<button class="am-addbtn" data-shadd="1">+ เพิ่มรูป</button>';
+    document.getElementById('adminSourdoughHeader').innerHTML = h;
+  }
+
   function renderOptionsAdmin() {
-    const optionNames = {
-      country: 'Country Bread (แป้ง)',
-      supper: 'Supper Multigrain (แป้ง)',
-      cream_cheese: 'Cream Cheese (Base Sauce)',
-      nutella: 'Nutella (Base Sauce)'
-    };
-    if (!shopConfig.options) shopConfig.options = { country: true, supper: true, cream_cheese: true, nutella: true };
-    let html = '';
-    for (const [id, name] of Object.entries(optionNames)) {
+    snapshotOnce();
+    if (!shopConfig.options) shopConfig.options = { country: true, supper: true };
+    if (!shopConfig.optionLabels) shopConfig.optionLabels = {};
+    if (!shopConfig.baseSauces) shopConfig.baseSauces = BASE_SAUCE_SEED.map(x => ({ id: x.id, name: x.name }));
+    let html = '<div class="am-sub">แป้งขนมปัง (Bread) — แก้ชื่อ/เปิดปิด</div>';
+    [['country', 'Country Bread'], ['supper', 'Supper Multigrain']].forEach(pair => {
+      const id = pair[0], def = pair[1];
       const checked = shopConfig.options[id] !== false ? 'checked' : '';
-      html += '<div class="admin-row"><span class="admin-row-label">' + name + '</span>' +
-        '<label class="toggle-switch"><input type="checkbox" data-type="option" data-id="' + id + '" ' + checked + '><span class="toggle-slider"></span></label></div>';
-    }
+      html += '<div class="am-item"><div class="am-row"><span class="am-lab">ชื่อ</span>' +
+        '<input class="am-input" data-optlabel="' + id + '" value="' + esc(shopConfig.optionLabels[id] || def) + '">' +
+        '<div class="admin-toggle-cell"><span class="admin-toggle-cap">มีของ</span><label class="toggle-switch"><input type="checkbox" data-type="option" data-id="' + id + '" ' + checked + '><span class="toggle-slider"></span></label></div>' +
+        '</div></div>';
+    });
     html += '<div class="am-sub">ค่าอัพเกรดแป้ง Supper Multigrain</div>';
-    html += '<div class="admin-price-row"><span class="admin-price-label">+฿ / ชิ้น</span><input type="number" class="admin-price-input" id="supperUpgradeInput" value="' + SUPPER_UPGRADE_PRICE + '"> ฿</div>';
+    html += '<div class="admin-price-row"><span class="admin-price-label">+฿ / ชิ้น (เปิดหน้า/ปิ้ง ตามเรตเมนู)</span><input type="number" class="admin-price-input" id="supperUpgradeInput" value="' + SUPPER_UPGRADE_PRICE + '"> ฿</div>';
+    html += '<div class="am-sub">Base Sauce — เพิ่ม / ลบ / แก้ชื่อ</div>';
+    shopConfig.baseSauces.forEach(b => {
+      const checked = shopConfig.options[b.id] !== false ? 'checked' : '';
+      html += '<div class="am-item"><div class="am-row"><span class="am-lab">ชื่อ</span>' +
+        '<input class="am-input" data-bsname="' + b.id + '" value="' + esc(b.name) + '">' +
+        '<div class="admin-toggle-cell"><span class="admin-toggle-cap">มีของ</span><label class="toggle-switch"><input type="checkbox" data-type="option" data-id="' + b.id + '" ' + checked + '><span class="toggle-slider"></span></label></div>' +
+        '</div><div class="am-row"><span class="am-lab"></span><button class="am-del" data-bsdel="' + b.id + '">🗑 ลบ</button></div></div>';
+    });
+    html += '<button class="am-addbtn" data-bsadd="1">+ เพิ่ม Base Sauce</button>';
     document.getElementById('adminOptions').innerHTML = html;
   }
 
   function renderBreakfastAdmin() {
+    snapshotOnce();
     if (!shopConfig.breakfast) shopConfig.breakfast = {};
+    if (!shopConfig.bfGroups) assembleExtras();
+    const G = shopConfig.bfGroups;
     const bfSectionShown = !(shopConfig.visible && shopConfig.visible.breakfastSection === false);
     let h = '';
     h += '<div class="admin-row"><span class="admin-row-label">แสดง section นี้ในหน้าสั่งซื้อ</span><label class="toggle-switch"><input type="checkbox" id="bfSectionShowToggle" ' + (bfSectionShown ? 'checked' : '') + '><span class="toggle-slider"></span></label></div>';
     h += '<div class="admin-row"><span class="admin-row-label">ราคาเริ่มต้น (Base)</span><input type="number" class="admin-price-input" id="breakfastBaseInput" value="' + BREAKFAST_BASE_PRICE + '"> ฿</div>';
-    const row = (key, label, priceVal, priceKey) => {
+    const grpRow = (group, prefix, it, hasPrice) => {
+      const key = prefix + '_' + it.id;
       const checked = shopConfig.breakfast[key] === false ? '' : 'checked';
-      let r = '<div class="am-item">';
-      r += '<div class="am-row"><span class="am-lab" style="width:auto;flex:1">' + label + '</span>' +
+      let r = '<div class="am-item"><div class="am-row"><span class="am-lab">ชื่อ</span>' +
+        '<input class="am-input" data-bfgname="' + group + '" data-id="' + it.id + '" value="' + esc(it.name) + '">' +
         '<div class="admin-toggle-cell"><span class="admin-toggle-cap">มีของ</span><label class="toggle-switch"><input type="checkbox" data-avail="breakfast" data-id="' + key + '" ' + checked + '><span class="toggle-slider"></span></label></div></div>';
-      if (priceKey !== null) r += '<div class="am-row"><span class="am-lab">+฿</span><input type="number" class="am-input num" data-bfprice="' + priceKey + '" value="' + priceVal + '"></div>';
-      r += '</div>';
+      if (hasPrice) r += '<div class="am-row"><span class="am-lab">+฿</span><input type="number" class="am-input num" data-bfgprice="' + group + '" data-id="' + it.id + '" value="' + (it.price || 0) + '"></div>';
+      r += '<div class="am-row"><span class="am-lab"></span><button class="am-del" data-bfgdel="' + group + '" data-id="' + it.id + '">🗑 ลบ</button></div></div>';
       return r;
     };
     h += '<div class="am-sub">ขนมปัง (Bread)</div>';
-    BFAST_BREAD.forEach(b => { h += row('bread_' + b.id, b.name, b.price, 'bread_' + b.id); });
+    (G.bread || []).forEach(b => { h += grpRow('bread', 'bread', b, true); });
+    h += '<button class="am-addbtn" data-bfgadd="bread">+ เพิ่มขนมปัง</button>';
     h += '<div class="am-sub">ไข่ & เนื้อสัตว์ (Egg & Meat)</div>';
-    BFAST_EGGMEAT.forEach(e => { h += row('eggmeat_' + e.id, e.name, e.price, 'eggmeat_' + e.id); });
+    (G.eggmeat || []).forEach(e => { h += grpRow('eggmeat', 'eggmeat', e, true); });
+    h += '<button class="am-addbtn" data-bfgadd="eggmeat">+ เพิ่มไข่/เนื้อ</button>';
     h += '<div class="am-sub">ซอส (Sauce)</div>';
-    BFAST_SAUCE.forEach(s => { h += row('sauce_' + s.id, s.name, null, null); });
+    (G.sauce || []).forEach(s => { h += grpRow('sauce', 'sauce', s, false); });
+    h += '<button class="am-addbtn" data-bfgadd="sauce">+ เพิ่มซอส</button>';
     h += '<div class="am-sub">Add-on</div>';
-    BFAST_ADDONS.forEach(a => { h += row('addon_' + a.id, a.name, a.price, 'addon_' + a.id); });
+    (G.addon || []).forEach(a => { h += grpRow('addon', 'addon', a, true); });
+    h += '<button class="am-addbtn" data-bfgadd="addon">+ เพิ่ม Add-on</button>';
     document.getElementById('adminBreakfast').innerHTML = h;
+  }
+
+  function collectExtrasAdmin() {
+    if (!shopConfig.optionLabels) shopConfig.optionLabels = {};
+    document.querySelectorAll('[data-optlabel]').forEach(inp => {
+      if (inp.value.trim()) shopConfig.optionLabels[inp.dataset.optlabel] = inp.value.trim();
+    });
+    document.querySelectorAll('[data-bsname]').forEach(inp => {
+      const b = (shopConfig.baseSauces || []).find(x => x.id === inp.dataset.bsname);
+      if (b && inp.value.trim()) b.name = inp.value.trim();
+    });
+    document.querySelectorAll('[data-shimg]').forEach(inp => {
+      const i = Number(inp.dataset.shimg);
+      if (shopConfig.sourdoughHeader) shopConfig.sourdoughHeader[i] = inp.value.trim();
+    });
+    document.querySelectorAll('[data-bfgname]').forEach(inp => {
+      const g = inp.dataset.bfgname, id = inp.dataset.id;
+      const it = ((shopConfig.bfGroups || {})[g] || []).find(x => x.id === id);
+      if (it && inp.value.trim()) it.name = inp.value.trim();
+    });
+    document.querySelectorAll('[data-bfgprice]').forEach(inp => {
+      const g = inp.dataset.bfgprice, id = inp.dataset.id;
+      const it = ((shopConfig.bfGroups || {})[g] || []).find(x => x.id === id);
+      if (it && inp.value !== '') it.price = Number(inp.value);
+    });
+  }
+
+  async function handleHeaderUpload(f) {
+    const file = f.files && f.files[0];
+    if (!file) return;
+    const i = f.dataset.shup;
+    const stat = document.querySelector('[data-upstat="sh_' + i + '"]');
+    if (stat) stat.textContent = 'กำลังอัพโหลด...';
+    try {
+      const dataUrl = await resizeImageFile(file, 1200, 0.85);
+      const res = await fetch('/api/upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'sourdough_header_' + i + '.jpg', mime: 'image/jpeg', data: dataUrl.split(',')[1] })
+      });
+      const j = await res.json();
+      if (j.status === 'ok' && j.id) {
+        const inp = document.querySelector('[data-shimg="' + i + '"]');
+        if (inp) inp.value = j.id;
+        if (stat) stat.textContent = '✅ อัพแล้ว (กดบันทึก)';
+      } else if (stat) stat.textContent = '❌ ' + (j.message || 'อัพไม่สำเร็จ');
+    } catch (err) {
+      if (stat) stat.textContent = '❌ ' + err.message;
+    }
+    f.value = '';
+  }
+
+  function wireAdminExtras() {
+    if (adminExtrasWired) return;
+    adminExtrasWired = true;
+    const sh = document.getElementById('adminSourdoughHeader');
+    sh.addEventListener('change', e => { const f = e.target.closest('input[type=file][data-shup]'); if (f) handleHeaderUpload(f); });
+    sh.addEventListener('click', e => {
+      const del = e.target.closest('[data-shdel]'), add = e.target.closest('[data-shadd]');
+      if (del) { collectExtrasAdmin(); shopConfig.sourdoughHeader.splice(Number(del.dataset.shdel), 1); renderSourdoughHeaderAdmin(); return; }
+      if (add) { collectExtrasAdmin(); if (!shopConfig.sourdoughHeader) shopConfig.sourdoughHeader = []; shopConfig.sourdoughHeader.push(''); renderSourdoughHeaderAdmin(); return; }
+    });
+    const op = document.getElementById('adminOptions');
+    op.addEventListener('click', e => {
+      const del = e.target.closest('[data-bsdel]'), add = e.target.closest('[data-bsadd]');
+      if (del) { collectExtrasAdmin(); shopConfig.baseSauces = (shopConfig.baseSauces || []).filter(x => x.id !== del.dataset.bsdel); renderOptionsAdmin(); return; }
+      if (add) { collectExtrasAdmin(); if (!shopConfig.baseSauces) shopConfig.baseSauces = []; shopConfig.baseSauces.push({ id: genId('b'), name: 'Base Sauce ใหม่' }); renderOptionsAdmin(); return; }
+    });
+    const bf = document.getElementById('adminBreakfast');
+    bf.addEventListener('click', e => {
+      const del = e.target.closest('[data-bfgdel]'), add = e.target.closest('[data-bfgadd]');
+      if (del) { collectExtrasAdmin(); const g = del.dataset.bfgdel, id = del.dataset.id; shopConfig.bfGroups[g] = (shopConfig.bfGroups[g] || []).filter(x => x.id !== id); renderBreakfastAdmin(); return; }
+      if (add) { collectExtrasAdmin(); const g = add.dataset.bfgadd; if (!shopConfig.bfGroups[g]) shopConfig.bfGroups[g] = []; const it = { id: genId('k'), name: 'รายการใหม่' }; if (g !== 'sauce') it.price = 0; shopConfig.bfGroups[g].push(it); renderBreakfastAdmin(); return; }
+    });
   }
 
   function renderAdminPanel() {
@@ -3498,8 +3719,10 @@
     document.getElementById('sameDayToggleDelivery').checked = isSameDayOpen('delivery');
     if (!shopConfig.prices) shopConfig.prices = {};
     renderMenuAdmin();
+    renderSourdoughHeaderAdmin();
     renderOptionsAdmin();
     renderBreakfastAdmin();
+    wireAdminExtras();
     renderAdminDates('pickup');
     renderAdminDates('delivery');
     initAdminCalendarMonth('pickup');
@@ -3607,6 +3830,7 @@
     btn.innerText = '💾 กำลังบันทึก...';
 
     collectMenuAdmin();
+    collectExtrasAdmin();
 
     document.querySelectorAll('[data-avail]').forEach(cb => {
       const cat = cb.dataset.avail;

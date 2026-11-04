@@ -1,0 +1,62 @@
+วิธีเปิดใช้ "อัพโหลดรูปจากมือถือ → เก็บลง Google Drive"
+=========================================================
+
+ต้องตั้งค่าครั้งเดียว ประมาณ 10 นาที ทำตามนี้ทีละขั้น
+
+--- ส่วนที่ 1: สร้าง OAuth ใน Google Cloud ---
+
+1) เข้า https://console.cloud.google.com  เลือกโปรเจกต์เดิมที่มี service account
+   (อันเดียวกับที่ใช้เขียน Google Sheets อยู่) หรือสร้างโปรเจกต์ใหม่ก็ได้
+
+2) เปิด Google Drive API
+   เมนู: APIs & Services → Library → ค้นหา "Google Drive API" → กด Enable
+
+3) ตั้ง OAuth consent screen
+   เมนู: APIs & Services → OAuth consent screen
+   - User Type: External → Create
+   - ใส่ชื่อแอป (เช่น Pikbaan Menu), อีเมลติดต่อ
+   - ส่วน Test users: กด Add users → ใส่อีเมล Google ของคุณ (เจ้าของ Drive)
+   - บันทึก
+   - **สำคัญ**: กลับมาหน้า OAuth consent screen แล้วกด "PUBLISH APP" → Confirm
+     (ถ้าไม่ publish token จะหมดอายุทุก 7 วัน) ถ้ามีเตือน unverified ไม่เป็นไร
+
+4) สร้าง OAuth client ID
+   เมนู: APIs & Services → Credentials → Create Credentials → OAuth client ID
+   - Application type: Web application
+   - Authorized redirect URIs: กด ADD URI แล้วใส่  (เปลี่ยน <โดเมน> เป็นโดเมน Vercel ของคุณ)
+       https://<โดเมน>/api/oauth-callback
+     เช่น  https://pikbaan.vercel.app/api/oauth-callback
+   - Create → จะได้ "Client ID" กับ "Client secret"  (คัดลอกเก็บไว้)
+
+
+--- ส่วนที่ 2: ใส่ค่าใน Vercel ---
+
+5) เข้า Vercel → โปรเจกต์ → Settings → Environment Variables  ใส่ 3 ตัวนี้:
+     GOOGLE_OAUTH_CLIENT_ID       = (Client ID จากข้อ 4)
+     GOOGLE_OAUTH_CLIENT_SECRET   = (Client secret จากข้อ 4)
+     GOOGLE_DRIVE_FOLDER_ID       = 1KIrreaX2maqRlO6_U375kT3xAisvgVw4
+   (โฟลเดอร์ ID ด้านบนดึงมาจากลิงก์โฟลเดอร์ที่คุณแชร์มา ถ้าอยากเก็บโฟลเดอร์อื่นให้เปลี่ยนเป็น ID ของโฟลเดอร์นั้น)
+   แล้วกด Redeploy 1 ครั้ง
+
+
+--- ส่วนที่ 3: เชื่อมบัญชี (ขอ refresh token) ---
+
+6) เปิดลิงก์นี้ในเบราว์เซอร์  (เปลี่ยน <โดเมน> เป็นของคุณ)
+       https://<โดเมน>/api/oauth-start
+   - ล็อกอินด้วยบัญชี Google ที่เป็น "เจ้าของ Drive" (บัญชีเดียวกับโฟลเดอร์)
+   - กดอนุญาต (ถ้าขึ้น "Google hasn't verified this app" ให้กด Advanced → Go to ... (unsafe))
+   - หน้าถัดไปจะโชว์ค่า "refresh token" ยาว ๆ
+
+7) คัดลอก refresh token ไปใส่ใน Vercel Environment Variables อีกตัว:
+       GOOGLE_OAUTH_REFRESH_TOKEN = (ค่าที่ได้จากข้อ 6)
+   แล้ว Redeploy อีก 1 ครั้ง
+
+เสร็จแล้ว! เข้าหน้า admin → แต่ละเมนูจะมีปุ่ม "📷 อัพโหลด/ถ่ายรูป"
+กดถ่าย/เลือกรูปจากมือถือได้เลย ระบบจะย่อรูปแล้วอัพขึ้น Drive ของคุณ
+(ตั้งสิทธิ์ให้ดูได้อัตโนมัติ) แล้วเอารหัสรูปมาใส่ให้เอง — กด "บันทึก" เป็นอันจบ
+
+
+หมายเหตุ
+- รูปจะถูกย่อให้ด้านยาวสุด ~1200px เพื่อให้อัพเร็วและโหลดไว
+- ถ้ายังไม่ตั้งค่าส่วนนี้ ปุ่มอัพโหลดจะขึ้น error แต่ช่อง "วางลิงก์/รหัส Drive" ยังใช้ได้ตามปกติ
+- ช่องกรอกลิงก์เดิมยังอยู่ ใช้วางลิงก์แชร์ Drive หรือรหัสไฟล์เองก็ได้
