@@ -1130,6 +1130,21 @@
     return !shopConfig || !shopConfig.options || shopConfig.options[id] !== false;
   }
 
+  function sandwichGroupOf(id) {
+    return SANDWICHES.some(s => s.id === id) ? 'sandwiches' : 'grilled';
+  }
+  function breadOptFor(id) {
+    const item = ALL_SANDWICHES.find(s => s.id === id);
+    const defPrice = (item && item.supperPrice) ? item.supperPrice : SUPPER_UPGRADE_PRICE;
+    const g = sandwichGroupOf(id);
+    const bo = (shopConfig && shopConfig.breadOpt && shopConfig.breadOpt[g] && shopConfig.breadOpt[g][id]) || {};
+    return {
+      country: bo.country !== false,
+      supper: bo.supper !== false,
+      price: (bo.price !== undefined && bo.price !== null && bo.price !== '') ? Number(bo.price) : defPrice
+    };
+  }
+
   const SANDWICHES = [
     { id: 'avocado_shrimps', name: 'Avocado & Shrimp with Scrambled Egg', label: 'Avocado & Shrimp with Scrambled Egg', price: 170, image: '/pic/avocado_shrimps_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
     { id: 'smoked_salmon', name: 'Smoked Salmon', label: 'Smoked Salmon', price: 170, image: '/pic/smoked_salmon_sourdough.jpg', addonList: OPEN_SANDWICH_ADDONS },
@@ -1232,8 +1247,8 @@
     { cfg: 'tiramisus', group: 'tiramisus', title: '☕ ที-รา-มิ-สุ (Tiramisu)', arr: () => TIRAMISUS, hasImg: true, dispName: true },
     { cfg: 'signatures', group: 'signatures', title: '🍰 Signature Cake', arr: () => SIGNATURES, hasImg: true, dispName: true, pool: 'signatures' },
     { cfg: 'sourdoughs', group: 'sourdoughs', title: '🍞 ซาวร์โดว์ ครีมชีสและแยม (Sourdough with Cream Cheese and Jam)', arr: () => SOURDOUGHS, dispName: true },
-    { cfg: 'sandwiches', group: 'sandwiches', title: '🥪 ซาวร์โดว์แซนด์วิชเปิดหน้า (Sourdough Open Sandwich)', arr: () => SANDWICHES, hasImg: true, dispName: true, pool: 'sandwiches' },
-    { cfg: 'sandwiches', group: 'grilled', title: '🥪 ซาวร์โดว์แซนวิช (Sourdough Sandwich)', arr: () => GRILLED_SANDWICHES, hasImg: true, dispName: true, pool: 'sandwiches', newSandwich: 'grilled' },
+    { cfg: 'sandwiches', group: 'sandwiches', title: '🥪 ซาวร์โดว์แซนด์วิชเปิดหน้า (Sourdough Open Sandwich)', arr: () => SANDWICHES, hasImg: true, dispName: true, pool: 'sandwiches', bread: true },
+    { cfg: 'sandwiches', group: 'grilled', title: '🥪 ซาวร์โดว์แซนวิช (Sourdough Sandwich)', arr: () => GRILLED_SANDWICHES, hasImg: true, dispName: true, pool: 'sandwiches', newSandwich: 'grilled', bread: true },
     { cfg: 'extras', group: 'extras', title: '🧈 ครีมชีสและแยม (Cream Cheese and Jam) — เพิ่มเติม', arr: () => EXTRAS, idField: 'configId' }
   ];
 
@@ -1316,6 +1331,7 @@
     if (!shopConfig.itemAddons) shopConfig.itemAddons = {};
     if (!shopConfig.addonPools) shopConfig.addonPools = {};
     if (!shopConfig.optionLabels) shopConfig.optionLabels = {};
+    if (!shopConfig.breadOpt) shopConfig.breadOpt = {};
     if (!shopConfig.sourdoughHeader) shopConfig.sourdoughHeader = ['/pic/sourdough_cream_cheese_1.png', '/pic/sourdough_cream_cheese_2.jpg', '/pic/sourdough_cream_cheese_3.jpg'];
 
     ['signatures', 'sandwiches'].forEach(poolKey => {
@@ -2216,7 +2232,8 @@
     const addonList = sandwich && sandwich.addonList ? sandwich.addonList : null;
     const hasAddon = !!addonList;
     const hasButter = sandwich && sandwich.butterChoice;
-    const supperUp = sandwich && sandwich.supperPrice ? sandwich.supperPrice : SUPPER_UPGRADE_PRICE;
+    const bo = breadOptFor(sid);
+    const supperUp = bo.price;
 
     if (qty <= 0) {
       container.classList.add('hidden');
@@ -2245,10 +2262,8 @@
       while (sandwichButter[sid].length > qty) sandwichButter[sid].pop();
     }
 
-    const countryAvail = !shopConfig || !shopConfig.options || shopConfig.options.country !== false;
-    const supperAvail = !shopConfig || !shopConfig.options || shopConfig.options.supper !== false;
-    const ccAvail = !shopConfig || !shopConfig.options || shopConfig.options.cream_cheese !== false;
-    const nutellaAvail = !shopConfig || !shopConfig.options || shopConfig.options.nutella !== false;
+    const countryAvail = bo.country;
+    const supperAvail = bo.supper;
 
     let html = '<div class="bread-choice-label">เลือกแป้งขนมปัง</div>';
     for (let i = 0; i < qty; i++) {
@@ -2394,7 +2409,7 @@
     ALL_SANDWICHES.forEach(s => {
       const q = quantities['sandwich-' + s.id];
       total += s.price * q;
-      const supperUp = s.supperPrice ? s.supperPrice : SUPPER_UPGRADE_PRICE;
+      const supperUp = breadOptFor(s.id).price;
       const breads = sandwichBread[s.id] || [];
       breads.forEach(b => { if (b === 'supper') total += supperUp; });
       const addonList = s.addonList || [];
@@ -2866,12 +2881,12 @@
       });
     const sandwiches = ALL_SANDWICHES.filter(s => quantities['sandwich-' + s.id] > 0)
       .map(s => {
-        const supperUp = s.supperPrice ? s.supperPrice : SUPPER_UPGRADE_PRICE;
+        const supperUp = breadOptFor(s.id).price;
         const breads = sandwichBread[s.id] || [];
         const supperCount = breads.filter(b => b === 'supper').length;
         const result = {
           name: s.name, price: s.price, qty: quantities['sandwich-' + s.id],
-          breads: breads.map(b => b === 'supper' ? 'Supper Multigrain' : 'Country Bread'),
+          breads: breads.map(b => b === 'supper' ? optLabel('supper', 'Supper Multigrain') : optLabel('country', 'Country Bread')),
           breadUpgradeTotal: supperCount * supperUp
         };
         if (s.hasBaseSauce) {
@@ -3111,6 +3126,15 @@
       if (!chips) chips = '<span style="font-size:12px;color:#aaa;">ยังไม่มี Add-on ในหมวดนี้</span>';
       h += '<div class="am-row" style="align-items:flex-start"><span class="am-lab">Add-on</span><div class="am-chips">' + chips + '</div></div>';
     }
+    if (ent.bread) {
+      const bo = breadOptFor(it.id);
+      h += '<div class="am-row" style="align-items:flex-start"><span class="am-lab">แป้ง</span>' +
+        '<div class="am-tog">' +
+          '<div class="admin-toggle-cell"><span class="admin-toggle-cap">' + esc(optLabel('country', 'Country')) + '</span><label class="toggle-switch"><input type="checkbox" data-breadav="country" data-grp="' + grp + '" data-id="' + it.id + '" ' + (bo.country ? 'checked' : '') + '><span class="toggle-slider"></span></label></div>' +
+          '<div class="admin-toggle-cell"><span class="admin-toggle-cap">' + esc(optLabel('supper', 'Supper')) + '</span><label class="toggle-switch"><input type="checkbox" data-breadav="supper" data-grp="' + grp + '" data-id="' + it.id + '" ' + (bo.supper ? 'checked' : '') + '><span class="toggle-slider"></span></label></div>' +
+        '</div></div>';
+      h += '<div class="am-row"><span class="am-lab">Supper +฿</span><input type="number" class="am-input num" data-breadprice="' + grp + '" data-id="' + it.id + '" value="' + bo.price + '"></div>';
+    }
     h += '<div class="am-row"><button class="am-del" data-delitem="' + grp + '" data-id="' + it.id + '">🗑 ลบรายการนี้</button></div>';
     h += '</div>';
     return h;
@@ -3213,6 +3237,19 @@
       const cat = cb.dataset.vis;
       if (!shopConfig.visible[cat]) shopConfig.visible[cat] = {};
       shopConfig.visible[cat][cb.dataset.id] = cb.checked;
+    });
+    if (!shopConfig.breadOpt) shopConfig.breadOpt = {};
+    document.querySelectorAll('[data-breadav]').forEach(cb => {
+      const g = cb.dataset.grp, id = cb.dataset.id, which = cb.dataset.breadav;
+      if (!shopConfig.breadOpt[g]) shopConfig.breadOpt[g] = {};
+      if (!shopConfig.breadOpt[g][id]) shopConfig.breadOpt[g][id] = {};
+      shopConfig.breadOpt[g][id][which] = cb.checked;
+    });
+    document.querySelectorAll('[data-breadprice]').forEach(inp => {
+      const g = inp.dataset.breadprice, id = inp.dataset.id;
+      if (!shopConfig.breadOpt[g]) shopConfig.breadOpt[g] = {};
+      if (!shopConfig.breadOpt[g][id]) shopConfig.breadOpt[g][id] = {};
+      if (inp.value !== '') shopConfig.breadOpt[g][id].price = Number(inp.value);
     });
   }
 
@@ -3354,17 +3391,14 @@
     if (!shopConfig.options) shopConfig.options = { country: true, supper: true };
     if (!shopConfig.optionLabels) shopConfig.optionLabels = {};
     if (!shopConfig.baseSauces) shopConfig.baseSauces = BASE_SAUCE_SEED.map(x => ({ id: x.id, name: x.name }));
-    let html = '<div class="am-sub">แป้งขนมปัง (Bread) — แก้ชื่อ/เปิดปิด</div>';
+    let html = '<div class="am-sub">ชื่อแป้งขนมปัง (ใช้ร่วมทุกเมนู)</div>';
+    html += '<div style="font-size:11px;color:#9a8a74;margin-bottom:8px;">การเปิด/ปิดของหมด และราคาอัพเกรด Supper ตั้งแยกได้ที่แต่ละเมนูในหัวข้อด้านบน</div>';
     [['country', 'Country Bread'], ['supper', 'Supper Multigrain']].forEach(pair => {
       const id = pair[0], def = pair[1];
-      const checked = shopConfig.options[id] !== false ? 'checked' : '';
       html += '<div class="am-item"><div class="am-row"><span class="am-lab">ชื่อ</span>' +
         '<input class="am-input" data-optlabel="' + id + '" value="' + esc(shopConfig.optionLabels[id] || def) + '">' +
-        '<div class="admin-toggle-cell"><span class="admin-toggle-cap">มีของ</span><label class="toggle-switch"><input type="checkbox" data-type="option" data-id="' + id + '" ' + checked + '><span class="toggle-slider"></span></label></div>' +
         '</div></div>';
     });
-    html += '<div class="am-sub">ค่าอัพเกรดแป้ง Supper Multigrain</div>';
-    html += '<div class="admin-price-row"><span class="admin-price-label">+฿ / ชิ้น (เปิดหน้า/ปิ้ง ตามเรตเมนู)</span><input type="number" class="admin-price-input" id="supperUpgradeInput" value="' + SUPPER_UPGRADE_PRICE + '"> ฿</div>';
     html += '<div class="am-sub">Base Sauce — เพิ่ม / ลบ / แก้ชื่อ</div>';
     shopConfig.baseSauces.forEach(b => {
       const checked = shopConfig.options[b.id] !== false ? 'checked' : '';
