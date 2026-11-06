@@ -670,7 +670,7 @@
     </div>
 
     <div class="card">
-      <div class="admin-section">🥖 ตัวเลือกแป้ง &amp; Base Sauce</div>
+      <div class="admin-section">🥄 Base Sauce</div>
       <div id="adminOptions"></div>
     </div>
 
@@ -1133,16 +1133,17 @@
   function sandwichGroupOf(id) {
     return SANDWICHES.some(s => s.id === id) ? 'sandwiches' : 'grilled';
   }
-  function breadOptFor(id) {
-    const item = ALL_SANDWICHES.find(s => s.id === id);
-    const defPrice = (item && item.supperPrice) ? item.supperPrice : SUPPER_UPGRADE_PRICE;
+  const BREAD_POOL_SEED = {
+    sandwiches: [{ id: 'country', name: 'Country Bread', price: 0, sold: false }, { id: 'supper', name: 'Supper Multigrain', price: 5, sold: false }],
+    grilled: [{ id: 'country', name: 'Country Bread', price: 0, sold: false }, { id: 'supper', name: 'Supper Multigrain', price: 10, sold: false }]
+  };
+  function breadPoolFor(id) {
     const g = sandwichGroupOf(id);
-    const bo = (shopConfig && shopConfig.breadOpt && shopConfig.breadOpt[g] && shopConfig.breadOpt[g][id]) || {};
-    return {
-      country: bo.country !== false,
-      supper: bo.supper !== false,
-      price: (bo.price !== undefined && bo.price !== null && bo.price !== '') ? Number(bo.price) : defPrice
-    };
+    return (shopConfig && shopConfig.breadPools && shopConfig.breadPools[g]) || [];
+  }
+  function breadPriceOf(id, breadId) {
+    const b = breadPoolFor(id).find(x => x.id === breadId);
+    return b ? (Number(b.price) || 0) : 0;
   }
 
   const SANDWICHES = [
@@ -1331,7 +1332,9 @@
     if (!shopConfig.itemAddons) shopConfig.itemAddons = {};
     if (!shopConfig.addonPools) shopConfig.addonPools = {};
     if (!shopConfig.optionLabels) shopConfig.optionLabels = {};
-    if (!shopConfig.breadOpt) shopConfig.breadOpt = {};
+    if (!shopConfig.breadPools) shopConfig.breadPools = { sandwiches: BREAD_POOL_SEED.sandwiches.map(b => Object.assign({}, b)), grilled: BREAD_POOL_SEED.grilled.map(b => Object.assign({}, b)) };
+    if (!shopConfig.breadPools.sandwiches) shopConfig.breadPools.sandwiches = BREAD_POOL_SEED.sandwiches.map(b => Object.assign({}, b));
+    if (!shopConfig.breadPools.grilled) shopConfig.breadPools.grilled = BREAD_POOL_SEED.grilled.map(b => Object.assign({}, b));
     if (!shopConfig.sourdoughHeader) shopConfig.sourdoughHeader = ['/pic/sourdough_cream_cheese_1.png', '/pic/sourdough_cream_cheese_2.jpg', '/pic/sourdough_cream_cheese_3.jpg'];
 
     ['signatures', 'sandwiches'].forEach(poolKey => {
@@ -2232,8 +2235,9 @@
     const addonList = sandwich && sandwich.addonList ? sandwich.addonList : null;
     const hasAddon = !!addonList;
     const hasButter = sandwich && sandwich.butterChoice;
-    const bo = breadOptFor(sid);
-    const supperUp = bo.price;
+    const breadPool = breadPoolFor(sid);
+    const breadAvail = breadPool.filter(b => !b.sold);
+    const breadDefault = breadAvail.length ? breadAvail[0].id : (breadPool[0] ? breadPool[0].id : '');
 
     if (qty <= 0) {
       container.classList.add('hidden');
@@ -2245,7 +2249,7 @@
       return;
     }
 
-    while (sandwichBread[sid].length < qty) sandwichBread[sid].push('normal');
+    while (sandwichBread[sid].length < qty) sandwichBread[sid].push(breadDefault);
     while (sandwichBread[sid].length > qty) sandwichBread[sid].pop();
     const baseAvailList = BASE_SAUCES.filter(b => optionAvail(b.id));
     const baseDefault = baseAvailList.length ? baseAvailList[0].id : (BASE_SAUCES[0] ? BASE_SAUCES[0].id : '');
@@ -2262,26 +2266,20 @@
       while (sandwichButter[sid].length > qty) sandwichButter[sid].pop();
     }
 
-    const countryAvail = bo.country;
-    const supperAvail = bo.supper;
-
     let html = '<div class="bread-choice-label">เลือกแป้งขนมปัง</div>';
     for (let i = 0; i < qty; i++) {
       let cur = sandwichBread[sid][i];
-      if (cur === 'supper' && !supperAvail) { cur = 'normal'; sandwichBread[sid][i] = 'normal'; }
-      if (cur === 'normal' && !countryAvail && supperAvail) { cur = 'supper'; sandwichBread[sid][i] = 'supper'; }
+      if (!breadAvail.some(b => b.id === cur)) { cur = breadDefault; sandwichBread[sid][i] = cur; }
       html += `<div class="bread-piece"><div class="bread-piece-num">#${i + 1}</div>`;
       html += '<div class="bread-options">';
-      if (countryAvail) {
-        html += `<button type="button" class="bread-opt ${cur === 'normal' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="normal">${optLabel('country', 'Country Bread')}</button>`;
-      } else {
-        html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">${optLabel('country', 'Country Bread')} (หมด)</button>`;
-      }
-      if (supperAvail) {
-        html += `<button type="button" class="bread-opt ${cur === 'supper' ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="supper">${optLabel('supper', 'Supper Multigrain')} (+${supperUp}฿)</button>`;
-      } else {
-        html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">${optLabel('supper', 'Supper Multigrain')} (หมด)</button>`;
-      }
+      breadPool.forEach(b => {
+        const extra = Number(b.price) > 0 ? ` (+${Number(b.price)}฿)` : '';
+        if (!b.sold) {
+          html += `<button type="button" class="bread-opt ${cur === b.id ? 'active' : ''}" data-sandwich="${sid}" data-piece="${i}" data-bread="${b.id}">${b.name}${extra}</button>`;
+        } else {
+          html += `<button type="button" class="bread-opt" disabled style="opacity:0.4;">${b.name} (หมด)</button>`;
+        }
+      });
       html += '</div></div>';
     }
 
@@ -2409,9 +2407,8 @@
     ALL_SANDWICHES.forEach(s => {
       const q = quantities['sandwich-' + s.id];
       total += s.price * q;
-      const supperUp = breadOptFor(s.id).price;
       const breads = sandwichBread[s.id] || [];
-      breads.forEach(b => { if (b === 'supper') total += supperUp; });
+      breads.forEach(b => { total += breadPriceOf(s.id, b); });
       const addonList = s.addonList || [];
       const addons = sandwichAddons[s.id] || [];
       addons.forEach(pieceAddons => {
@@ -2881,13 +2878,12 @@
       });
     const sandwiches = ALL_SANDWICHES.filter(s => quantities['sandwich-' + s.id] > 0)
       .map(s => {
-        const supperUp = breadOptFor(s.id).price;
         const breads = sandwichBread[s.id] || [];
-        const supperCount = breads.filter(b => b === 'supper').length;
+        const pool = breadPoolFor(s.id);
         const result = {
           name: s.name, price: s.price, qty: quantities['sandwich-' + s.id],
-          breads: breads.map(b => b === 'supper' ? optLabel('supper', 'Supper Multigrain') : optLabel('country', 'Country Bread')),
-          breadUpgradeTotal: supperCount * supperUp
+          breads: breads.map(bid => { const b = pool.find(x => x.id === bid); return b ? b.name : bid; }),
+          breadUpgradeTotal: breads.reduce((sum, bid) => sum + breadPriceOf(s.id, bid), 0)
         };
         if (s.hasBaseSauce) {
           result.baseSauces = (sandwichBaseSauce[s.id] || []).map(b => { const o = BASE_SAUCES.find(x => x.id === b); return o ? o.name : b; });
@@ -3126,15 +3122,6 @@
       if (!chips) chips = '<span style="font-size:12px;color:#aaa;">ยังไม่มี Add-on ในหมวดนี้</span>';
       h += '<div class="am-row" style="align-items:flex-start"><span class="am-lab">Add-on</span><div class="am-chips">' + chips + '</div></div>';
     }
-    if (ent.bread) {
-      const bo = breadOptFor(it.id);
-      h += '<div class="am-row" style="align-items:flex-start"><span class="am-lab">แป้ง</span>' +
-        '<div class="am-tog">' +
-          '<div class="admin-toggle-cell"><span class="admin-toggle-cap">' + esc(optLabel('country', 'Country')) + '</span><label class="toggle-switch"><input type="checkbox" data-breadav="country" data-grp="' + grp + '" data-id="' + it.id + '" ' + (bo.country ? 'checked' : '') + '><span class="toggle-slider"></span></label></div>' +
-          '<div class="admin-toggle-cell"><span class="admin-toggle-cap">' + esc(optLabel('supper', 'Supper')) + '</span><label class="toggle-switch"><input type="checkbox" data-breadav="supper" data-grp="' + grp + '" data-id="' + it.id + '" ' + (bo.supper ? 'checked' : '') + '><span class="toggle-slider"></span></label></div>' +
-        '</div></div>';
-      h += '<div class="am-row"><span class="am-lab">Supper +฿</span><input type="number" class="am-input num" data-breadprice="' + grp + '" data-id="' + it.id + '" value="' + bo.price + '"></div>';
-    }
     h += '<div class="am-row"><button class="am-del" data-delitem="' + grp + '" data-id="' + it.id + '">🗑 ลบรายการนี้</button></div>';
     h += '</div>';
     return h;
@@ -3169,10 +3156,29 @@
         if (groups[groups.length - 1] === ent.group) html += poolEditorHtml(ent.pool);
       }
       html += '<button class="am-addbtn" data-additem="' + ent.group + '">+ เพิ่มรายการในหมวดนี้</button>';
+      if (ent.bread) html += breadPoolEditorHtml(ent.group);
       html += '</div>';
     });
     document.getElementById('adminMenu').innerHTML = html;
     wireAdminMenu();
+  }
+
+  function breadPoolEditorHtml(group) {
+    if (!shopConfig.breadPools) shopConfig.breadPools = {};
+    if (!shopConfig.breadPools[group]) shopConfig.breadPools[group] = (BREAD_POOL_SEED[group] || []).map(b => Object.assign({}, b));
+    const pool = shopConfig.breadPools[group];
+    let h = '<div class="am-sub">🍞 ตัวเลือกแป้งของหมวดนี้ (เพิ่ม/ลบ/ตั้งราคา/ของหมด)</div>';
+    pool.forEach(b => {
+      const avail = b.sold === true ? '' : 'checked';
+      h += '<div class="am-item">' +
+        '<div class="am-row"><span class="am-lab">ชื่อ</span><input class="am-input" data-bpname="' + group + '" data-id="' + b.id + '" value="' + esc(b.name) + '">' +
+        '<div class="admin-toggle-cell"><span class="admin-toggle-cap">มีของ</span><label class="toggle-switch"><input type="checkbox" data-bpsold="' + group + '" data-id="' + b.id + '" ' + avail + '><span class="toggle-slider"></span></label></div></div>' +
+        '<div class="am-row"><span class="am-lab">+฿</span><input type="number" class="am-input num" data-bpprice="' + group + '" data-id="' + b.id + '" value="' + (Number(b.price) || 0) + '">' +
+        '<button class="am-del" data-bpdel="' + group + '" data-id="' + b.id + '">🗑 ลบ</button></div>' +
+        '</div>';
+    });
+    h += '<button class="am-addbtn" data-bpadd="' + group + '">+ เพิ่มแป้ง</button>';
+    return h;
   }
 
   function collectMenuAdmin() {
@@ -3238,18 +3244,21 @@
       if (!shopConfig.visible[cat]) shopConfig.visible[cat] = {};
       shopConfig.visible[cat][cb.dataset.id] = cb.checked;
     });
-    if (!shopConfig.breadOpt) shopConfig.breadOpt = {};
-    document.querySelectorAll('[data-breadav]').forEach(cb => {
-      const g = cb.dataset.grp, id = cb.dataset.id, which = cb.dataset.breadav;
-      if (!shopConfig.breadOpt[g]) shopConfig.breadOpt[g] = {};
-      if (!shopConfig.breadOpt[g][id]) shopConfig.breadOpt[g][id] = {};
-      shopConfig.breadOpt[g][id][which] = cb.checked;
+    if (!shopConfig.breadPools) shopConfig.breadPools = {};
+    document.querySelectorAll('[data-bpname]').forEach(inp => {
+      const g = inp.dataset.bpname, id = inp.dataset.id;
+      const b = (shopConfig.breadPools[g] || []).find(x => x.id === id);
+      if (b && inp.value.trim()) b.name = inp.value.trim();
     });
-    document.querySelectorAll('[data-breadprice]').forEach(inp => {
-      const g = inp.dataset.breadprice, id = inp.dataset.id;
-      if (!shopConfig.breadOpt[g]) shopConfig.breadOpt[g] = {};
-      if (!shopConfig.breadOpt[g][id]) shopConfig.breadOpt[g][id] = {};
-      if (inp.value !== '') shopConfig.breadOpt[g][id].price = Number(inp.value);
+    document.querySelectorAll('[data-bpprice]').forEach(inp => {
+      const g = inp.dataset.bpprice, id = inp.dataset.id;
+      const b = (shopConfig.breadPools[g] || []).find(x => x.id === id);
+      if (b && inp.value !== '') b.price = Number(inp.value);
+    });
+    document.querySelectorAll('[data-bpsold]').forEach(cb => {
+      const g = cb.dataset.bpsold, id = cb.dataset.id;
+      const b = (shopConfig.breadPools[g] || []).find(x => x.id === id);
+      if (b) b.sold = !cb.checked;
     });
   }
 
@@ -3322,6 +3331,23 @@
       const del = e.target.closest('[data-delitem]');
       const ap = e.target.closest('[data-addpool]');
       const dp = e.target.closest('[data-delpool]');
+      const bpa = e.target.closest('[data-bpadd]');
+      const bpd = e.target.closest('[data-bpdel]');
+      if (bpa) {
+        collectMenuAdmin();
+        const g = bpa.dataset.bpadd;
+        if (!shopConfig.breadPools[g]) shopConfig.breadPools[g] = [];
+        shopConfig.breadPools[g].push({ id: genId('p'), name: 'แป้งใหม่', price: 0, sold: false });
+        rebuildAdminMenu();
+        return;
+      }
+      if (bpd) {
+        collectMenuAdmin();
+        const g = bpd.dataset.bpdel, id = bpd.dataset.id;
+        shopConfig.breadPools[g] = (shopConfig.breadPools[g] || []).filter(x => x.id !== id);
+        rebuildAdminMenu();
+        return;
+      }
       if (add) {
         collectMenuAdmin();
         const grp = add.dataset.additem;
@@ -3391,14 +3417,7 @@
     if (!shopConfig.options) shopConfig.options = { country: true, supper: true };
     if (!shopConfig.optionLabels) shopConfig.optionLabels = {};
     if (!shopConfig.baseSauces) shopConfig.baseSauces = BASE_SAUCE_SEED.map(x => ({ id: x.id, name: x.name }));
-    let html = '<div class="am-sub">ชื่อแป้งขนมปัง (ใช้ร่วมทุกเมนู)</div>';
-    html += '<div style="font-size:11px;color:#9a8a74;margin-bottom:8px;">การเปิด/ปิดของหมด และราคาอัพเกรด Supper ตั้งแยกได้ที่แต่ละเมนูในหัวข้อด้านบน</div>';
-    [['country', 'Country Bread'], ['supper', 'Supper Multigrain']].forEach(pair => {
-      const id = pair[0], def = pair[1];
-      html += '<div class="am-item"><div class="am-row"><span class="am-lab">ชื่อ</span>' +
-        '<input class="am-input" data-optlabel="' + id + '" value="' + esc(shopConfig.optionLabels[id] || def) + '">' +
-        '</div></div>';
-    });
+    let html = '<div style="font-size:11px;color:#9a8a74;margin-bottom:8px;">ตัวเลือกแป้งแยกไปตั้งที่ล่างสุดของแต่ละหมวดแซนด์วิชแล้ว</div>';
     html += '<div class="am-sub">Base Sauce — เพิ่ม / ลบ / แก้ชื่อ</div>';
     shopConfig.baseSauces.forEach(b => {
       const checked = shopConfig.options[b.id] !== false ? 'checked' : '';
